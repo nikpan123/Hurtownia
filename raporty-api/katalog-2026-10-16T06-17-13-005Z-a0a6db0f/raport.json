@@ -1,0 +1,581 @@
+{
+  "generatedAt": "2026-10-16T06:17:13.008Z",
+  "baseUrl": "https://ksiegarnia.gwodev.pl/api/v2",
+  "status": "FAIL",
+  "tests": [
+    {
+      "name": "Tworzenie: logowanie API administratora",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 915
+    },
+    {
+      "name": "Tworzenie: POST admin/products",
+      "status": "FAIL",
+      "detail": "Tworzenie produktu HTTP 403; Access Denied.\n\n403 !== 201\n",
+      "durationMs": 757
+    },
+    {
+      "name": "WHOLESALE: wszystkie strony, kontrakt i unikalność",
+      "status": "PASS",
+      "detail": "19 produktów",
+      "durationMs": 1072
+    },
+    {
+      "name": "WHOLESALE: domyślna paginacja 1 / 10",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 974
+    },
+    {
+      "name": "WHOLESALE: limit=1",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 824
+    },
+    {
+      "name": "WHOLESALE: limit=2",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 989
+    },
+    {
+      "name": "WHOLESALE: limit=10",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 1006
+    },
+    {
+      "name": "WHOLESALE: limit=50",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 1075
+    },
+    {
+      "name": "WHOLESALE: strona za końcem katalogu",
+      "status": "FAIL",
+      "detail": "Expected values to be strictly equal:\n\n404 !== 200\n",
+      "durationMs": 769
+    },
+    {
+      "name": "WHOLESALE: domyślne sortowanie jak jawne taxon_position_wholesale_category asc",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 1034
+    },
+    {
+      "name": "WHOLESALE: sortowanie name asc / desc",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 2130
+    },
+    {
+      "name": "WHOLESALE: sortowanie pozycji desc zachowuje komplet produktów",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 1042
+    },
+    {
+      "name": "WHOLESALE: wyszukiwanie bez wyników",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 678
+    },
+    {
+      "name": "WHOLESALE: wyszukiwanie nazwa",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 898
+    },
+    {
+      "name": "WHOLESALE: wyszukiwanie ISBN",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 876
+    },
+    {
+      "name": "WHOLESALE: wyszukiwanie autor",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 858
+    },
+    {
+      "name": "WHOLESALE: lista i szczegóły po slugu są zgodne",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 2423
+    },
+    {
+      "name": "WHOLESALE: nieistniejący slug zwraca 404",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 735
+    },
+    {
+      "name": "WHOLESALE: slug z polskimi znakami i odstępami bez błędu serwera",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 781
+    },
+    {
+      "name": "WHOLESALE: fixture testAPI2 — produkt utworzony przez panel, fallback nazwy i slugu",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 817
+    },
+    {
+      "name": "WHOLESALE: filtr Adamada — takson potwierdzony przez API i CMS",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 894
+    },
+    {
+      "name": "WHOLESALE: filtr Takson Adamada + nazwa produktu",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 864
+    },
+    {
+      "name": "WHOLESALE: dodatni filtr publication_type[]",
+      "status": "SKIP",
+      "detail": "Brak niezależnej fixture z prawidłowymi wartościami i oczekiwanymi kodami."
+    },
+    {
+      "name": "WHOLESALE: filtr bez dopasowania publication_type[]",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 770
+    },
+    {
+      "name": "WHOLESALE: dodatni filtr subjects[]",
+      "status": "SKIP",
+      "detail": "Brak niezależnej fixture z prawidłowymi wartościami i oczekiwanymi kodami."
+    },
+    {
+      "name": "WHOLESALE: filtr bez dopasowania subjects[]",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 727
+    },
+    {
+      "name": "WHOLESALE: dodatni filtr primary_school[]",
+      "status": "SKIP",
+      "detail": "Brak niezależnej fixture z prawidłowymi wartościami i oczekiwanymi kodami."
+    },
+    {
+      "name": "WHOLESALE: filtr bez dopasowania primary_school[]",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 711
+    },
+    {
+      "name": "WHOLESALE: dodatni filtr high_school[]",
+      "status": "SKIP",
+      "detail": "Brak niezależnej fixture z prawidłowymi wartościami i oczekiwanymi kodami."
+    },
+    {
+      "name": "WHOLESALE: filtr bez dopasowania high_school[]",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 770
+    },
+    {
+      "name": "WHOLESALE: filtr bez dopasowania taxons[]",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 789
+    },
+    {
+      "name": "WHOLESALE: niepoprawne parametry {\"page\":0}",
+      "status": "FAIL",
+      "detail": "Oczekiwano 400/422, otrzymano 404",
+      "durationMs": 741
+    },
+    {
+      "name": "WHOLESALE: niepoprawne parametry {\"page\":-1}",
+      "status": "FAIL",
+      "detail": "Oczekiwano 400/422, otrzymano 404",
+      "durationMs": 748
+    },
+    {
+      "name": "WHOLESALE: niepoprawne parametry {\"limit\":0}",
+      "status": "FAIL",
+      "detail": "Oczekiwano 400/422, otrzymano 404",
+      "durationMs": 710
+    },
+    {
+      "name": "WHOLESALE: niepoprawne parametry {\"limit\":-1}",
+      "status": "FAIL",
+      "detail": "Oczekiwano 400/422, otrzymano 404",
+      "durationMs": 743
+    },
+    {
+      "name": "WHOLESALE: niepoprawne parametry {\"page\":\"abc\"}",
+      "status": "FAIL",
+      "detail": "Oczekiwano 400/422, otrzymano 404",
+      "durationMs": 808
+    },
+    {
+      "name": "WHOLESALE: niepoprawne parametry {\"limit\":\"abc\"}",
+      "status": "FAIL",
+      "detail": "Oczekiwano 400/422, otrzymano 404",
+      "durationMs": 754
+    },
+    {
+      "name": "WHOLESALE: niepoprawne parametry {\"order_by\":\"qa_invalid\"}",
+      "status": "FAIL",
+      "detail": "Oczekiwano 400/422, otrzymano 500",
+      "durationMs": 745
+    },
+    {
+      "name": "WHOLESALE: niepoprawne parametry {\"sort\":\"qa_invalid\"}",
+      "status": "FAIL",
+      "detail": "Oczekiwano 400/422, otrzymano 500",
+      "durationMs": 691
+    },
+    {
+      "name": "RETAIL: wszystkie strony, kontrakt i unikalność",
+      "status": "FAIL",
+      "detail": "Lista HTTP 500\n\n500 !== 200\n",
+      "durationMs": 897
+    },
+    {
+      "name": "ACADEMY: wszystkie strony, kontrakt i unikalność",
+      "status": "FAIL",
+      "detail": "Lista HTTP 500\n\n500 !== 200\n",
+      "durationMs": 2859
+    },
+    {
+      "name": "Nieprawidłowy kanał: shop/products-dto",
+      "status": "FAIL",
+      "detail": "Oczekiwano odrzucenia kanału, HTTP 500",
+      "durationMs": 948
+    },
+    {
+      "name": "Brak wymaganego nagłówka kanału: shop/products-dto",
+      "status": "FAIL",
+      "detail": "Swagger wymaga nagłówka; HTTP 500",
+      "durationMs": 874
+    },
+    {
+      "name": "Nieprawidłowy kanał: shop/products-dto-by-slug/qa-invalid-channel",
+      "status": "PASS",
+      "detail": "",
+      "durationMs": 764
+    },
+    {
+      "name": "Brak wymaganego nagłówka kanału: shop/products-dto-by-slug/qa-invalid-channel",
+      "status": "FAIL",
+      "detail": "Swagger wymaga nagłówka; HTTP 404",
+      "durationMs": 671
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "endpoint": "/api/v2/shop/authentication-token",
+      "status": 200,
+      "durationMs": 1108
+    },
+    {
+      "method": "POST",
+      "endpoint": "/api/v2/admin/authentication-token",
+      "status": 200,
+      "durationMs": 913
+    },
+    {
+      "method": "POST",
+      "endpoint": "/api/v2/admin/products",
+      "status": 403,
+      "durationMs": 755
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?page=1&limit=50",
+      "status": 200,
+      "durationMs": 1070
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto",
+      "status": 200,
+      "durationMs": 973
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?limit=1",
+      "status": 200,
+      "durationMs": 824
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?limit=2",
+      "status": 200,
+      "durationMs": 988
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?limit=10",
+      "status": 200,
+      "durationMs": 1004
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?limit=50",
+      "status": 200,
+      "durationMs": 1073
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?page=119&limit=1",
+      "status": 404,
+      "durationMs": 768
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?order_by=taxon_position_wholesale_category&sort=asc&page=1&limit=50",
+      "status": 200,
+      "durationMs": 1030
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?order_by=name&sort=asc&page=1&limit=50",
+      "status": 200,
+      "durationMs": 1077
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?order_by=name&sort=desc&page=1&limit=50",
+      "status": 200,
+      "durationMs": 1046
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?order_by=taxon_position_wholesale_category&sort=desc&page=1&limit=50",
+      "status": 200,
+      "durationMs": 1041
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?name=qa-brak-dd06b324-b0a2-4034-97df-f1af09cb09d2",
+      "status": 200,
+      "durationMs": 673
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?name=historia+cen+dwanascie&page=1&limit=50",
+      "status": 200,
+      "durationMs": 897
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?name=9788381183611&page=1&limit=50",
+      "status": 200,
+      "durationMs": 875
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?name=Stefan+Jarzyna+ze+Szczecina&page=1&limit=50",
+      "status": 200,
+      "durationMs": 857
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto-by-slug/historia-cen-dwa",
+      "status": 200,
+      "durationMs": 813
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto-by-slug/test-ksiazka",
+      "status": 200,
+      "durationMs": 756
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto-by-slug/dfgdfsghdsfh",
+      "status": 200,
+      "durationMs": 852
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto-by-slug/qa-brak-da01219f-19e9-4afa-99d6-1a4041a127e3",
+      "status": 404,
+      "durationMs": 734
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto-by-slug/qa%20%C5%BC%C3%B3%C5%82%C4%87%20nie%20istnieje",
+      "status": 404,
+      "durationMs": 781
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto-by-slug/testapi2",
+      "status": 200,
+      "durationMs": 816
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?taxons%5B%5D=WHOLESALE_ADAMADA&page=1&limit=50",
+      "status": 200,
+      "durationMs": 892
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?taxons%5B%5D=WHOLESALE_ADAMADA&name=Kuka+Muka&page=1&limit=50",
+      "status": 200,
+      "durationMs": 863
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?publication_type%5B%5D=qa-brak-a5018aaa-b025-4c35-a957-549d2b899859",
+      "status": 200,
+      "durationMs": 769
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?subjects%5B%5D=qa-brak-7fe8c8bc-0e09-4802-9729-7b30ed10eb63",
+      "status": 200,
+      "durationMs": 726
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?primary_school%5B%5D=qa-brak-5b8ebecb-5dbd-44b7-ada2-91b8bfe21c05",
+      "status": 200,
+      "durationMs": 710
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?high_school%5B%5D=qa-brak-26a5381b-c295-489c-85f5-77bf3270fa74",
+      "status": 200,
+      "durationMs": 770
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?taxons%5B%5D=qa-brak-9839d37d-aa97-4623-a38e-683314eedc7e",
+      "status": 200,
+      "durationMs": 788
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?page=0",
+      "status": 404,
+      "durationMs": 740
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?page=-1",
+      "status": 404,
+      "durationMs": 748
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?limit=0",
+      "status": 404,
+      "durationMs": 710
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?limit=-1",
+      "status": 404,
+      "durationMs": 743
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?page=abc",
+      "status": 404,
+      "durationMs": 806
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?limit=abc",
+      "status": 404,
+      "durationMs": 754
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?order_by=qa_invalid",
+      "status": 500,
+      "durationMs": 743
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?sort=qa_invalid",
+      "status": 500,
+      "durationMs": 690
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?page=1&limit=50",
+      "status": 500,
+      "durationMs": 896
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto?page=1&limit=50",
+      "status": 500,
+      "durationMs": 2858
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto",
+      "status": 500,
+      "durationMs": 945
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto",
+      "status": 500,
+      "durationMs": 873
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto-by-slug/qa-invalid-channel",
+      "status": 404,
+      "durationMs": 763
+    },
+    {
+      "method": "GET",
+      "endpoint": "/api/v2/shop/products-dto-by-slug/qa-invalid-channel",
+      "status": 404,
+      "durationMs": 671
+    }
+  ],
+  "documentationIssues": [
+    "Swagger opisuje odpowiedź products-dto jako tablicę, natomiast rzeczywisty kontrakt ma obiekt {data,pagination}.",
+    "Swagger wymienia parametr ścieżki code dla products-dto-by-slug/{slug}, mimo że ścieżka zawiera wyłącznie slug."
+  ],
+  "creation": {
+    "transport": "admin JSON API",
+    "state": "creation_rejected",
+    "code": "qa-catalog-1792131435039-47945",
+    "httpStatus": 403
+  },
+  "fixtures": [
+    {
+      "code": "testAPI2",
+      "slug": "testapi2",
+      "purpose": "produkt utworzony przez panel, fallback nazwy i slugu",
+      "channels": {
+        "WHOLESALE": {
+          "visible": true,
+          "name": "testAPI2",
+          "slug": "testapi2",
+          "price": 5000,
+          "originalPrice": 5000,
+          "description": "",
+          "shortDescription": ""
+        },
+        "RETAIL": {
+          "visible": false,
+          "slug": "testapi2"
+        },
+        "ACADEMY": {
+          "visible": false,
+          "slug": "testapi2"
+        }
+      }
+    }
+  ]
+}

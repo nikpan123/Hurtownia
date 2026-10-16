@@ -1,0 +1,73 @@
+﻿<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>HURTOWNIA - raport 5646</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;background:#f4f6f8;color:#202124;margin:0;padding:30px}
+.wrap{max-width:1150px;margin:auto}
+.card{background:#fff;border:1px solid #e2e5e9;border-radius:10px;padding:20px;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.status{padding:18px;border-radius:10px;color:#fff;font-weight:700;font-size:18px}
+.ok{background:#16794b}.fail{background:#b42318}
+table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px solid #e7e9ed;text-align:left}
+th{background:#f7f8fa}.n{text-align:right;white-space:nowrap}
+.total{font-size:24px;font-weight:700;margin-top:12px}
+.state{display:inline-block;background:#eef1f5;border-radius:6px;padding:5px 8px;margin:3px}
+.small{color:#6d7480;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>HURTOWNIA - raport testu koszyka</h1>
+<p class="small">Wygenerowano z finalTestReport</p>
+
+<div class="status ok">FINALIZACJA OK | HTTP 200</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Zamówienie</h2>
+    <div><b>ID:</b> 5646</div>
+    <div><b>tokenValue:</b> GCLdVV7O_C</div>
+    <div><b>generatedAt:</b> 2026-09-14T11:43:05.373Z</div>
+  </div>
+  <div class="card">
+    <h2>Płatność i dostawa</h2>
+    <div><b>Płatność:</b> Płatność terminowa</div>
+    <div><b>Dostawa:</b> Odbi&#243;r we własnym zakresie</div>
+  </div>
+  <div class="card">
+    <h2>Stany</h2>
+    <span class="state">checkout: payment_selected</span>
+    <span class="state">payment: cart</span>
+    <span class="state">shipping: cart</span>
+  </div>
+</div>
+
+<div class="card">
+<h2>Produkty</h2>
+<table>
+<thead><tr><th>Kod</th><th>Produkt</th><th class="n">Ilość początkowa</th><th class="n">Po edycji</th><th class="n">Końcowa</th><th class="n">Cena</th><th class="n">Wartość</th></tr></thead>
+<tbody><tr><td><b>POP1</b></td><td>Ortografia dla szkoły podstawowej i gimnazjum.  Pisownia wyraz&#243;w z &#243; i u</td><td class='n'>5</td><td class='n'>1</td><td class='n'>1</td><td class='n'>100,00 PLN</td><td class='n'>75,00 PLN</td></tr><tr><td><b>m-F8P</b></td><td>Fizyka z plusem 8. Multipodręcznik. Wersja premium</td><td class='n'>9</td><td class='n'>4</td><td class='n'>4</td><td class='n'>213,00 PLN</td><td class='n'>638,99 PLN</td></tr><tr><td><b>testhurtB</b></td><td>Testowy produkt dla hurtowni B  - Opisy produktu dla kanał&#243;w sprzedaży</td><td class='n'>9</td><td class='n'>8</td><td class='n'>8</td><td class='n'>100,00 PLN</td><td class='n'>800,00 PLN</td></tr></tbody>
+</table>
+</div>
+
+<div class="grid">
+  <div class="card"><h2>Adres wysyłki</h2><div><div><b>Firma:</b> Test Hurtownia</div><div><b>Adres:</b> Grunwaldzka 101</div><div><b>Miasto:</b> 80-244 Gdańsk</div><div><b>Telefon:</b> 627357705</div></div></div>
+  <div class="card"><h2>Adres rozliczeniowy</h2><div><div><b>Firma:</b> Test Hurtownia</div><div><b>Adres:</b> Kartuska 77</div><div><b>Miasto:</b> 80-122 Gdańsk</div><div><b>NIP:</b> 8630794767</div></div></div>
+</div>
+
+<div class="card">
+<h2>Podsumowanie</h2>
+<div><b>Różnych produktów:</b> 3</div>
+<div><b>Łączna liczba sztuk:</b> 13</div>
+<hr>
+<div><b>Produkty:</b> 1513,99 PLN</div>
+<div><b>Dostawa:</b> 37,55 PLN</div>
+<div class="total">RAZEM: 1551,54 PLN</div>
+</div>
+
+<p class="small">Obok raportu HTML zapisano również pełny raport JSON.</p>
+</div>
+</body>
+</html>

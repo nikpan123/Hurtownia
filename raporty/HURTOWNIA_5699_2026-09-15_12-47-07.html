@@ -1,0 +1,200 @@
+﻿<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HURTOWNIA - raport zamówienia 5699</title>
+<style>
+body{font-family:"Segoe UI",Arial,sans-serif;background:#f5f6f8;color:#202124;margin:0;padding:28px}
+.container{max-width:1500px;margin:0 auto}
+h1{margin:0 0 8px}.subtitle,.muted{color:#6b7280}
+.card{background:#fff;border:1px solid #e2e5e9;border-radius:10px;padding:20px;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.status{padding:18px 22px;border-radius:10px;color:#fff;font-weight:700;margin:20px 0}
+.success{background:#16794b}.failure{background:#b42318}
+.table-wrap{overflow-x:auto}
+table{width:100%;min-width:1900px;border-collapse:collapse;background:#fff}
+th,td{padding:10px;border-bottom:1px solid #e8eaed;text-align:left;vertical-align:top}
+th{background:#f8f9fb;font-size:12px;position:sticky;top:0}
+.num{text-align:right;white-space:nowrap}
+.total{font-size:24px;font-weight:700;margin-top:12px}
+.state{display:inline-block;background:#eef1f5;border-radius:6px;padding:5px 9px;margin:3px}
+.warning{background:#fff7ed;border:1px solid #fed7aa;padding:12px;border-radius:8px}
+.shipping-table{min-width:620px}.shipping-metrics{display:flex;gap:28px;flex-wrap:wrap;margin:16px 0}.shipping-metrics strong{display:block;font-size:24px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>HURTOWNIA - raport testu koszyka</h1>
+<div class="subtitle">Raport obejmuje dane produktów, edycję quantity, rabaty, netto/VAT, dostawę i finalizację.</div>
+
+<div class="status success">
+FINALIZACJA OK | HTTP 200
+</div>
+
+<div class="grid">
+<div class="card">
+<h2>Zamówienie</h2>
+<div><b>ID:</b> 5699</div>
+<div><b>tokenValue:</b> TfDZTfDRqC</div>
+<div><b>generatedAt:</b> 2026-09-15T10:47:07.125Z</div>
+</div>
+
+<div class="card">
+<h2>Płatność i dostawa</h2>
+<div><b>Płatność:</b> Płatność terminowa</div>
+<div><b>Dostawa:</b> testowa wysyłka dla hurtowni</div>
+</div>
+
+<div class="card">
+<h2>Stany</h2>
+<span class="state">checkout: payment_selected</span>
+<span class="state">payment: cart</span>
+<span class="state">shipping: cart</span>
+</div>
+</div>
+
+<div class="card">
+<h2>Paczki, waga i koszt wysyłki</h2>
+<div class="shipping-metrics">
+<div>Liczba paczek<strong>4</strong></div>
+<div>Całkowity koszt wysyłki<strong>42,00 PLN</strong></div>
+<div>Łączna waga produktów<strong>185</strong></div>
+</div>
+<p class="muted">Jednostka wagi: jednostka API product.weight — do potwierdzenia. Waga pozycji = waga jednej sztuki × końcowa liczba sztuk. Waga produktów nie obejmuje opakowań.</p>
+
+<div class="table-wrap"><table class="shipping-table">
+<thead><tr><th>Kod produktu</th><th>ISBN</th><th class="num">Liczba sztuk</th><th class="num">Waga / szt.</th><th class="num">Waga × sztuki</th></tr></thead>
+<tbody><tr>
+<td>POP1</td>
+<td>9788387788155</td>
+<td class="num">1</td>
+<td class="num">140</td>
+<td class="num">140</td>
+</tr><tr>
+<td>4321</td>
+<td>9788385824350</td>
+<td class="num">9</td>
+<td class="num">5</td>
+<td class="num">45</td>
+</tr></tbody></table></div>
+<p><b>Suma znanych wag:</b> 185</p>
+<p class="muted">Źródło: 10. Podgląd podsumowania — przed finalizacją.</p>
+</div>
+
+<div class="card">
+<h2>Produkty i rabaty</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Kod</th>
+<th>Produkt</th>
+<th class="num">Ilość początkowa</th>
+<th class="num">Po edycji</th>
+<th class="num">Końcowa</th>
+<th class="num">Cena oryginalna</th>
+<th class="num">Cena jednostkowa API</th>
+<th class="num">Rabat API</th>
+<th class="num">Rabat zaokr.</th>
+<th class="num">Rabat efektywny</th>
+<th class="num">Zniżka / szt.</th>
+<th class="num">Cena po rabacie</th>
+<th class="num">Przed rabatem</th>
+<th class="num">Rabat łącznie</th>
+<th class="num">Wyliczone po rabacie</th>
+<th class="num">API total</th>
+<th class="num">Różnica</th>
+<th class="num">Netto / szt.</th>
+<th class="num">Netto łącznie</th>
+<th class="num">VAT</th>
+<th class="num">Podatek</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>POP1</strong></td>
+<td>Ortografia dla szkoły podstawowej i gimnazjum.  Pisownia wyraz&#243;w z &#243; i u</td>
+<td class="num">8</td>
+<td class="num">1</td>
+<td class="num">1</td>
+<td class="num">150,00 PLN</td>
+<td class="num">100,00 PLN</td>
+<td class="num">50,00%</td>
+<td class="num">50,00%</td>
+<td class="num">50,00%</td>
+<td class="num">75,00 PLN</td>
+<td class="num">75,00 PLN</td>
+<td class="num">150,00 PLN</td>
+<td class="num">75,00 PLN</td>
+<td class="num">75,00 PLN</td>
+<td class="num">75,00 PLN</td>
+<td class="num">0,00 PLN</td>
+<td class="num">71,43 PLN</td>
+<td class="num">71,43 PLN</td>
+<td class="num">5,00%</td>
+<td class="num">3,57 PLN</td>
+</tr><tr>
+<td><strong>4321</strong></td>
+<td>Test książka</td>
+<td class="num">3</td>
+<td class="num">9</td>
+<td class="num">9</td>
+<td class="num">34,00 PLN</td>
+<td class="num">34,00 PLN</td>
+<td class="num">25,00%</td>
+<td class="num">25,00%</td>
+<td class="num">25,00%</td>
+<td class="num">8,50 PLN</td>
+<td class="num">25,50 PLN</td>
+<td class="num">306,00 PLN</td>
+<td class="num">76,50 PLN</td>
+<td class="num">229,50 PLN</td>
+<td class="num">229,45 PLN</td>
+<td class="num">-0,05 PLN</td>
+<td class="num">24,28 PLN</td>
+<td class="num">218,52 PLN</td>
+<td class="num">5,00%</td>
+<td class="num">10,93 PLN</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="muted">„Różnica” = API total - (cena po rabacie × ilość). Wartość różna od 0 może wskazywać na dodatkową precyzję/zaokrąglenia lub dodatkowe korekty backendu.</p>
+</div>
+
+<div class="grid">
+<div class="card"><h2>Adres wysyłki</h2><div><div><b>Firma:</b> Firma testowa A</div><div><b>Adres:</b> Grunwaldzka 101</div><div><b>Miasto:</b> 80-244 Gdańsk</div><div><b>Telefon:</b> 610604219</div></div></div>
+<div class="card"><h2>Adres rozliczeniowy</h2><div><div><b>Firma:</b> Sklep Testowy</div><div><b>Adres:</b> Monte Cassino 10</div><div><b>Miasto:</b> 81-759 Sopot</div><div><b>NIP:</b> 1351077709</div></div></div>
+</div>
+
+<div class="grid">
+<div class="card">
+<h2>Podsumowanie zamówienia</h2>
+<div><b>Różnych produktów:</b> 2</div>
+<div><b>Łączna liczba sztuk:</b> 10</div>
+<hr>
+<div><b>Produkty:</b> 304,45 PLN</div>
+<div><b>Promocja/rabat zamówienia:</b> -101,55 PLN</div>
+<div><b>Dostawa:</b> 42,00 PLN</div>
+<div><b>Dostawa netto:</b> 40,00 PLN</div>
+<div><b>VAT dostawy:</b> 5,00%</div>
+<div><b>Netto zamówienia:</b> 329,95 PLN</div>
+<div><b>Podatek API:</b> 16,50 PLN</div>
+<div class="total">RAZEM: 346,45 PLN</div>
+</div>
+
+<div class="card">
+<h2>Kontrola sum</h2>
+<div><b>Suma item.total:</b> 304,45 PLN</div>
+<div><b>itemsTotal API:</b> 304,45 PLN</div>
+<div><b>Różnica itemsTotal:</b> 0,00 PLN</div>
+<div><b>Produkty + dostawa:</b> 346,45 PLN</div>
+<div><b>Różnica do total API:</b> 0,00 PLN</div>
+</div>
+</div>
+
+</div>
+</body>
+</html>

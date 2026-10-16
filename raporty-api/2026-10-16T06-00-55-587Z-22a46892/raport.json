@@ -1,0 +1,941 @@
+{
+  "generatedAt": "2026-10-16T06:00:55.589Z",
+  "environment": "dev",
+  "baseUrl": "https://ksiegarnia.gwodev.pl/api/v2",
+  "scenario": "Koszyk, edycja ilości, płatność i dostawa",
+  "status": "PASS",
+  "finalization": "nie wykonano",
+  "products": [
+    {
+      "productVariant": "222222",
+      "group": "pozostale",
+      "quantity": 2,
+      "newQuantity": 1
+    }
+  ],
+  "productSelection": {
+    "source": "random",
+    "algorithm": "sha256-mulberry32-v1",
+    "seed": "63c435861809a0cfd7d7ddf7",
+    "group": "pozostale",
+    "catalog": [
+      {
+        "productVariant": "12",
+        "merchandiseCode": "12a",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "4321",
+        "merchandiseCode": "34",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "432423",
+        "merchandiseCode": "dsgdsg",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "5lp-1",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "POP1",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "D090",
+        "group": "adamada"
+      },
+      {
+        "productVariant": "m-F8P",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "test1",
+        "merchandiseCode": "testowy321",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "D087",
+        "group": "adamada"
+      },
+      {
+        "productVariant": "D414",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtC",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtB",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtA",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "3465346",
+        "merchandiseCode": "11",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "5555",
+        "group": "pozostale",
+        "enabled": false,
+        "reason": "Wyłączony z testów na prośbę użytkownika: Testowe spotkanie online."
+      },
+      {
+        "productVariant": "111111",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "222222",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "333333",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "test321321",
+        "group": "pozostale",
+        "enabled": false,
+        "reason": "API dev /items/bulk: Produkt test321321 nie jest dostępny w sprzedaży (2026-10-16)."
+      }
+    ],
+    "settings": {
+      "enabled": true,
+      "catalogFile": "config/products.json",
+      "group": "random",
+      "productCount": [
+        1,
+        5
+      ],
+      "quantity": [
+        1,
+        10
+      ],
+      "editQuantities": true,
+      "editedQuantity": [
+        1,
+        10
+      ],
+      "seed": "63c435861809a0cfd7d7ddf7"
+    }
+  },
+  "expectedGroupRebates": {
+    "adamada": 10
+  },
+  "snapshots": [
+    {
+      "stage": "Po dodaniu produktów",
+      "capturedAt": "2026-10-16T06:00:59.213Z",
+      "order": {
+        "id": 5989,
+        "currencyCode": "PLN",
+        "itemsTotal": 1200,
+        "total": 3200,
+        "totalNet": 3047,
+        "shippingTotal": 2000,
+        "orderPromotionTotal": 0,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "poczta_polska",
+        "items": [
+          {
+            "id": 9219,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 2,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 600,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 571,
+            "rebatePercent": 0,
+            "total": 1200,
+            "totalNetSalesAfterDiscount": 1142,
+            "lineDifference": 0
+          }
+        ]
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "capturedAt": "2026-10-16T06:01:01.083Z",
+      "order": {
+        "id": 5989,
+        "currencyCode": "PLN",
+        "itemsTotal": 299,
+        "total": 2299,
+        "totalNet": 2190,
+        "shippingTotal": 2000,
+        "orderPromotionTotal": -301,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "poczta_polska",
+        "items": [
+          {
+            "id": 9219,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 1,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 299,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 285,
+            "rebatePercent": 50.2,
+            "total": 299,
+            "totalNetSalesAfterDiscount": 285,
+            "lineDifference": 0
+          }
+        ]
+      }
+    },
+    {
+      "stage": "Po wyborze płatności",
+      "capturedAt": "2026-10-16T06:01:04.084Z",
+      "order": {
+        "id": 5989,
+        "currencyCode": "PLN",
+        "itemsTotal": 299,
+        "total": 2299,
+        "totalNet": 2190,
+        "shippingTotal": 2000,
+        "orderPromotionTotal": -301,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "poczta_polska",
+        "items": [
+          {
+            "id": 9219,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 1,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 299,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 285,
+            "rebatePercent": 50.2,
+            "total": 299,
+            "totalNetSalesAfterDiscount": 285,
+            "lineDifference": 0
+          }
+        ]
+      }
+    },
+    {
+      "stage": "Przed finalizacją",
+      "capturedAt": "2026-10-16T06:01:07.128Z",
+      "order": {
+        "id": 5989,
+        "currencyCode": "PLN",
+        "itemsTotal": 299,
+        "total": 1799,
+        "totalNet": 1714,
+        "shippingTotal": 1500,
+        "orderPromotionTotal": -301,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "gls_wholesale",
+        "items": [
+          {
+            "id": 9219,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 1,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 299,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 285,
+            "rebatePercent": 50.2,
+            "total": 299,
+            "totalNetSalesAfterDiscount": 285,
+            "lineDifference": 0
+          }
+        ]
+      }
+    }
+  ],
+  "changes": [
+    {
+      "stage": "Po edycji ilości",
+      "code": "222222",
+      "before": {
+        "id": 9219,
+        "code": "222222",
+        "productName": "Matematyka klasa 5 – Hurt",
+        "quantity": 2,
+        "unitPrice": 600,
+        "originalUnitPrice": 600,
+        "discountedUnitPrice": 600,
+        "unitPriceNet": 571,
+        "discountedUnitPriceNet": 571,
+        "rebatePercent": 0,
+        "total": 1200,
+        "totalNetSalesAfterDiscount": 1142,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9219,
+        "code": "222222",
+        "productName": "Matematyka klasa 5 – Hurt",
+        "quantity": 1,
+        "unitPrice": 600,
+        "originalUnitPrice": 600,
+        "discountedUnitPrice": 299,
+        "unitPriceNet": 571,
+        "discountedUnitPriceNet": 285,
+        "rebatePercent": 50.2,
+        "total": 299,
+        "totalNetSalesAfterDiscount": 285,
+        "lineDifference": 0
+      }
+    }
+  ],
+  "payments": [
+    {
+      "code": "cash_on_delivery",
+      "name": "Płatność przy odbiorze",
+      "rebatePercent": 50,
+      "orderItemTotal": 285
+    },
+    {
+      "code": "bank_transfer_1_day",
+      "name": "Przelew 1-dniowy na konto GWO",
+      "rebatePercent": 75,
+      "orderItemTotal": 143
+    },
+    {
+      "code": "payment_timely",
+      "name": "Płatność terminowa",
+      "rebatePercent": 25,
+      "orderItemTotal": 428
+    }
+  ],
+  "shippingMethods": [
+    {
+      "code": "poczta_polska",
+      "name": "Poczta Polska"
+    },
+    {
+      "code": "gls_wholesale",
+      "name": "Przesyłka kurierska (GLS)"
+    },
+    {
+      "code": "testwys",
+      "name": "testowa wysyłka dla hurtowni"
+    }
+  ],
+  "checks": [
+    {
+      "name": "POST shop/authentication-token: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/authentication-token: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/authentication-token: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Uzyskano token API",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Utworzono nowy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders/{order_token}/items/bulk: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders/{order_token}/items/bulk: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/bulk: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9219",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9219: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9219: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9219: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "GET wholesale/orders/{order_token}/payments: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET wholesale/orders/{order_token}/payments: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/orders/{order_token}/payments: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Niepusta lista płatności",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Unikalne kody płatności",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Oferty płatności zawierają poprawne rabaty i kwoty",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Wybrana płatność dostępna",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Uprawnienia konta do płatności",
+      "status": "SKIP",
+      "detail": "Nie skonfigurowano oczekiwanej listy płatności."
+    },
+    {
+      "name": "Rabaty ofert płatności / Adamada",
+      "status": "SKIP",
+      "detail": "Uzupełnij paymentQuotes, groupRebatePercent lub allPaymentRebatePercent dla potwierdzonych produktów i ustawień konta."
+    },
+    {
+      "name": "PATCH wholesale/orders/{order_token}/payment-method: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH wholesale/orders/{order_token}/payment-method: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/orders/{order_token}/payment-method: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "Wycena płatności zawiera kwotę produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Cena produktów netto po wyborze płatności zgodna z jej ofertą",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET wholesale/checkout-step-two/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET wholesale/checkout-step-two/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/checkout-step-two/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Niepusta lista dostaw",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Poprawne, unikalne kody dostaw",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Wybrana dostawa dostępna",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST wholesale/checkout-step-two/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST wholesale/checkout-step-two/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/checkout-step-two/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: zapisana płatność",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: zapisana dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "Reguła zaokrągleń",
+      "status": "SKIP",
+      "detail": "Różnice pokazano w raporcie; brak potwierdzonej tolerancji biznesowej w groszach."
+    },
+    {
+      "name": "Finalizacja i dokumenty PDF",
+      "status": "SKIP",
+      "detail": "Uruchom z --complete na dedykowanym koncie dev."
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "endpoint": "shop/authentication-token",
+      "status": 200,
+      "durationMs": 963
+    },
+    {
+      "method": "POST",
+      "endpoint": "shop/orders",
+      "status": 201,
+      "durationMs": 864
+    },
+    {
+      "method": "POST",
+      "endpoint": "shop/orders/{order_token}/items/bulk",
+      "status": 201,
+      "durationMs": 897
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 892
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9219",
+      "status": 200,
+      "durationMs": 1013
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 854
+    },
+    {
+      "method": "GET",
+      "endpoint": "wholesale/orders/{order_token}/payments",
+      "status": 200,
+      "durationMs": 906
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "wholesale/orders/{order_token}/payment-method",
+      "status": 200,
+      "durationMs": 1046
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 1046
+    },
+    {
+      "method": "GET",
+      "endpoint": "wholesale/checkout-step-two/{order_token}",
+      "status": 200,
+      "durationMs": 972
+    },
+    {
+      "method": "POST",
+      "endpoint": "wholesale/checkout-step-two/{order_token}",
+      "status": 201,
+      "durationMs": 1142
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 911
+    }
+  ],
+  "documents": [],
+  "orderId": 5989,
+  "selectedPayment": "cash_on_delivery",
+  "paymentQuoteTotalBasis": "net",
+  "shippingResponseShape": {
+    "topLevelKeys": [
+      "addressList",
+      "shippingMethods",
+      "defaultShippingAddress",
+      "defaultBillingAddress"
+    ],
+    "shippingMethodsType": "array",
+    "shippingMethodsKeys": []
+  },
+  "selectedShipping": "gls_wholesale"
+}

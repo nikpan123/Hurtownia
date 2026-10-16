@@ -1,0 +1,372 @@
+﻿{
+    "generatedAt":  "2026-09-15T10:52:20.214Z",
+    "finalization":  {
+                         "statusCode":  200,
+                         "success":  true
+                     },
+    "order":  {
+                  "orderId":  "5700",
+                  "tokenValue":  "5OkB9BHYRX"
+              },
+    "initialProducts":  [
+                            {
+                                "type":  "productVariant",
+                                "code":  "testhurtA",
+                                "quantity":  2
+                            },
+                            {
+                                "type":  "productVariant",
+                                "code":  "testhurtC",
+                                "quantity":  8
+                            },
+                            {
+                                "type":  "productVariant",
+                                "code":  "4321",
+                                "quantity":  4
+                            },
+                            {
+                                "type":  "isbn",
+                                "isbn":  "9788374207768",
+                                "quantity":  4
+                            }
+                        ],
+    "editedProducts":  [
+                           {
+                               "itemId":  8675,
+                               "productCode":  "testhurtA",
+                               "isbn":  "9780306406157",
+                               "productName":  "test WHOLESALE",
+                               "oldQuantity":  2,
+                               "newQuantity":  3
+                           },
+                           {
+                               "itemId":  8676,
+                               "productCode":  "testhurtC",
+                               "isbn":  null,
+                               "productName":  "Testowy produkt dla hurtowni C",
+                               "oldQuantity":  8,
+                               "newQuantity":  1
+                           },
+                           {
+                               "itemId":  8677,
+                               "productCode":  "4321",
+                               "isbn":  "9788385824350",
+                               "productName":  "Test książka",
+                               "oldQuantity":  4,
+                               "newQuantity":  9
+                           },
+                           {
+                               "itemId":  8678,
+                               "productCode":  "D087",
+                               "isbn":  "9788374207768",
+                               "productName":  "Kuka Muka i uciekające uszy",
+                               "oldQuantity":  4,
+                               "newQuantity":  2
+                           }
+                       ],
+    "checkout":  {
+                     "shippingMethodCode":  "inpost_kurier",
+                     "shippingAddress":  {
+                                             "phoneNumber":  "751556236",
+                                             "company":  "Test Hurtownia",
+                                             "street":  "Długa",
+                                             "streetNumber":  "12",
+                                             "city":  "Gdańsk",
+                                             "postcode":  "80-831"
+                                         },
+                     "billingAddress":  {
+                                            "nip":  "2173373730",
+                                            "company":  "Test Hurtownia",
+                                            "street":  "Kościuszki",
+                                            "streetNumber":  "44",
+                                            "city":  "Gdynia",
+                                            "postcode":  "81-198"
+                                        }
+                 },
+    "summary":  {
+                    "orderId":  5700,
+                    "tokenValue":  "5OkB9BHYRX",
+                    "currency":  "PLN",
+                    "products":  [
+                                     {
+                                         "code":  "testhurtA",
+                                         "name":  "test WHOLESALE",
+                                         "itemId":  8675,
+                                         "quantity":  3,
+                                         "originalUnitPrice":  "100,00 PLN",
+                                         "unitPrice":  "100,00 PLN",
+                                         "discountedUnitPrice":  "75,00 PLN",
+                                         "rebatePercent":  "25,00%",
+                                         "roundedRebatePercent":  "25,00%",
+                                         "effectiveDiscountPercent":  "25,00%",
+                                         "unitDiscount":  "25,00 PLN",
+                                         "grossBeforeDiscount":  "300,00 PLN",
+                                         "calculatedDiscountTotal":  "75,00 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "225,00 PLN",
+                                         "total":  "225,00 PLN",
+                                         "subtotal":  "225,00 PLN",
+                                         "totalDifference":  "0,00 PLN",
+                                         "unitPriceNet":  "95,24 PLN",
+                                         "discountedUnitPriceNet":  "71,43 PLN",
+                                         "totalNetSalesAfterDiscount":  "214,29 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "10,71 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  10000,
+                                                     "unitPrice":  10000,
+                                                     "discountedUnitPrice":  7500,
+                                                     "rebatePercent":  25,
+                                                     "roundedRebatePercent":  25,
+                                                     "total":  22500,
+                                                     "subtotal":  22500,
+                                                     "totalNetSalesAfterDiscount":  21429,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  0
+                                                 },
+                                         "isbn":  "9780306406157",
+                                         "unitWeight":  50,
+                                         "totalWeight":  150
+                                     },
+                                     {
+                                         "code":  "testhurtC",
+                                         "name":  "Testowy produkt dla hurtowni C",
+                                         "itemId":  8676,
+                                         "quantity":  1,
+                                         "originalUnitPrice":  "300,00 PLN",
+                                         "unitPrice":  "300,00 PLN",
+                                         "discountedUnitPrice":  "224,99 PLN",
+                                         "rebatePercent":  "25,00%",
+                                         "roundedRebatePercent":  "25,00%",
+                                         "effectiveDiscountPercent":  "25,00%",
+                                         "unitDiscount":  "75,01 PLN",
+                                         "grossBeforeDiscount":  "300,00 PLN",
+                                         "calculatedDiscountTotal":  "75,01 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "224,99 PLN",
+                                         "total":  "224,99 PLN",
+                                         "subtotal":  "224,99 PLN",
+                                         "totalDifference":  "0,00 PLN",
+                                         "unitPriceNet":  "285,71 PLN",
+                                         "discountedUnitPriceNet":  "214,28 PLN",
+                                         "totalNetSalesAfterDiscount":  "214,28 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "10,71 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  30000,
+                                                     "unitPrice":  30000,
+                                                     "discountedUnitPrice":  22499,
+                                                     "rebatePercent":  25,
+                                                     "roundedRebatePercent":  25,
+                                                     "total":  22499,
+                                                     "subtotal":  22499,
+                                                     "totalNetSalesAfterDiscount":  21428,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  0
+                                                 },
+                                         "isbn":  null,
+                                         "unitWeight":  null,
+                                         "totalWeight":  null
+                                     },
+                                     {
+                                         "code":  "4321",
+                                         "name":  "Test książka",
+                                         "itemId":  8677,
+                                         "quantity":  9,
+                                         "originalUnitPrice":  "34,00 PLN",
+                                         "unitPrice":  "34,00 PLN",
+                                         "discountedUnitPrice":  "25,50 PLN",
+                                         "rebatePercent":  "25,00%",
+                                         "roundedRebatePercent":  "25,00%",
+                                         "effectiveDiscountPercent":  "25,00%",
+                                         "unitDiscount":  "8,50 PLN",
+                                         "grossBeforeDiscount":  "306,00 PLN",
+                                         "calculatedDiscountTotal":  "76,50 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "229,50 PLN",
+                                         "total":  "229,45 PLN",
+                                         "subtotal":  "229,50 PLN",
+                                         "totalDifference":  "-0,05 PLN",
+                                         "unitPriceNet":  "32,38 PLN",
+                                         "discountedUnitPriceNet":  "24,28 PLN",
+                                         "totalNetSalesAfterDiscount":  "218,52 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "10,93 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  3400,
+                                                     "unitPrice":  3400,
+                                                     "discountedUnitPrice":  2550,
+                                                     "rebatePercent":  25,
+                                                     "roundedRebatePercent":  25,
+                                                     "total":  22945,
+                                                     "subtotal":  22950,
+                                                     "totalNetSalesAfterDiscount":  21852,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  -5
+                                                 },
+                                         "isbn":  "9788385824350",
+                                         "unitWeight":  5,
+                                         "totalWeight":  45
+                                     },
+                                     {
+                                         "code":  "D087",
+                                         "name":  "Kuka Muka i uciekające uszy",
+                                         "itemId":  8678,
+                                         "quantity":  2,
+                                         "originalUnitPrice":  "10,00 PLN",
+                                         "unitPrice":  "10,00 PLN",
+                                         "discountedUnitPrice":  "7,50 PLN",
+                                         "rebatePercent":  "25,00%",
+                                         "roundedRebatePercent":  "25,00%",
+                                         "effectiveDiscountPercent":  "25,00%",
+                                         "unitDiscount":  "2,50 PLN",
+                                         "grossBeforeDiscount":  "20,00 PLN",
+                                         "calculatedDiscountTotal":  "5,00 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "15,00 PLN",
+                                         "total":  "14,99 PLN",
+                                         "subtotal":  "15,00 PLN",
+                                         "totalDifference":  "-0,01 PLN",
+                                         "unitPriceNet":  "9,52 PLN",
+                                         "discountedUnitPriceNet":  "7,14 PLN",
+                                         "totalNetSalesAfterDiscount":  "14,28 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "0,71 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  1000,
+                                                     "unitPrice":  1000,
+                                                     "discountedUnitPrice":  750,
+                                                     "rebatePercent":  25,
+                                                     "roundedRebatePercent":  25,
+                                                     "total":  1499,
+                                                     "subtotal":  1500,
+                                                     "totalNetSalesAfterDiscount":  1428,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  -1
+                                                 },
+                                         "isbn":  "9788374207768",
+                                         "unitWeight":  275,
+                                         "totalWeight":  550
+                                     }
+                                 ],
+                    "differentProducts":  4,
+                    "totalQuantity":  15,
+                    "itemsTotal":  "694,43 PLN",
+                    "calculatedItemsTotal":  "694,43 PLN",
+                    "itemsTotalDifference":  "0,00 PLN",
+                    "orderPromotionTotal":  "-231,57 PLN",
+                    "shippingTotal":  "157,50 PLN",
+                    "shippingTotalNet":  "150,00 PLN",
+                    "shippingTaxRate":  "5,00%",
+                    "orderTotal":  "851,93 PLN",
+                    "calculatedOrderTotalWithoutPromotion":  "851,93 PLN",
+                    "orderTotalDifference":  "0,00 PLN",
+                    "totalNet":  "811,37 PLN",
+                    "taxTotal":  "40,56 PLN",
+                    "paymentMethod":  "Płatność terminowa",
+                    "shippingMethod":  "testowa wysyłka dla hurtowni",
+                    "checkoutState":  "payment_selected",
+                    "paymentState":  "cart",
+                    "shippingState":  "cart",
+                    "shipping":  {
+                                     "source":  "10. Podgląd podsumowania — przed finalizacją",
+                                     "capturedAt":  "2026-09-15T10:52:18.743Z",
+                                     "weightUnit":  "jednostka API product.weight — do potwierdzenia",
+                                     "products":  [
+                                                      {
+                                                          "itemId":  8675,
+                                                          "code":  "testhurtA",
+                                                          "isbn":  "9780306406157",
+                                                          "quantity":  3,
+                                                          "unitWeight":  50,
+                                                          "totalWeight":  150
+                                                      },
+                                                      {
+                                                          "itemId":  8676,
+                                                          "code":  "testhurtC",
+                                                          "isbn":  null,
+                                                          "quantity":  1,
+                                                          "unitWeight":  null,
+                                                          "totalWeight":  null
+                                                      },
+                                                      {
+                                                          "itemId":  8677,
+                                                          "code":  "4321",
+                                                          "isbn":  "9788385824350",
+                                                          "quantity":  9,
+                                                          "unitWeight":  5,
+                                                          "totalWeight":  45
+                                                      },
+                                                      {
+                                                          "itemId":  8678,
+                                                          "code":  "D087",
+                                                          "isbn":  "9788374207768",
+                                                          "quantity":  2,
+                                                          "unitWeight":  275,
+                                                          "totalWeight":  550
+                                                      }
+                                                  ],
+                                     "knownProductsWeight":  745,
+                                     "totalProductsWeight":  null,
+                                     "weightDataComplete":  false,
+                                     "missingWeightProducts":  [
+                                                                   {
+                                                                       "itemId":  8676,
+                                                                       "code":  "testhurtC"
+                                                                   }
+                                                               ],
+                                     "shipmentPackageQuantity":  15,
+                                     "shippingTotalRaw":  15750,
+                                     "shippingTotal":  "157,50 PLN",
+                                     "currency":  "PLN"
+                                 }
+                },
+    "shipping":  {
+                     "source":  "10. Podgląd podsumowania — przed finalizacją",
+                     "capturedAt":  "2026-09-15T10:52:18.743Z",
+                     "weightUnit":  "jednostka API product.weight — do potwierdzenia",
+                     "products":  [
+                                      {
+                                          "itemId":  8675,
+                                          "code":  "testhurtA",
+                                          "isbn":  "9780306406157",
+                                          "quantity":  3,
+                                          "unitWeight":  50,
+                                          "totalWeight":  150
+                                      },
+                                      {
+                                          "itemId":  8676,
+                                          "code":  "testhurtC",
+                                          "isbn":  null,
+                                          "quantity":  1,
+                                          "unitWeight":  null,
+                                          "totalWeight":  null
+                                      },
+                                      {
+                                          "itemId":  8677,
+                                          "code":  "4321",
+                                          "isbn":  "9788385824350",
+                                          "quantity":  9,
+                                          "unitWeight":  5,
+                                          "totalWeight":  45
+                                      },
+                                      {
+                                          "itemId":  8678,
+                                          "code":  "D087",
+                                          "isbn":  "9788374207768",
+                                          "quantity":  2,
+                                          "unitWeight":  275,
+                                          "totalWeight":  550
+                                      }
+                                  ],
+                     "knownProductsWeight":  745,
+                     "totalProductsWeight":  null,
+                     "weightDataComplete":  false,
+                     "missingWeightProducts":  [
+                                                   {
+                                                       "itemId":  8676,
+                                                       "code":  "testhurtC"
+                                                   }
+                                               ],
+                     "shipmentPackageQuantity":  15,
+                     "shippingTotalRaw":  15750,
+                     "shippingTotal":  "157,50 PLN",
+                     "currency":  "PLN"
+                 }
+}

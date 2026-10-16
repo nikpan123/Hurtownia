@@ -1,0 +1,248 @@
+﻿{
+    "generatedAt":  "2026-09-14T12:35:11.660Z",
+    "finalization":  {
+                         "statusCode":  500,
+                         "success":  false
+                     },
+    "order":  {
+                  "orderId":  "5653",
+                  "tokenValue":  "9HMhs27Le1"
+              },
+    "initialProducts":  [
+                            {
+                                "code":  "testhurtA",
+                                "quantity":  2
+                            },
+                            {
+                                "code":  "testhurtC",
+                                "quantity":  8
+                            },
+                            {
+                                "code":  "12",
+                                "quantity":  1
+                            },
+                            {
+                                "code":  "testhurtB",
+                                "quantity":  10
+                            }
+                        ],
+    "editedProducts":  [
+                           {
+                               "itemId":  8574,
+                               "productCode":  "testhurtA",
+                               "productName":  "test WHOLESALE",
+                               "oldQuantity":  2,
+                               "newQuantity":  4
+                           },
+                           {
+                               "itemId":  8575,
+                               "productCode":  "testhurtC",
+                               "productName":  "Testowy produkt dla hurtowni C",
+                               "oldQuantity":  8,
+                               "newQuantity":  6
+                           },
+                           {
+                               "itemId":  8576,
+                               "productCode":  "12",
+                               "productName":  "historia cen dwa",
+                               "oldQuantity":  1,
+                               "newQuantity":  3
+                           },
+                           {
+                               "itemId":  8577,
+                               "productCode":  "testhurtB",
+                               "productName":  "Testowy produkt dla hurtowni B  - Opisy produktu dla kanałów sprzedaży",
+                               "oldQuantity":  10,
+                               "newQuantity":  7
+                           }
+                       ],
+    "checkout":  {
+                     "shippingMethodCode":  "inpost_kurier",
+                     "shippingAddress":  {
+                                             "phoneNumber":  "685389054",
+                                             "company":  "Firma testowa A",
+                                             "street":  "Długa",
+                                             "streetNumber":  "12",
+                                             "city":  "Gdańsk",
+                                             "postcode":  "80-831"
+                                         },
+                     "billingAddress":  {
+                                            "nip":  "5196642626",
+                                            "company":  "Firma testowa A",
+                                            "street":  "Monte Cassino",
+                                            "streetNumber":  "10",
+                                            "city":  "Sopot",
+                                            "postcode":  "81-759"
+                                        }
+                 },
+    "summary":  {
+                    "orderId":  5653,
+                    "tokenValue":  "9HMhs27Le1",
+                    "currency":  "PLN",
+                    "products":  [
+                                     {
+                                         "code":  "testhurtA",
+                                         "name":  "test WHOLESALE",
+                                         "itemId":  8574,
+                                         "quantity":  4,
+                                         "originalUnitPrice":  "100,00 PLN",
+                                         "unitPrice":  "100,00 PLN",
+                                         "discountedUnitPrice":  "100,00 PLN",
+                                         "rebatePercent":  "0,00%",
+                                         "roundedRebatePercent":  "0,00%",
+                                         "effectiveDiscountPercent":  "0,00%",
+                                         "unitDiscount":  "0,00 PLN",
+                                         "grossBeforeDiscount":  "400,00 PLN",
+                                         "calculatedDiscountTotal":  "0,00 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "400,00 PLN",
+                                         "total":  "400,00 PLN",
+                                         "subtotal":  "400,00 PLN",
+                                         "totalDifference":  "0,00 PLN",
+                                         "unitPriceNet":  "95,24 PLN",
+                                         "discountedUnitPriceNet":  "95,23 PLN",
+                                         "totalNetSalesAfterDiscount":  "380,92 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "19,08 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  10000,
+                                                     "unitPrice":  10000,
+                                                     "discountedUnitPrice":  10000,
+                                                     "rebatePercent":  0,
+                                                     "roundedRebatePercent":  0,
+                                                     "total":  40000,
+                                                     "subtotal":  40000,
+                                                     "totalNetSalesAfterDiscount":  38092,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  0
+                                                 }
+                                     },
+                                     {
+                                         "code":  "testhurtC",
+                                         "name":  "Testowy produkt dla hurtowni C",
+                                         "itemId":  8575,
+                                         "quantity":  6,
+                                         "originalUnitPrice":  "300,00 PLN",
+                                         "unitPrice":  "300,00 PLN",
+                                         "discountedUnitPrice":  "300,00 PLN",
+                                         "rebatePercent":  "0,00%",
+                                         "roundedRebatePercent":  "0,00%",
+                                         "effectiveDiscountPercent":  "0,00%",
+                                         "unitDiscount":  "0,00 PLN",
+                                         "grossBeforeDiscount":  "1800,00 PLN",
+                                         "calculatedDiscountTotal":  "0,00 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "1800,00 PLN",
+                                         "total":  "1800,00 PLN",
+                                         "subtotal":  "1800,00 PLN",
+                                         "totalDifference":  "0,00 PLN",
+                                         "unitPriceNet":  "285,71 PLN",
+                                         "discountedUnitPriceNet":  "285,71 PLN",
+                                         "totalNetSalesAfterDiscount":  "1714,26 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "85,74 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  30000,
+                                                     "unitPrice":  30000,
+                                                     "discountedUnitPrice":  30000,
+                                                     "rebatePercent":  0,
+                                                     "roundedRebatePercent":  0,
+                                                     "total":  180000,
+                                                     "subtotal":  180000,
+                                                     "totalNetSalesAfterDiscount":  171426,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  0
+                                                 }
+                                     },
+                                     {
+                                         "code":  "12",
+                                         "name":  "historia cen dwa",
+                                         "itemId":  8576,
+                                         "quantity":  3,
+                                         "originalUnitPrice":  "234,00 PLN",
+                                         "unitPrice":  "250,00 PLN",
+                                         "discountedUnitPrice":  "234,00 PLN",
+                                         "rebatePercent":  "0,00%",
+                                         "roundedRebatePercent":  "0,00%",
+                                         "effectiveDiscountPercent":  "0,00%",
+                                         "unitDiscount":  "0,00 PLN",
+                                         "grossBeforeDiscount":  "702,00 PLN",
+                                         "calculatedDiscountTotal":  "0,00 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "702,00 PLN",
+                                         "total":  "702,00 PLN",
+                                         "subtotal":  "702,00 PLN",
+                                         "totalDifference":  "0,00 PLN",
+                                         "unitPriceNet":  "238,10 PLN",
+                                         "discountedUnitPriceNet":  "222,85 PLN",
+                                         "totalNetSalesAfterDiscount":  "668,55 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "33,45 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  23400,
+                                                     "unitPrice":  25000,
+                                                     "discountedUnitPrice":  23400,
+                                                     "rebatePercent":  0,
+                                                     "roundedRebatePercent":  0,
+                                                     "total":  70200,
+                                                     "subtotal":  70200,
+                                                     "totalNetSalesAfterDiscount":  66855,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  0
+                                                 }
+                                     },
+                                     {
+                                         "code":  "testhurtB",
+                                         "name":  "Testowy produkt dla hurtowni B  - Opisy produktu dla kanałów sprzedaży",
+                                         "itemId":  8577,
+                                         "quantity":  7,
+                                         "originalUnitPrice":  "100,00 PLN",
+                                         "unitPrice":  "100,00 PLN",
+                                         "discountedUnitPrice":  "100,00 PLN",
+                                         "rebatePercent":  "0,00%",
+                                         "roundedRebatePercent":  "0,00%",
+                                         "effectiveDiscountPercent":  "0,00%",
+                                         "unitDiscount":  "0,00 PLN",
+                                         "grossBeforeDiscount":  "700,00 PLN",
+                                         "calculatedDiscountTotal":  "0,00 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "700,00 PLN",
+                                         "total":  "700,00 PLN",
+                                         "subtotal":  "700,00 PLN",
+                                         "totalDifference":  "0,00 PLN",
+                                         "unitPriceNet":  "95,24 PLN",
+                                         "discountedUnitPriceNet":  "95,23 PLN",
+                                         "totalNetSalesAfterDiscount":  "666,61 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "33,39 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  10000,
+                                                     "unitPrice":  10000,
+                                                     "discountedUnitPrice":  10000,
+                                                     "rebatePercent":  0,
+                                                     "roundedRebatePercent":  0,
+                                                     "total":  70000,
+                                                     "subtotal":  70000,
+                                                     "totalNetSalesAfterDiscount":  66661,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  0
+                                                 }
+                                     }
+                                 ],
+                    "differentProducts":  4,
+                    "totalQuantity":  20,
+                    "itemsTotal":  "3602,00 PLN",
+                    "calculatedItemsTotal":  "3602,00 PLN",
+                    "itemsTotalDifference":  "0,00 PLN",
+                    "orderPromotionTotal":  "-48,00 PLN",
+                    "shippingTotal":  "37,55 PLN",
+                    "shippingTotalNet":  "35,76 PLN",
+                    "shippingTaxRate":  "5,00%",
+                    "orderTotal":  "3639,55 PLN",
+                    "calculatedOrderTotalWithoutPromotion":  "3639,55 PLN",
+                    "orderTotalDifference":  "0,00 PLN",
+                    "totalNet":  "3466,10 PLN",
+                    "taxTotal":  "173,31 PLN",
+                    "paymentMethod":  "Płatność terminowa",
+                    "shippingMethod":  "Odbiór we własnym zakresie",
+                    "checkoutState":  "cart",
+                    "paymentState":  "cart",
+                    "shippingState":  "cart"
+                }
+}

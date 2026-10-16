@@ -1,0 +1,244 @@
+TESTY API HURTOWNI
+
+Przygotowany zestaw powstał na podstawie dostarczonej kolekcji Postmana.
+Oryginalna kolekcja, skrypt zapisz-raport.ps1 i dotychczasowe raporty pozostają do wykorzystania.
+Nowy runner zapisuje raport automatycznie, bez schowka i lokalnego odbiornika Postmana.
+
+START
+1. Uzupełnij plik .env:
+   GITLAB_USERNAME / GITLAB_PASSWORD — Twoje konto GitLab;
+   HURT_EMAIL / HURT_API_PASSWORD — dedykowany hurtownik (apiPassword z kolekcji);
+   HURT_TESTS_TOKEN — wartość nagłówka X-Tests-Token z obecnego środowiska Postmana.
+   To są dwa osobne logowania. Hasło GitLab nie zastępuje apiPassword hurtownika.
+   Wartości zawierające # lub spacje ujmij w cudzysłowy zgodnie ze składnią .env.
+
+2. Adres API dev jest ustawiony w HURT_DEV_BASE_URL:
+   https://ksiegarnia.gwodev.pl/api/v2
+   Logowanie zapisuje sesję dla tego hosta API.
+
+3. Uzupełnij config/dev.local.json:
+   Domyślnie produkty losuje randomProducts z config/products.json.
+   Po wyłączeniu losowania products: productVariant ALBO isbn, quantity i opcjonalne newQuantity;
+   randomCheckout steruje losowaniem płatności i dostawy; sprawdź też testowe adresy.
+   paymentMethodCode i shippingMethodCode służą do scenariuszy z wyłączonym losowaniem.
+   Domyślna dostawa gls_wholesale jest oferowana przez API dev (sprawdzono 2026-10-16).
+   Każdy przebieg tworzy nowy koszyk. Nie wznawia starego zamówienia.
+
+4. Przy pierwszym uruchomieniu otwórz Przygotuj.cmd (instalacja Playwright).
+   Logowanie korzysta z zainstalowanego na tym komputerze Microsoft Edge.
+   Potem uruchom Zaloguj-dev.cmd. Otworzy się przeglądarka z logowaniem GitLab.
+   Login i hasło są odczytywane z .env. Uzupełnij 2FA lub zgodę aplikacji, jeśli się pojawią.
+   Sesja zostaje zapisana w .auth/dev.json. Po jej wygaśnięciu powtórz logowanie.
+   Brak frontu hurtowni nie przeszkadza: przeglądarka służy tylko do autoryzacji,
+   operacje koszyka i zamówienia są wykonywane przez API.
+
+5. Uruchom Testuj-koszyk-dev.cmd — dochodzi do podsumowania bez complete.
+   Zamowienie-dev.cmd wykonuje także complete, co może wysłać mail i zapisać zamówienie
+   w bazie transferowej. Używaj uzgodnionego dedykowanego konta testowego.
+   Każde ponowne uruchomienie tego pliku może złożyć kolejne zamówienie.
+
+RAPORTY
+raporty-api/<data-i-id>/raport.html — czytelny raport;
+raporty-api/<data-i-id>/raport.json — dane oraz asercje;
+pdfSummary.pdf — oryginalne potwierdzenie pobrane z serwera po finalizacji;
+paymentForm.pdf — druczek przelewu, jeśli API go zwróci.
+Raport powstaje także po błędzie w trakcie przebiegu. Błąd wstępnej konfiguracji
+jest zgłaszany przed wywołaniem API. Tokeny i hasła nie są zapisywane w raportach.
+Raporty mogą zawierać nazwy produktów, numer zamówienia i ceny — przechowuj je lokalnie.
+Do raportu nie trafiają adresy i pełne odpowiedzi logowania.
+
+Raport obejmuje plan produktów, ilości po zmianie, nazwy, netto/brutto przed i po rabacie,
+rabaty API, historię zmian, dostępne i wybrane płatności/dostawy, koszty wysyłki,
+liczbę paczek, podsumowanie przed i po finalizacji oraz wyniki wszystkich asercji.
+Pełna lista dostaw i płatności oznacza listę ZWRÓCONĄ PRZEZ API; zgodność z uprawnieniami
+konta sprawdza się dopiero po wpisaniu oczekiwanych list w konfiguracji.
+
+WYNIKI OCZEKIWANE — config/dev.local.json -> scenario.expectations
+Kwoty: całkowite grosze. rebatePercent: punkty procentowe (25 oznacza 25%, 1 oznacza 1%).
+Nigdy nie przeliczamy automatycznie rebatePercent <= 1 na procenty.
+availablePaymentCodes / availableShippingCodes: dokładne oczekiwane listy kodów.
+paymentQuotes: oczekiwane parametry ofert; np. dla potwierdzonej konfiguracji:
+  "paymentQuotes": { "cash_on_delivery": { "rebatePercent": 30, "orderItemTotal": 7707 } }
+To przykład z dokumentacji, NIE ustalone oczekiwanie dla domyślnego testhurtA.
+allPaymentRebatePercent: np. 30 — sprawdza taki rabat we WSZYSTKICH ofertach płatności
+w scenariuszu Adamady; null pozostawia tę asercję wyłączoną.
+
+afterPayment i beforeComplete: oczekiwane kwoty zamówienia oraz pola pozycji, np.:
+  "afterPayment": {
+    "itemsTotal": 22500,
+    "items": { "testhurtA": { "rebatePercent": 25, "productName": "test WHOLESALE" } }
+  }
+Wartości muszą pochodzić z potwierdzonej konfiguracji konta, produktu i promocji.
+Same poprawne sumy nie dowodzą naliczenia właściwego rabatu.
+Bez oczekiwań biznesowych odpowiednie sprawdzenia mają status SKIP, nie PASS.
+
+lineRoundingToleranceMinor: dozwolona różnica w groszach między item.total
+a discountedUnitPrice * quantity. Domyślnie null: różnice są widoczne w tabeli,
+ale reguła zaokrąglania pozostaje SKIP. W starych raportach są różnice -1 i -5 groszy.
+Nie ustalono, czy są poprawne biznesowo. Nie dodajemy drugi raz orderPromotionTotal:
+starsze raporty wskazują, że rabaty już uwzględniono w itemsTotal.
+
+requirePaymentForm: true dla scenariusza, w którym druczek jest wymagany.
+checkoutInformationIncludes: np. ["shop_billing"] dla przelewu,
+albo ["pickup_address"] dla odbioru. Wpisz wartości właściwe dla scenariusza.
+forbiddenPaymentCodes (obok expectations): znane płatności niedostępne dla hurtownika.
+Test wymaga HTTP 400/403/422 i niezmienionego koszyka. Akceptacja takiej płatności
+jest błędem i blokuje dalszą finalizację. Pusta lista nie testuje tego przypadku.
+
+SCENARIUSZE DO UZUPEŁNIENIA Z RZECZYWISTYMI DANYMI
+- Produkty GWO bez Adamady, każda dostępna płatność, potwierdzone rabaty konta.
+- Sam produkt Adamada: jednakowy rabat Adamady dla wszystkich ofert płatności.
+- Koszyk mieszany GWO + Adamada: tylko przypadek negatywny — odrzucenie połączenia, bez finalizacji.
+- Konto z ograniczonymi płatnościami: lista dostępnych i odrzucenie zabronionych kodów.
+- Przelew: checkoutInformation shop_billing i wymagany paymentForm.
+- Odbiór: checkoutInformation pickup_address.
+- Nazwa WHOLESALE i fallback: przygotowane produkty z tłumaczeniem i bez tłumaczenia,
+  oczekiwane productName w zamówieniu. Lista produktów, slugi i edycja CMS to osobne testy.
+
+Tworzenie / edycja produktów w Syliusie nie jest jeszcze zautomatyzowane.
+Znany jest adres https://cms-ksiegarnia.gwodev.pl/login, ale nie udostępniono kontraktu
+administracyjnego API, wymaganych pól ani konta administratora. Nie zgadujemy endpointów.
+Obecny zestaw używa gotowych produktów. Dalsza integracja powinna tworzyć oznaczone
+produkty QA i zapisywać ich konfigurację jako niezależną podstawę oczekiwanych wyników.
+
+OGRANICZENIA WERYFIKACJI
+Pobranie PDF sprawdza HTTP, Content-Type i sygnaturę %PDF-. Nie dowodzi zgodności treści
+PDF z koszykiem. Porównywanie pozycji PDF, e-mail i baza transferowa wymagają osobnych
+integracji. Raport pokazuje je jako SKIP. Nie powstaje zastępcze potwierdzenie zamówienia.
+Po timeout complete nie ma automatycznej ponownej finalizacji — sprawdź stan zamówienia.
+PDF pobierany jest z hosta API; dodatkowe hosty dokumentów dodaj do pdfAllowedOrigins.
+Przekierowanie PDF jest zgłaszane jako błąd zamiast niejawnego przesyłania sesji.
+
+ŚRODOWISKO TEST
+config/test.local.json i zmienne HURT_TEST_* są przygotowane, enabled=false.
+Runner dodatkowo blokuje wywołania gwotest bez osobnego argumentu --allow-test.
+Po wdrożeniu i zgodzie należy ustawić enabled=true, uzupełnić scenariusz oraz
+przygotować osobną sesję test. Dopiero wtedy użyj poleceń:
+  node api-tests/login.mjs --config config/test.local.json --allow-test
+  node api-tests/run.mjs --config config/test.local.json --allow-test
+  (opcjonalnie --complete do pełnego checkoutu).
+Plan można wyświetlić bez żądań sieciowych:
+  node api-tests/run.mjs --config config/test.local.json --plan
+
+POLECENIA (w tym folderze)
+  npm.cmd test
+    Testy samego runnera na lokalnym modelu API; bez połączeń z GWO.
+  npm.cmd run demo
+    Tworzy raport demonstracyjny na symulowanych danych, bez rzeczywistego zamówienia.
+  npm.cmd run login:dev
+  npm.cmd run dev
+  npm.cmd run dev -- --complete
+  npm.cmd run plan
+
+UWAGA O STANIE PRAC
+Testy lokalne sprawdzają działanie narzędzia. Nie są wynikiem testów aplikacji GWO.
+Pełny przebieg logowania, autoryzacja API i checkout na dev wymagają uzupełnionego .env
+i pierwszego uruchomienia. Środowisko test nie jest uruchamiane.
+Dokumentacja mechanizmu sesji: https://playwright.dev/docs/auth
+
+INTERPRETACJA OFERT PŁATNOŚCI
+paymentQuoteTotalBasis: net lub gross. Dla dev ustawiono net na podstawie raportu
+zamówienia 5974: oferta 141 groszy odpowiadała sumie netto produktów 141 groszy,
+przy kwocie brutto 148 groszy. Jest to wniosek z odpowiedzi API, do potwierdzenia
+w kontrakcie endpointu. Porównanie netto nie uwzględnia kosztu dostawy.
+
+LOSOWANIE PRODUKTÓW
+Włączono scenario.randomProducts w config/dev.local.json. Najpierw losowana jest grupa
+(adamada lub pozostale, z równą szansą), potem 1–5 różnych kodów wyłącznie z tej grupy.
+Adamady są obecnie dwa kody: D090 i D087, więc jej koszyk ma najwyżej dwie różne pozycje.
+Ilości początkowe i po edycji są losowane z zakresu 1–10 sztuk.
+Lista znajduje się w config/products.json: 19 dostępnych produktów ze zrzutów użytkownika;
+nieaktywny kod test pominięto. Produkty bez widocznej grupy wpisano jako pozostale.
+To lista lokalna, nie bieżące pobieranie grup i stanów z CMS. W razie zmian zaktualizuj ją.
+Produkty cyfrowe / spotkania z listy pozostają w puli; ich ograniczenia API będą raportowane.
+Grupa random losuje obie grupy, adamada wymusza Adamadę, pozostale wymusza resztę.
+Aby wrócić do stałej listy scenario.products, ustaw randomProducts.enabled=false.
+Raport JSON zapisuje ziarno, algorytm, katalog, parametry i wylosowany plan.
+Powtórzenie wyboru (to nowy koszyk, a nie wznowienie zamówienia):
+  npm.cmd run dev -- --seed ZIARNO_Z_RAPORTU
+Podgląd bez żądań API:
+  node api-tests/run.mjs --config config/dev.local.json --plan --seed ZIARNO_Z_RAPORTU
+Odtworzenie wymaga tej samej listy i ustawień losowania. Ziarno nie zamraża cen API.
+Oczekiwania kwotowe zapisane dla stałego koszyka trzeba przenieść do osobnego scenariusza;
+losowanie nie kasuje i nie wyłącza asercji biznesowych.
+Scenariusze mieszane Adamada + GWO wymienione wcześniej nie są poprawnym checkoutem.
+Zgodnie z aktualną regułą biznesową takie połączenie można testować jedynie jako przypadek
+negatywny, bez finalizacji. Domyślny scenariusz nigdy nie miesza tych grup.
+
+DOSTĘPNOŚĆ POTWIERDZONA PRZEZ API
+2026-10-16: wyłączono z poprawnego checkoutu test321321 (niedostępny w sprzedaży)
+Kod handlowy 11 początkowo wyłączono, ale później potwierdzono jego wariant API
+3465346 i przywrócono produkt do losowania. test321321 pozostaje enabled=false.
+Stan dostępny w CMS nie zastępuje dostępności dla kanału WHOLESALE i kodu wariantu.
+Zmiana katalogu zmienia wynik losowania — samo ziarno nie odtworzy poprzedniej listy.
+Raport błędu zapisuje teraz komunikaty i violations API, bez śladu stosu serwera.
+
+KOD HANDLOWY A WARIANT API
+Pole productVariant wymaga kodu wariantu z defaultVariant odpowiedzi products-dto,
+nie pola Kod handlowy z listy CMS. Zweryfikowane mapowanie (CMS -> API):
+12a -> 12; 34 -> 4321; dsgdsg -> 432423; testowy321 -> test1; 11 -> 3465346.
+Katalog przechowuje osobno merchandiseCode i productVariant, a raport pokazuje oba.
+Wcześniejsze komunikaty Produkt nie istnieje dla tych kodów dotyczyły błędnego
+identyfikatora w żądaniu, a nie braku produktu w CMS ani niepoprawnego formularza.
+
+POTWIERDZONA REGUŁA ADAMADY
+Użytkownik potwierdził 2026-10-16: rabat Adamady dla testowanego hurtownika wynosi 10%.
+Ustawienie expectations.groupRebatePercent.adamada=10 dotyczy wyłącznie produktów
+z grupy adamada. Dla koszyka Adamady sprawdzane są wszystkie oferty płatności oraz
+rabat pozycji po wyborze płatności, przed finalizacją i po finalizacji.
+Nie ustawia to rabatu pozostałym produktom i nie zmienia konfiguracji CMS.
+
+LOSOWANIE PŁATNOŚCI I DOSTAWY
+Domyślnie randomCheckout.payment=true i randomCheckout.shipping=true.
+Płatność wybierana jest wyłącznie z aktualnej listy GET /wholesale/orders/{token}/payments.
+Po zapisaniu tej płatności pobierana jest lista dostaw dla tego koszyka; dopiero wtedy
+losowana i zapisywana jest dostępna dostawa. Brak opcji zatrzymuje przebieg błędem.
+Raport pokazuje listy opcji, wybrane kody, tryby wyboru i ziarno losowania.
+Ziarno jest wspólne z losowaniem produktów, o ile nie ustawiono osobnego randomCheckout.seed.
+Argument --seed odtwarza produkty i wybór metod przy tym samym katalogu, ustawieniach
+i tych samych dostępnych opcjach API (kolejność odpowiedzi nie wpływa na wybór metody).
+Aby wymusić konkretną metodę, wyłącz jej losowanie i wpisz paymentMethodCode / shippingMethodCode.
+Losowanie korzysta z list API; zgodność tych list z uprawnieniami konta nadal wymaga
+ustawienia oczekiwanych kodów. Kontrole rabatów, w tym Adamada 10%, pozostają aktywne.
+
+PANEL W PRZEGLĄDARCE
+Uruchom Panel-testow.cmd (dwuklik) albo npm.cmd run ui w katalogu projektu.
+Adres panelu: http://127.0.0.1:18767
+Pozostaw okno programu uruchamiającego otwarte; jego zamknięcie wyłącza panel.
+Jeśli przeglądarka otworzy się wcześniej niż program, odśwież stronę.
+Panel działa wyłącznie lokalnie i korzysta z obecnego pliku .env oraz sesji GitLab.
+
+Uruchom testy:
+- Koszyk: dodaje i edytuje produkty, sprawdza rabaty, płatności i dostawę; bez complete.
+- Pełne zamówienie: dodatkowo zatwierdza zamówienie i pobiera PDF z API.
+  Korzystaj z dedykowanego konta testowego; może powstać e-mail i zapis transferowy.
+- Katalog produktów: odczyt obu endpointów DTO w kanałach WHOLESALE/RETAIL/ACADEMY.
+- Nowy produkt + katalog: próbuje utworzyć nowy produkt QA przez admin JSON API.
+  Zapis wymaga uprawnień do admin API, nie tylko logowania w panelu CMS.
+Opcjonalne ziarno pozwala powtórzyć losowanie koszyka i metod.
+Jednocześnie działa jeden zestaw. Zatrzymanie przerywa kolejne żądania i żądanie
+w toku, lecz nie cofa operacji już przyjętych przez serwer. Przy przerwaniu complete
+sprawdź stan zamówienia w CMS przed ponownym uruchomieniem.
+
+Raporty: historia HTML, wyszukiwanie po produkcie/numerze, filtrowanie PASS/FAIL
+i rodzaju zestawu, podgląd raportu w panelu oraz otwieranie w nowej karcie.
+Dokumenty PDF są dostępne z raportu zamówienia, jeśli serwer je wygenerował.
+Podgląd API: ręczny GET listy/szczegółów, wybór kanału, paginacji, sortowania,
+wyszukiwania i filtrów; status HTTP, czas, karty produktów i odpowiedź JSON.
+Konfiguracja: stan uzupełnienia danych bez pokazywania haseł i tokenów.
+Przycisk logowania otwiera pomocniczy program. Jeśli system zablokuje jego
+uruchomienie, otwórz Zaloguj-dev.cmd. Środowisko gwotest pozostaje zablokowane.
+
+TESTY KATALOGU
+Testuj-katalog-dev.cmd lub npm.cmd run catalog
+Nowy-produkt-i-katalog-dev.cmd lub npm.cmd run catalog:create
+Konfiguracja: config/catalog.dev.local.json.
+Niezależne oczekiwania: config/catalog-fixtures.local.json; wzór w pliku example.
+Testy obejmują kontrakt odpowiedzi, paginację, sortowanie, nazwę/ISBN/autora,
+porównanie listy i szczegółów, kanały, slugi nieistniejące i błędne parametry.
+Pozytywne filtry wymagają fixture z dokładną listą oczekiwanych kodów.
+Brak takich danych oznacza SKIP, a nie potwierdzenie poprawności filtra.
+Każdy przebieg tworzy folder raporty-api/katalog-... z HTML i JSON.
+2026-10-16: logowanie admin API działa, ale zapis produktu zwraca 403 Access Denied.
+To pozostaje błędem testu tworzenia do wyjaśnienia uprawnień/konfiguracji backendu.
+Produkty referencyjne QA utworzono w CMS na dev, bez zmian cen istniejących produktów.

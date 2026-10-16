@@ -1,0 +1,230 @@
+﻿{
+    "generatedAt":  "2026-09-15T10:47:07.125Z",
+    "finalization":  {
+                         "statusCode":  200,
+                         "success":  true
+                     },
+    "order":  {
+                  "orderId":  "5699",
+                  "tokenValue":  "TfDZTfDRqC"
+              },
+    "initialProducts":  [
+                            {
+                                "type":  "productVariant",
+                                "code":  "POP1",
+                                "quantity":  8
+                            },
+                            {
+                                "type":  "isbn",
+                                "isbn":  "9788385824350",
+                                "quantity":  3
+                            }
+                        ],
+    "editedProducts":  [
+                           {
+                               "itemId":  8673,
+                               "productCode":  "POP1",
+                               "isbn":  "9788387788155",
+                               "productName":  "Ortografia dla szkoły podstawowej i gimnazjum.  Pisownia wyrazów z ó i u",
+                               "oldQuantity":  8,
+                               "newQuantity":  1
+                           },
+                           {
+                               "itemId":  8674,
+                               "productCode":  "4321",
+                               "isbn":  "9788385824350",
+                               "productName":  "Test książka",
+                               "oldQuantity":  3,
+                               "newQuantity":  9
+                           }
+                       ],
+    "checkout":  {
+                     "shippingMethodCode":  "inpost_kurier",
+                     "shippingAddress":  {
+                                             "phoneNumber":  "610604219",
+                                             "company":  "Firma testowa A",
+                                             "street":  "Grunwaldzka",
+                                             "streetNumber":  "101",
+                                             "city":  "Gdańsk",
+                                             "postcode":  "80-244"
+                                         },
+                     "billingAddress":  {
+                                            "nip":  "1351077709",
+                                            "company":  "Sklep Testowy",
+                                            "street":  "Monte Cassino",
+                                            "streetNumber":  "10",
+                                            "city":  "Sopot",
+                                            "postcode":  "81-759"
+                                        }
+                 },
+    "summary":  {
+                    "orderId":  5699,
+                    "tokenValue":  "TfDZTfDRqC",
+                    "currency":  "PLN",
+                    "products":  [
+                                     {
+                                         "code":  "POP1",
+                                         "name":  "Ortografia dla szkoły podstawowej i gimnazjum.  Pisownia wyrazów z ó i u",
+                                         "itemId":  8673,
+                                         "quantity":  1,
+                                         "originalUnitPrice":  "150,00 PLN",
+                                         "unitPrice":  "100,00 PLN",
+                                         "discountedUnitPrice":  "75,00 PLN",
+                                         "rebatePercent":  "50,00%",
+                                         "roundedRebatePercent":  "50,00%",
+                                         "effectiveDiscountPercent":  "50,00%",
+                                         "unitDiscount":  "75,00 PLN",
+                                         "grossBeforeDiscount":  "150,00 PLN",
+                                         "calculatedDiscountTotal":  "75,00 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "75,00 PLN",
+                                         "total":  "75,00 PLN",
+                                         "subtotal":  "75,00 PLN",
+                                         "totalDifference":  "0,00 PLN",
+                                         "unitPriceNet":  "95,24 PLN",
+                                         "discountedUnitPriceNet":  "71,43 PLN",
+                                         "totalNetSalesAfterDiscount":  "71,43 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "3,57 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  15000,
+                                                     "unitPrice":  10000,
+                                                     "discountedUnitPrice":  7500,
+                                                     "rebatePercent":  50,
+                                                     "roundedRebatePercent":  50,
+                                                     "total":  7500,
+                                                     "subtotal":  7500,
+                                                     "totalNetSalesAfterDiscount":  7143,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  0
+                                                 },
+                                         "isbn":  "9788387788155",
+                                         "unitWeight":  140,
+                                         "totalWeight":  140
+                                     },
+                                     {
+                                         "code":  "4321",
+                                         "name":  "Test książka",
+                                         "itemId":  8674,
+                                         "quantity":  9,
+                                         "originalUnitPrice":  "34,00 PLN",
+                                         "unitPrice":  "34,00 PLN",
+                                         "discountedUnitPrice":  "25,50 PLN",
+                                         "rebatePercent":  "25,00%",
+                                         "roundedRebatePercent":  "25,00%",
+                                         "effectiveDiscountPercent":  "25,00%",
+                                         "unitDiscount":  "8,50 PLN",
+                                         "grossBeforeDiscount":  "306,00 PLN",
+                                         "calculatedDiscountTotal":  "76,50 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "229,50 PLN",
+                                         "total":  "229,45 PLN",
+                                         "subtotal":  "229,50 PLN",
+                                         "totalDifference":  "-0,05 PLN",
+                                         "unitPriceNet":  "32,38 PLN",
+                                         "discountedUnitPriceNet":  "24,28 PLN",
+                                         "totalNetSalesAfterDiscount":  "218,52 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "10,93 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  3400,
+                                                     "unitPrice":  3400,
+                                                     "discountedUnitPrice":  2550,
+                                                     "rebatePercent":  25,
+                                                     "roundedRebatePercent":  25,
+                                                     "total":  22945,
+                                                     "subtotal":  22950,
+                                                     "totalNetSalesAfterDiscount":  21852,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  -5
+                                                 },
+                                         "isbn":  "9788385824350",
+                                         "unitWeight":  5,
+                                         "totalWeight":  45
+                                     }
+                                 ],
+                    "differentProducts":  2,
+                    "totalQuantity":  10,
+                    "itemsTotal":  "304,45 PLN",
+                    "calculatedItemsTotal":  "304,45 PLN",
+                    "itemsTotalDifference":  "0,00 PLN",
+                    "orderPromotionTotal":  "-101,55 PLN",
+                    "shippingTotal":  "42,00 PLN",
+                    "shippingTotalNet":  "40,00 PLN",
+                    "shippingTaxRate":  "5,00%",
+                    "orderTotal":  "346,45 PLN",
+                    "calculatedOrderTotalWithoutPromotion":  "346,45 PLN",
+                    "orderTotalDifference":  "0,00 PLN",
+                    "totalNet":  "329,95 PLN",
+                    "taxTotal":  "16,50 PLN",
+                    "paymentMethod":  "Płatność terminowa",
+                    "shippingMethod":  "testowa wysyłka dla hurtowni",
+                    "checkoutState":  "payment_selected",
+                    "paymentState":  "cart",
+                    "shippingState":  "cart",
+                    "shipping":  {
+                                     "source":  "10. Podgląd podsumowania — przed finalizacją",
+                                     "capturedAt":  "2026-09-15T10:47:05.777Z",
+                                     "weightUnit":  "jednostka API product.weight — do potwierdzenia",
+                                     "products":  [
+                                                      {
+                                                          "itemId":  8673,
+                                                          "code":  "POP1",
+                                                          "isbn":  "9788387788155",
+                                                          "quantity":  1,
+                                                          "unitWeight":  140,
+                                                          "totalWeight":  140
+                                                      },
+                                                      {
+                                                          "itemId":  8674,
+                                                          "code":  "4321",
+                                                          "isbn":  "9788385824350",
+                                                          "quantity":  9,
+                                                          "unitWeight":  5,
+                                                          "totalWeight":  45
+                                                      }
+                                                  ],
+                                     "knownProductsWeight":  185,
+                                     "totalProductsWeight":  185,
+                                     "weightDataComplete":  true,
+                                     "missingWeightProducts":  [
+
+                                                               ],
+                                     "shipmentPackageQuantity":  4,
+                                     "shippingTotalRaw":  4200,
+                                     "shippingTotal":  "42,00 PLN",
+                                     "currency":  "PLN"
+                                 }
+                },
+    "shipping":  {
+                     "source":  "10. Podgląd podsumowania — przed finalizacją",
+                     "capturedAt":  "2026-09-15T10:47:05.777Z",
+                     "weightUnit":  "jednostka API product.weight — do potwierdzenia",
+                     "products":  [
+                                      {
+                                          "itemId":  8673,
+                                          "code":  "POP1",
+                                          "isbn":  "9788387788155",
+                                          "quantity":  1,
+                                          "unitWeight":  140,
+                                          "totalWeight":  140
+                                      },
+                                      {
+                                          "itemId":  8674,
+                                          "code":  "4321",
+                                          "isbn":  "9788385824350",
+                                          "quantity":  9,
+                                          "unitWeight":  5,
+                                          "totalWeight":  45
+                                      }
+                                  ],
+                     "knownProductsWeight":  185,
+                     "totalProductsWeight":  185,
+                     "weightDataComplete":  true,
+                     "missingWeightProducts":  [
+
+                                               ],
+                     "shipmentPackageQuantity":  4,
+                     "shippingTotalRaw":  4200,
+                     "shippingTotal":  "42,00 PLN",
+                     "currency":  "PLN"
+                 }
+}

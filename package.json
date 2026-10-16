@@ -1,0 +1,21 @@
+{
+  "name": "hurtownia-api-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "plan": "node api-tests/run.mjs --config config/dev.example.json --plan",
+    "demo": "node api-tests/demo.mjs",
+    "login:dev": "node api-tests/login.mjs",
+    "dev": "node api-tests/run.mjs --config config/dev.local.json",
+    "catalog": "node api-tests/catalog-run.mjs",
+    "catalog:create": "node api-tests/catalog-run.mjs --create",
+    "ui": "node dashboard/server.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}

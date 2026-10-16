@@ -1,0 +1,1493 @@
+{
+  "generatedAt": "2026-10-16T05:45:10.173Z",
+  "environment": "dev",
+  "baseUrl": "https://ksiegarnia.gwodev.pl/api/v2",
+  "scenario": "Koszyk, edycja ilości, płatność i dostawa",
+  "status": "FAIL",
+  "finalization": "nie wykonano",
+  "products": [
+    {
+      "productVariant": "222222",
+      "group": "pozostale",
+      "quantity": 4,
+      "newQuantity": 1
+    },
+    {
+      "productVariant": "5555",
+      "group": "pozostale",
+      "quantity": 3,
+      "newQuantity": 4
+    },
+    {
+      "productVariant": "111111",
+      "group": "pozostale",
+      "quantity": 2,
+      "newQuantity": 3
+    },
+    {
+      "productVariant": "m-F8P",
+      "group": "pozostale",
+      "quantity": 6,
+      "newQuantity": 3
+    },
+    {
+      "productVariant": "testhurtA",
+      "group": "pozostale",
+      "quantity": 9,
+      "newQuantity": 2
+    }
+  ],
+  "productSelection": {
+    "source": "random",
+    "algorithm": "sha256-mulberry32-v1",
+    "seed": "d08a99cd8fda030040e1ffa0",
+    "group": "pozostale",
+    "catalog": [
+      {
+        "productVariant": "12a",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "34",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "dsgdsg",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "5lp-1",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "POP1",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "D090",
+        "group": "adamada"
+      },
+      {
+        "productVariant": "m-F8P",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testowy321",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "D087",
+        "group": "adamada"
+      },
+      {
+        "productVariant": "D414",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtC",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtB",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtA",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "11",
+        "group": "pozostale",
+        "enabled": false,
+        "reason": "API dev /items/bulk: Produkt nie istnieje dla productVariant=11 (2026-10-16). Wymaga sprawdzenia kodu wariantu w CMS."
+      },
+      {
+        "productVariant": "5555",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "111111",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "222222",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "333333",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "test321321",
+        "group": "pozostale",
+        "enabled": false,
+        "reason": "API dev /items/bulk: Produkt test321321 nie jest dostępny w sprzedaży (2026-10-16)."
+      }
+    ],
+    "settings": {
+      "enabled": true,
+      "catalogFile": "config/products.json",
+      "group": "random",
+      "productCount": [
+        1,
+        5
+      ],
+      "quantity": [
+        1,
+        10
+      ],
+      "editQuantities": true,
+      "editedQuantity": [
+        1,
+        10
+      ],
+      "seed": "d08a99cd8fda030040e1ffa0"
+    }
+  },
+  "snapshots": [
+    {
+      "stage": "Po dodaniu produktów",
+      "capturedAt": "2026-10-16T05:45:14.191Z",
+      "order": {
+        "id": 5982,
+        "currencyCode": "PLN",
+        "itemsTotal": 142100,
+        "total": 144100,
+        "totalNet": 135975,
+        "shippingTotal": 2000,
+        "orderPromotionTotal": 0,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "poczta_polska",
+        "items": [
+          {
+            "id": 9202,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 4,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 600,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 571,
+            "rebatePercent": 0,
+            "total": 2400,
+            "totalNetSalesAfterDiscount": 2284,
+            "lineDifference": 0
+          },
+          {
+            "id": 9203,
+            "code": "5555",
+            "productName": "Testowe spotkanie online",
+            "quantity": 3,
+            "unitPrice": 3000,
+            "originalUnitPrice": 3000,
+            "discountedUnitPrice": 3000,
+            "unitPriceNet": 2439,
+            "discountedUnitPriceNet": 2439,
+            "rebatePercent": 0,
+            "total": 9000,
+            "totalNetSalesAfterDiscount": 7317,
+            "lineDifference": 0
+          },
+          {
+            "id": 9204,
+            "code": "111111",
+            "productName": "matematyka-klasa-5-hurt",
+            "quantity": 2,
+            "unitPrice": 1000,
+            "originalUnitPrice": 1000,
+            "discountedUnitPrice": 1000,
+            "unitPriceNet": 952,
+            "discountedUnitPriceNet": 952,
+            "rebatePercent": 0,
+            "total": 2000,
+            "totalNetSalesAfterDiscount": 1904,
+            "lineDifference": 0
+          },
+          {
+            "id": 9205,
+            "code": "m-F8P",
+            "isbn": "9788374209793",
+            "productName": "Fizyka z plusem 8. Multipodręcznik. Wersja premium",
+            "quantity": 6,
+            "unitPrice": 21300,
+            "originalUnitPrice": 21300,
+            "discountedUnitPrice": 21300,
+            "unitPriceNet": 20286,
+            "discountedUnitPriceNet": 20285,
+            "rebatePercent": 0,
+            "total": 127800,
+            "totalNetSalesAfterDiscount": 121710,
+            "lineDifference": 0
+          },
+          {
+            "id": 9206,
+            "code": "testhurtA",
+            "isbn": "9780306406157",
+            "productName": "test WHOLESALE",
+            "quantity": 9,
+            "unitPrice": 100,
+            "originalUnitPrice": 100,
+            "discountedUnitPrice": 100,
+            "unitPriceNet": 95,
+            "discountedUnitPriceNet": 95,
+            "rebatePercent": 0,
+            "total": 900,
+            "totalNetSalesAfterDiscount": 855,
+            "lineDifference": 0
+          }
+        ]
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "capturedAt": "2026-10-16T05:45:20.740Z",
+      "order": {
+        "id": 5982,
+        "currencyCode": "PLN",
+        "itemsTotal": 45847,
+        "total": 47847,
+        "totalNet": 43897,
+        "shippingTotal": 2000,
+        "orderPromotionTotal": -33853,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "poczta_polska",
+        "items": [
+          {
+            "id": 9202,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 1,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 299,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 285,
+            "rebatePercent": 50.2,
+            "total": 299,
+            "totalNetSalesAfterDiscount": 285,
+            "lineDifference": 0
+          },
+          {
+            "id": 9203,
+            "code": "5555",
+            "productName": "Testowe spotkanie online",
+            "quantity": 4,
+            "unitPrice": 3000,
+            "originalUnitPrice": 3000,
+            "discountedUnitPrice": 3000,
+            "unitPriceNet": 2439,
+            "discountedUnitPriceNet": 2439,
+            "rebatePercent": 0,
+            "total": 12000,
+            "totalNetSalesAfterDiscount": 9756,
+            "lineDifference": 0
+          },
+          {
+            "id": 9204,
+            "code": "111111",
+            "productName": "matematyka-klasa-5-hurt",
+            "quantity": 3,
+            "unitPrice": 1000,
+            "originalUnitPrice": 1000,
+            "discountedUnitPrice": 500,
+            "unitPriceNet": 952,
+            "discountedUnitPriceNet": 476,
+            "rebatePercent": 50,
+            "total": 1499,
+            "totalNetSalesAfterDiscount": 1428,
+            "lineDifference": -1
+          },
+          {
+            "id": 9205,
+            "code": "m-F8P",
+            "isbn": "9788374209793",
+            "productName": "Fizyka z plusem 8. Multipodręcznik. Wersja premium",
+            "quantity": 3,
+            "unitPrice": 21300,
+            "originalUnitPrice": 21300,
+            "discountedUnitPrice": 10650,
+            "unitPriceNet": 20286,
+            "discountedUnitPriceNet": 10143,
+            "rebatePercent": 50,
+            "total": 31950,
+            "totalNetSalesAfterDiscount": 30429,
+            "lineDifference": 0
+          },
+          {
+            "id": 9206,
+            "code": "testhurtA",
+            "isbn": "9780306406157",
+            "productName": "test WHOLESALE",
+            "quantity": 2,
+            "unitPrice": 100,
+            "originalUnitPrice": 100,
+            "discountedUnitPrice": 50,
+            "unitPriceNet": 95,
+            "discountedUnitPriceNet": 47,
+            "rebatePercent": 50,
+            "total": 99,
+            "totalNetSalesAfterDiscount": 94,
+            "lineDifference": -1
+          }
+        ]
+      }
+    },
+    {
+      "stage": "Po wyborze płatności",
+      "capturedAt": "2026-10-16T05:45:23.750Z",
+      "order": {
+        "id": 5982,
+        "currencyCode": "PLN",
+        "itemsTotal": 45847,
+        "total": 47847,
+        "totalNet": 43897,
+        "shippingTotal": 2000,
+        "orderPromotionTotal": -33853,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "poczta_polska",
+        "items": [
+          {
+            "id": 9202,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 1,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 299,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 285,
+            "rebatePercent": 50.2,
+            "total": 299,
+            "totalNetSalesAfterDiscount": 285,
+            "lineDifference": 0
+          },
+          {
+            "id": 9203,
+            "code": "5555",
+            "productName": "Testowe spotkanie online",
+            "quantity": 4,
+            "unitPrice": 3000,
+            "originalUnitPrice": 3000,
+            "discountedUnitPrice": 3000,
+            "unitPriceNet": 2439,
+            "discountedUnitPriceNet": 2439,
+            "rebatePercent": 0,
+            "total": 12000,
+            "totalNetSalesAfterDiscount": 9756,
+            "lineDifference": 0
+          },
+          {
+            "id": 9204,
+            "code": "111111",
+            "productName": "matematyka-klasa-5-hurt",
+            "quantity": 3,
+            "unitPrice": 1000,
+            "originalUnitPrice": 1000,
+            "discountedUnitPrice": 500,
+            "unitPriceNet": 952,
+            "discountedUnitPriceNet": 476,
+            "rebatePercent": 50,
+            "total": 1499,
+            "totalNetSalesAfterDiscount": 1428,
+            "lineDifference": -1
+          },
+          {
+            "id": 9205,
+            "code": "m-F8P",
+            "isbn": "9788374209793",
+            "productName": "Fizyka z plusem 8. Multipodręcznik. Wersja premium",
+            "quantity": 3,
+            "unitPrice": 21300,
+            "originalUnitPrice": 21300,
+            "discountedUnitPrice": 10650,
+            "unitPriceNet": 20286,
+            "discountedUnitPriceNet": 10143,
+            "rebatePercent": 50,
+            "total": 31950,
+            "totalNetSalesAfterDiscount": 30429,
+            "lineDifference": 0
+          },
+          {
+            "id": 9206,
+            "code": "testhurtA",
+            "isbn": "9780306406157",
+            "productName": "test WHOLESALE",
+            "quantity": 2,
+            "unitPrice": 100,
+            "originalUnitPrice": 100,
+            "discountedUnitPrice": 50,
+            "unitPriceNet": 95,
+            "discountedUnitPriceNet": 47,
+            "rebatePercent": 50,
+            "total": 99,
+            "totalNetSalesAfterDiscount": 94,
+            "lineDifference": -1
+          }
+        ]
+      }
+    }
+  ],
+  "changes": [
+    {
+      "stage": "Po edycji ilości",
+      "code": "222222",
+      "before": {
+        "id": 9202,
+        "code": "222222",
+        "productName": "Matematyka klasa 5 – Hurt",
+        "quantity": 4,
+        "unitPrice": 600,
+        "originalUnitPrice": 600,
+        "discountedUnitPrice": 600,
+        "unitPriceNet": 571,
+        "discountedUnitPriceNet": 571,
+        "rebatePercent": 0,
+        "total": 2400,
+        "totalNetSalesAfterDiscount": 2284,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9202,
+        "code": "222222",
+        "productName": "Matematyka klasa 5 – Hurt",
+        "quantity": 1,
+        "unitPrice": 600,
+        "originalUnitPrice": 600,
+        "discountedUnitPrice": 299,
+        "unitPriceNet": 571,
+        "discountedUnitPriceNet": 285,
+        "rebatePercent": 50.2,
+        "total": 299,
+        "totalNetSalesAfterDiscount": 285,
+        "lineDifference": 0
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "code": "5555",
+      "before": {
+        "id": 9203,
+        "code": "5555",
+        "productName": "Testowe spotkanie online",
+        "quantity": 3,
+        "unitPrice": 3000,
+        "originalUnitPrice": 3000,
+        "discountedUnitPrice": 3000,
+        "unitPriceNet": 2439,
+        "discountedUnitPriceNet": 2439,
+        "rebatePercent": 0,
+        "total": 9000,
+        "totalNetSalesAfterDiscount": 7317,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9203,
+        "code": "5555",
+        "productName": "Testowe spotkanie online",
+        "quantity": 4,
+        "unitPrice": 3000,
+        "originalUnitPrice": 3000,
+        "discountedUnitPrice": 3000,
+        "unitPriceNet": 2439,
+        "discountedUnitPriceNet": 2439,
+        "rebatePercent": 0,
+        "total": 12000,
+        "totalNetSalesAfterDiscount": 9756,
+        "lineDifference": 0
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "code": "111111",
+      "before": {
+        "id": 9204,
+        "code": "111111",
+        "productName": "matematyka-klasa-5-hurt",
+        "quantity": 2,
+        "unitPrice": 1000,
+        "originalUnitPrice": 1000,
+        "discountedUnitPrice": 1000,
+        "unitPriceNet": 952,
+        "discountedUnitPriceNet": 952,
+        "rebatePercent": 0,
+        "total": 2000,
+        "totalNetSalesAfterDiscount": 1904,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9204,
+        "code": "111111",
+        "productName": "matematyka-klasa-5-hurt",
+        "quantity": 3,
+        "unitPrice": 1000,
+        "originalUnitPrice": 1000,
+        "discountedUnitPrice": 500,
+        "unitPriceNet": 952,
+        "discountedUnitPriceNet": 476,
+        "rebatePercent": 50,
+        "total": 1499,
+        "totalNetSalesAfterDiscount": 1428,
+        "lineDifference": -1
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "code": "m-F8P",
+      "before": {
+        "id": 9205,
+        "code": "m-F8P",
+        "isbn": "9788374209793",
+        "productName": "Fizyka z plusem 8. Multipodręcznik. Wersja premium",
+        "quantity": 6,
+        "unitPrice": 21300,
+        "originalUnitPrice": 21300,
+        "discountedUnitPrice": 21300,
+        "unitPriceNet": 20286,
+        "discountedUnitPriceNet": 20285,
+        "rebatePercent": 0,
+        "total": 127800,
+        "totalNetSalesAfterDiscount": 121710,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9205,
+        "code": "m-F8P",
+        "isbn": "9788374209793",
+        "productName": "Fizyka z plusem 8. Multipodręcznik. Wersja premium",
+        "quantity": 3,
+        "unitPrice": 21300,
+        "originalUnitPrice": 21300,
+        "discountedUnitPrice": 10650,
+        "unitPriceNet": 20286,
+        "discountedUnitPriceNet": 10143,
+        "rebatePercent": 50,
+        "total": 31950,
+        "totalNetSalesAfterDiscount": 30429,
+        "lineDifference": 0
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "code": "testhurtA",
+      "before": {
+        "id": 9206,
+        "code": "testhurtA",
+        "isbn": "9780306406157",
+        "productName": "test WHOLESALE",
+        "quantity": 9,
+        "unitPrice": 100,
+        "originalUnitPrice": 100,
+        "discountedUnitPrice": 100,
+        "unitPriceNet": 95,
+        "discountedUnitPriceNet": 95,
+        "rebatePercent": 0,
+        "total": 900,
+        "totalNetSalesAfterDiscount": 855,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9206,
+        "code": "testhurtA",
+        "isbn": "9780306406157",
+        "productName": "test WHOLESALE",
+        "quantity": 2,
+        "unitPrice": 100,
+        "originalUnitPrice": 100,
+        "discountedUnitPrice": 50,
+        "unitPriceNet": 95,
+        "discountedUnitPriceNet": 47,
+        "rebatePercent": 50,
+        "total": 99,
+        "totalNetSalesAfterDiscount": 94,
+        "lineDifference": -1
+      }
+    }
+  ],
+  "payments": [
+    {
+      "code": "cash_on_delivery",
+      "name": "Płatność przy odbiorze",
+      "rebatePercent": 50,
+      "orderItemTotal": 37112
+    },
+    {
+      "code": "bank_transfer_1_day",
+      "name": "Przelew 1-dniowy na konto GWO",
+      "rebatePercent": 75,
+      "orderItemTotal": 18558
+    },
+    {
+      "code": "payment_timely",
+      "name": "Płatność terminowa",
+      "rebatePercent": 25,
+      "orderItemTotal": 55670
+    }
+  ],
+  "shippingMethods": [],
+  "checks": [
+    {
+      "name": "POST shop/authentication-token: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/authentication-token: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/authentication-token: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Uzyskano token API",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Utworzono nowy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders/{order_token}/items/bulk: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders/{order_token}/items/bulk: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/bulk: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9202",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9203",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9204",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9205",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9206",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9202: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9202: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9202: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9203: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9203: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9203: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9204: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9204: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9204: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9205: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9205: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9205: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9206: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9206: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9206: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "GET wholesale/orders/{order_token}/payments: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET wholesale/orders/{order_token}/payments: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/orders/{order_token}/payments: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Niepusta lista płatności",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Unikalne kody płatności",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Oferty płatności zawierają poprawne rabaty i kwoty",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Wybrana płatność dostępna",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Uprawnienia konta do płatności",
+      "status": "SKIP",
+      "detail": "Nie skonfigurowano oczekiwanej listy płatności."
+    },
+    {
+      "name": "Rabaty ofert płatności / Adamada",
+      "status": "SKIP",
+      "detail": "Uzupełnij paymentQuotes lub allPaymentRebatePercent dla potwierdzonych produktów i ustawień konta."
+    },
+    {
+      "name": "PATCH wholesale/orders/{order_token}/payment-method: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH wholesale/orders/{order_token}/payment-method: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/orders/{order_token}/payment-method: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 5555",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 111111",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji m-F8P",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "Wycena płatności zawiera kwotę produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Cena produktów netto po wyborze płatności zgodna z jej ofertą",
+      "status": "FAIL",
+      "detail": "Oferta: 37112 groszy; produkty netto: 41992 groszy."
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "endpoint": "shop/authentication-token",
+      "status": 200,
+      "durationMs": 1069
+    },
+    {
+      "method": "POST",
+      "endpoint": "shop/orders",
+      "status": 201,
+      "durationMs": 862
+    },
+    {
+      "method": "POST",
+      "endpoint": "shop/orders/{order_token}/items/bulk",
+      "status": 201,
+      "durationMs": 1085
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 988
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9202",
+      "status": 200,
+      "durationMs": 1089
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9203",
+      "status": 200,
+      "durationMs": 1150
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9204",
+      "status": 200,
+      "durationMs": 1162
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9205",
+      "status": 200,
+      "durationMs": 1117
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9206",
+      "status": 200,
+      "durationMs": 1054
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 861
+    },
+    {
+      "method": "GET",
+      "endpoint": "wholesale/orders/{order_token}/payments",
+      "status": 200,
+      "durationMs": 923
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "wholesale/orders/{order_token}/payment-method",
+      "status": 200,
+      "durationMs": 1172
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 909
+    }
+  ],
+  "documents": [],
+  "orderId": 5982,
+  "selectedPayment": "cash_on_delivery",
+  "paymentQuoteTotalBasis": "net",
+  "error": "Cena produktów netto po wyborze płatności zgodna z jej ofertą: Oferta: 37112 groszy; produkty netto: 41992 groszy."
+}

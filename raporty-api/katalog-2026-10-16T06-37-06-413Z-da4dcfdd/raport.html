@@ -1,0 +1,89 @@
+<!doctype html><html lang="pl"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Testy API katalogu</title><style>body{font:15px system-ui;background:#f0f4f8;color:#183044;margin:0}main{max-width:1250px;margin:auto;padding:30px}section{background:white;border-radius:12px;padding:22px;margin:18px 0}table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid #dce5ed;text-align:left;padding:10px;vertical-align:top}th{background:#edf3f8}.FAIL{color:#a22424}.PASS{color:#13683d}.SKIP{color:#85640c}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style><main><h1>Testy API katalogu i tworzenia produktu</h1><p>16.10.2026, 08:37:06 · https://ksiegarnia.gwodev.pl/api/v2</p><section><h2 class="FAIL">FAIL</h2><p>PASS: 33 · FAIL: 8 · SKIP: 4</p><p></p><p>Testy dotyczą katalogu. Nie składają zamówień. Dane produktów QA pozostają w środowisku dev; raport zawiera ich kody i przebieg utworzenia.</p></section><section><h2>Produkty QA / tworzenie</h2><pre>[
+  {
+    &quot;code&quot;: &quot;testAPI2&quot;,
+    &quot;slug&quot;: &quot;testapi2&quot;,
+    &quot;purpose&quot;: &quot;produkt utworzony przez panel, fallback nazwy i slugu&quot;,
+    &quot;channels&quot;: {
+      &quot;WHOLESALE&quot;: {
+        &quot;visible&quot;: true,
+        &quot;name&quot;: &quot;testAPI2&quot;,
+        &quot;slug&quot;: &quot;testapi2&quot;,
+        &quot;price&quot;: 5000,
+        &quot;originalPrice&quot;: 5000,
+        &quot;description&quot;: &quot;&quot;,
+        &quot;shortDescription&quot;: &quot;&quot;
+      },
+      &quot;RETAIL&quot;: {
+        &quot;visible&quot;: false,
+        &quot;slug&quot;: &quot;testapi2&quot;
+      },
+      &quot;ACADEMY&quot;: {
+        &quot;visible&quot;: false,
+        &quot;slug&quot;: &quot;testapi2&quot;
+      }
+    }
+  },
+  {
+    &quot;code&quot;: &quot;qa-catalog-fallback-mvakpqlr&quot;,
+    &quot;slug&quot;: &quot;qa-katalog-zolc-fallback-mvakpqlr&quot;,
+    &quot;purpose&quot;: &quot;nowy produkt QA — fallback pustych tłumaczeń kanałowych&quot;,
+    &quot;source&quot;: &quot;https://cms-ksiegarnia.gwodev.pl/products/10213/edit&quot;,
+    &quot;channels&quot;: {
+      &quot;WHOLESALE&quot;: {
+        &quot;visible&quot;: true,
+        &quot;name&quot;: &quot;QA Katalog żółć fallback mvakpqlr&quot;,
+        &quot;slug&quot;: &quot;qa-katalog-zolc-fallback-mvakpqlr&quot;,
+        &quot;shortDescription&quot;: &quot;Główny krótki opis QA mvakpqlr&quot;,
+        &quot;description&quot;: &quot;&quot;,
+        &quot;price&quot;: 5000,
+        &quot;originalPrice&quot;: 5000,
+        &quot;author&quot;: &quot;QA Autor mvakpqlr&quot;,
+        &quot;isbnNumber&quot;: &quot;9780008428549&quot;
+      },
+      &quot;RETAIL&quot;: {
+        &quot;visible&quot;: false,
+        &quot;slug&quot;: &quot;qa-katalog-zolc-fallback-mvakpqlr&quot;
+      },
+      &quot;ACADEMY&quot;: {
+        &quot;visible&quot;: false,
+        &quot;slug&quot;: &quot;qa-katalog-zolc-fallback-mvakpqlr&quot;
+      }
+    }
+  },
+  {
+    &quot;code&quot;: &quot;qa-catalog-override-mvakpqlr&quot;,
+    &quot;slug&quot;: &quot;qa-hurt-mvakpqlr&quot;,
+    &quot;purpose&quot;: &quot;nowy produkt QA — osobne tłumaczenia WHOLESALE&quot;,
+    &quot;source&quot;: &quot;https://cms-ksiegarnia.gwodev.pl/products/10214/edit&quot;,
+    &quot;channels&quot;: {
+      &quot;WHOLESALE&quot;: {
+        &quot;visible&quot;: true,
+        &quot;name&quot;: &quot;QA Hurt żółć override mvakpqlr&quot;,
+        &quot;slug&quot;: &quot;qa-hurt-mvakpqlr&quot;,
+        &quot;shortDescription&quot;: &quot;Hurtowy krótki opis QA mvakpqlr&quot;,
+        &quot;descriptionContains&quot;: &quot;Hurtowy pełny opis QA mvakpqlr&quot;,
+        &quot;price&quot;: 6000,
+        &quot;originalPrice&quot;: 6000,
+        &quot;author&quot;: &quot;QA Autor mvakpqlr&quot;,
+        &quot;isbnNumber&quot;: &quot;9780000744968&quot;
+      },
+      &quot;RETAIL&quot;: {
+        &quot;visible&quot;: false,
+        &quot;slug&quot;: &quot;qa-katalog-glowny-override-mvakpqlr&quot;
+      },
+      &quot;ACADEMY&quot;: {
+        &quot;visible&quot;: false,
+        &quot;slug&quot;: &quot;qa-katalog-glowny-override-mvakpqlr&quot;
+      }
+    }
+  }
+]</pre></section><section><h2>Wyniki</h2><table><tr><th>Wynik</th><th>Przypadek</th><th>Szczegóły</th></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: wszystkie strony, kontrakt i unikalność</td><td>21 produktów</td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: domyślna paginacja 1 / 10</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: limit=1</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: limit=2</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: limit=10</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: limit=50</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: strona za końcem katalogu</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: domyślne sortowanie jak jawne taxon_position_wholesale_category asc</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: sortowanie name asc / desc</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: sortowanie pozycji desc zachowuje komplet produktów</td><td></td></tr><tr><td class="FAIL">FAIL</td><td>WHOLESALE: wyszukiwanie bez wyników</td><td>Expected values to be strictly equal:
+
+2 !== 0
+</td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: wyszukiwanie nazwa</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: wyszukiwanie ISBN</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: wyszukiwanie autor</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: lista i szczegóły po slugu są zgodne</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: nieistniejący slug zwraca 404</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: slug z polskimi znakami i odstępami bez błędu serwera</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: fixture testAPI2 — produkt utworzony przez panel, fallback nazwy i slugu</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: fixture qa-catalog-fallback-mvakpqlr — nowy produkt QA — fallback pustych tłumaczeń kanałowych</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: fixture qa-catalog-override-mvakpqlr — nowy produkt QA — osobne tłumaczenia WHOLESALE</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: filtr Adamada — takson potwierdzony przez API i CMS</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: filtr Takson Adamada + nazwa produktu</td><td></td></tr><tr><td class="SKIP">SKIP</td><td>WHOLESALE: dodatni filtr publication_type[]</td><td>Brak niezależnej fixture z prawidłowymi wartościami i oczekiwanymi kodami.</td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: filtr bez dopasowania publication_type[]</td><td></td></tr><tr><td class="SKIP">SKIP</td><td>WHOLESALE: dodatni filtr subjects[]</td><td>Brak niezależnej fixture z prawidłowymi wartościami i oczekiwanymi kodami.</td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: filtr bez dopasowania subjects[]</td><td></td></tr><tr><td class="SKIP">SKIP</td><td>WHOLESALE: dodatni filtr primary_school[]</td><td>Brak niezależnej fixture z prawidłowymi wartościami i oczekiwanymi kodami.</td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: filtr bez dopasowania primary_school[]</td><td></td></tr><tr><td class="SKIP">SKIP</td><td>WHOLESALE: dodatni filtr high_school[]</td><td>Brak niezależnej fixture z prawidłowymi wartościami i oczekiwanymi kodami.</td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: filtr bez dopasowania high_school[]</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: filtr bez dopasowania taxons[]</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: niepoprawne parametry {&quot;page&quot;:0}</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: niepoprawne parametry {&quot;page&quot;:-1}</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: niepoprawne parametry {&quot;limit&quot;:0}</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: niepoprawne parametry {&quot;limit&quot;:-1}</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: niepoprawne parametry {&quot;page&quot;:&quot;abc&quot;}</td><td></td></tr><tr><td class="PASS">PASS</td><td>WHOLESALE: niepoprawne parametry {&quot;limit&quot;:&quot;abc&quot;}</td><td></td></tr><tr><td class="FAIL">FAIL</td><td>WHOLESALE: niepoprawne parametry {&quot;order_by&quot;:&quot;qa_invalid&quot;}</td><td>Oczekiwano odrzucenia parametru (400/404/422), otrzymano 500</td></tr><tr><td class="FAIL">FAIL</td><td>WHOLESALE: niepoprawne parametry {&quot;sort&quot;:&quot;qa_invalid&quot;}</td><td>Oczekiwano odrzucenia parametru (400/404/422), otrzymano 500</td></tr><tr><td class="FAIL">FAIL</td><td>RETAIL: wszystkie strony, kontrakt i unikalność</td><td>Lista HTTP 500
+
+500 !== 200
+</td></tr><tr><td class="FAIL">FAIL</td><td>ACADEMY: wszystkie strony, kontrakt i unikalność</td><td>Lista HTTP 500
+
+500 !== 200
+</td></tr><tr><td class="FAIL">FAIL</td><td>Nieprawidłowy kanał: shop/products-dto</td><td>Oczekiwano odrzucenia kanału, HTTP 500</td></tr><tr><td class="FAIL">FAIL</td><td>Brak wymaganego nagłówka kanału: shop/products-dto</td><td>Swagger wymaga nagłówka; HTTP 500</td></tr><tr><td class="PASS">PASS</td><td>Nieprawidłowy kanał: shop/products-dto-by-slug/qa-invalid-channel</td><td></td></tr><tr><td class="FAIL">FAIL</td><td>Brak wymaganego nagłówka kanału: shop/products-dto-by-slug/qa-invalid-channel</td><td>Swagger wymaga nagłówka; HTTP 404</td></tr></table></section><section><h2>Uwagi do Swaggera</h2><ul><li>Swagger opisuje odpowiedź products-dto jako tablicę, natomiast rzeczywisty kontrakt ma obiekt {data,pagination}.</li><li>Swagger wymienia parametr ścieżki code dla products-dto-by-slug/{slug}, mimo że ścieżka zawiera wyłącznie slug.</li></ul></section><section><h2>Żądania</h2><table><tr><th>Metoda</th><th>Endpoint</th><th>Status</th><th>Czas ms</th></tr><tr><td>POST</td><td>/api/v2/shop/authentication-token</td><td>200</td><td>1166</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?page=1&amp;limit=50</td><td>200</td><td>1823</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto</td><td>200</td><td>1108</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?limit=1</td><td>200</td><td>897</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?limit=2</td><td>200</td><td>901</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?limit=10</td><td>200</td><td>1449</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?limit=50</td><td>200</td><td>1015</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?page=121&amp;limit=1</td><td>404</td><td>821</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?order_by=taxon_position_wholesale_category&amp;sort=asc&amp;page=1&amp;limit=50</td><td>200</td><td>1092</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?order_by=name&amp;sort=asc&amp;page=1&amp;limit=50</td><td>200</td><td>1038</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?order_by=name&amp;sort=desc&amp;page=1&amp;limit=50</td><td>200</td><td>1077</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?order_by=taxon_position_wholesale_category&amp;sort=desc&amp;page=1&amp;limit=50</td><td>200</td><td>1049</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?name=qa-brak-5cdd14d7-670e-4f23-8c4a-656292e8515b</td><td>200</td><td>895</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?name=historia+cen+dwanascie&amp;page=1&amp;limit=50</td><td>200</td><td>843</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?name=9788381183611&amp;page=1&amp;limit=50</td><td>200</td><td>800</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?name=Stefan+Jarzyna+ze+Szczecina&amp;page=1&amp;limit=50</td><td>200</td><td>862</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/historia-cen-dwa</td><td>200</td><td>831</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/test-ksiazka</td><td>200</td><td>837</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/dfgdfsghdsfh</td><td>200</td><td>897</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/qa-brak-941270d2-10d4-46c7-a8d0-da5d60bb27e6</td><td>404</td><td>888</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/qa%20%C5%BC%C3%B3%C5%82%C4%87%20nie%20istnieje</td><td>404</td><td>750</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/testapi2</td><td>200</td><td>813</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/qa-katalog-zolc-fallback-mvakpqlr</td><td>200</td><td>789</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/qa-hurt-mvakpqlr</td><td>200</td><td>785</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?taxons%5B%5D=WHOLESALE_ADAMADA&amp;page=1&amp;limit=50</td><td>200</td><td>809</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?taxons%5B%5D=WHOLESALE_ADAMADA&amp;name=Kuka+Muka&amp;page=1&amp;limit=50</td><td>200</td><td>866</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?publication_type%5B%5D=qa-brak-112c1381-b0dc-4bd7-8468-76879696870f</td><td>200</td><td>720</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?subjects%5B%5D=qa-brak-911fde21-cf45-4f2e-be53-be59482f6f9f</td><td>200</td><td>750</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?primary_school%5B%5D=qa-brak-e5f90a5d-3375-4180-b832-fdd731232c95</td><td>200</td><td>713</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?high_school%5B%5D=qa-brak-78e6a7ab-8840-4fdb-8298-9579e42965c7</td><td>200</td><td>748</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?taxons%5B%5D=qa-brak-9ac77092-c670-4ba8-aa8f-7e9eb960a740</td><td>200</td><td>854</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?page=0</td><td>404</td><td>793</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?page=-1</td><td>404</td><td>750</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?limit=0</td><td>404</td><td>748</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?limit=-1</td><td>404</td><td>707</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?page=abc</td><td>404</td><td>732</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?limit=abc</td><td>404</td><td>799</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?order_by=qa_invalid</td><td>500</td><td>749</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?sort=qa_invalid</td><td>500</td><td>842</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?page=1&amp;limit=50</td><td>500</td><td>858</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto?page=1&amp;limit=50</td><td>500</td><td>1904</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto</td><td>500</td><td>904</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto</td><td>500</td><td>813</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/qa-invalid-channel</td><td>404</td><td>698</td></tr><tr><td>GET</td><td>/api/v2/shop/products-dto-by-slug/qa-invalid-channel</td><td>404</td><td>693</td></tr></table></section></main></html>

@@ -1,0 +1,232 @@
+{
+  "generatedAt": "2026-10-16T06:08:26.022Z",
+  "environment": "dev",
+  "baseUrl": "https://ksiegarnia.gwodev.pl/api/v2",
+  "scenario": "Koszyk, edycja ilości, płatność i dostawa",
+  "status": "FAIL",
+  "finalization": "nie wykonano",
+  "products": [
+    {
+      "productVariant": "D090",
+      "group": "adamada",
+      "quantity": 9,
+      "newQuantity": 2
+    },
+    {
+      "productVariant": "D087",
+      "group": "adamada",
+      "quantity": 8,
+      "newQuantity": 6
+    }
+  ],
+  "productSelection": {
+    "source": "random",
+    "algorithm": "sha256-mulberry32-v1",
+    "seed": "6fbf131922fc28e06581e733",
+    "group": "adamada",
+    "catalog": [
+      {
+        "productVariant": "12",
+        "merchandiseCode": "12a",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "4321",
+        "merchandiseCode": "34",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "432423",
+        "merchandiseCode": "dsgdsg",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "5lp-1",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "POP1",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "D090",
+        "group": "adamada"
+      },
+      {
+        "productVariant": "m-F8P",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "test1",
+        "merchandiseCode": "testowy321",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "D087",
+        "group": "adamada"
+      },
+      {
+        "productVariant": "D414",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtC",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtB",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtA",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "3465346",
+        "merchandiseCode": "11",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "5555",
+        "group": "pozostale",
+        "enabled": false,
+        "reason": "Wyłączony z testów na prośbę użytkownika: Testowe spotkanie online."
+      },
+      {
+        "productVariant": "111111",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "222222",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "333333",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "test321321",
+        "group": "pozostale",
+        "enabled": false,
+        "reason": "API dev /items/bulk: Produkt test321321 nie jest dostępny w sprzedaży (2026-10-16)."
+      }
+    ],
+    "settings": {
+      "enabled": true,
+      "catalogFile": "config/products.json",
+      "group": "random",
+      "productCount": [
+        1,
+        5
+      ],
+      "quantity": [
+        1,
+        10
+      ],
+      "editQuantities": true,
+      "editedQuantity": [
+        1,
+        10
+      ],
+      "seed": "6fbf131922fc28e06581e733"
+    }
+  },
+  "expectedGroupRebates": {
+    "adamada": 10
+  },
+  "snapshots": [],
+  "changes": [],
+  "checkoutSelection": {
+    "seed": "6fbf131922fc28e06581e733",
+    "algorithm": "sha256-method-v1",
+    "paymentMode": "random",
+    "shippingMode": "random"
+  },
+  "payments": [],
+  "shippingMethods": [],
+  "checks": [
+    {
+      "name": "POST shop/authentication-token: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/authentication-token: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/authentication-token: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Uzyskano token API",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Utworzono nowy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders/{order_token}/items/bulk: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders/{order_token}/items/bulk: status",
+      "status": "FAIL",
+      "detail": "HTTP 422; {\"title\":\"An error occurred\",\"detail\":\"Produkty Adamada nie mogą być łączone w koszyku z pozostałymi produktami.\",\"violations\":[{\"propertyPath\":\"\",\"message\":\"Produkty Adamada nie mogą być łączone w koszyku z pozostałymi produktami.\"}]}"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "endpoint": "shop/authentication-token",
+      "status": 200,
+      "durationMs": 1258
+    },
+    {
+      "method": "POST",
+      "endpoint": "shop/orders",
+      "status": 201,
+      "durationMs": 989
+    },
+    {
+      "method": "POST",
+      "endpoint": "shop/orders/{order_token}/items/bulk",
+      "status": 422,
+      "durationMs": 982,
+      "apiError": {
+        "title": "An error occurred",
+        "detail": "Produkty Adamada nie mogą być łączone w koszyku z pozostałymi produktami.",
+        "violations": [
+          {
+            "propertyPath": "",
+            "message": "Produkty Adamada nie mogą być łączone w koszyku z pozostałymi produktami."
+          }
+        ]
+      }
+    }
+  ],
+  "documents": [],
+  "orderId": 5991,
+  "error": "POST shop/orders/{order_token}/items/bulk: status: HTTP 422; {\"title\":\"An error occurred\",\"detail\":\"Produkty Adamada nie mogą być łączone w koszyku z pozostałymi produktami.\",\"violations\":[{\"propertyPath\":\"\",\"message\":\"Produkty Adamada nie mogą być łączone w koszyku z pozostałymi produktami.\"}]}"
+}

@@ -1,0 +1,5 @@
+{
+  "products":[],
+  "filters":[],
+  "note":"Produkty i niezależne oczekiwania testów. Wypełniane po utworzeniu fixture QA; filtry wymagają wartości rzeczywiście obsługiwanych przez API, nie zgadywanych etykiet."
+}

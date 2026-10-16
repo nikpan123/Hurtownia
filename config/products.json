@@ -1,0 +1,24 @@
+{
+  "source": "Lista ze zrzutów CMS. Kody handlowe rozdzielono od kodów wariantów na podstawie WHOLESALE products-dto i defaultVariant (2026-10-16).",
+  "products": [
+    {"productVariant":"12","merchandiseCode":"12a","group":"pozostale"},
+    {"productVariant":"4321","merchandiseCode":"34","group":"pozostale"},
+    {"productVariant":"432423","merchandiseCode":"dsgdsg","group":"pozostale"},
+    {"productVariant":"5lp-1","group":"pozostale"},
+    {"productVariant":"POP1","group":"pozostale"},
+    {"productVariant":"D090","group":"adamada"},
+    {"productVariant":"m-F8P","group":"pozostale"},
+    {"productVariant":"test1","merchandiseCode":"testowy321","group":"pozostale"},
+    {"productVariant":"D087","group":"adamada"},
+    {"productVariant":"D414","group":"pozostale"},
+    {"productVariant":"testhurtC","group":"pozostale"},
+    {"productVariant":"testhurtB","group":"pozostale"},
+    {"productVariant":"testhurtA","group":"pozostale"},
+    {"productVariant":"3465346","merchandiseCode":"11","group":"pozostale"},
+    {"productVariant":"5555","group":"pozostale","enabled":false,"reason":"Wyłączony z testów na prośbę użytkownika: Testowe spotkanie online."},
+    {"productVariant":"111111","group":"pozostale"},
+    {"productVariant":"222222","group":"pozostale"},
+    {"productVariant":"333333","group":"pozostale"},
+    {"productVariant":"test321321","group":"pozostale","enabled":false,"reason":"API dev /items/bulk: Produkt test321321 nie jest dostępny w sprzedaży (2026-10-16)."}
+  ]
+}

@@ -1,0 +1,1878 @@
+{
+  "generatedAt": "2026-10-16T06:01:49.185Z",
+  "environment": "dev",
+  "baseUrl": "https://ksiegarnia.gwodev.pl/api/v2",
+  "scenario": "Koszyk, edycja ilości, płatność i dostawa",
+  "status": "PASS",
+  "finalization": "nie wykonano",
+  "products": [
+    {
+      "productVariant": "testhurtA",
+      "group": "pozostale",
+      "quantity": 1,
+      "newQuantity": 1
+    },
+    {
+      "productVariant": "testhurtC",
+      "group": "pozostale",
+      "quantity": 1,
+      "newQuantity": 6
+    },
+    {
+      "productVariant": "222222",
+      "group": "pozostale",
+      "quantity": 6,
+      "newQuantity": 6
+    },
+    {
+      "productVariant": "432423",
+      "group": "pozostale",
+      "quantity": 9,
+      "merchandiseCode": "dsgdsg",
+      "newQuantity": 9
+    },
+    {
+      "productVariant": "D414",
+      "group": "pozostale",
+      "quantity": 7,
+      "newQuantity": 4
+    }
+  ],
+  "productSelection": {
+    "source": "random",
+    "algorithm": "sha256-mulberry32-v1",
+    "seed": "09ac702ee67bdc3dea408e1e",
+    "group": "pozostale",
+    "catalog": [
+      {
+        "productVariant": "12",
+        "merchandiseCode": "12a",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "4321",
+        "merchandiseCode": "34",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "432423",
+        "merchandiseCode": "dsgdsg",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "5lp-1",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "POP1",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "D090",
+        "group": "adamada"
+      },
+      {
+        "productVariant": "m-F8P",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "test1",
+        "merchandiseCode": "testowy321",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "D087",
+        "group": "adamada"
+      },
+      {
+        "productVariant": "D414",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtC",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtB",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "testhurtA",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "3465346",
+        "merchandiseCode": "11",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "5555",
+        "group": "pozostale",
+        "enabled": false,
+        "reason": "Wyłączony z testów na prośbę użytkownika: Testowe spotkanie online."
+      },
+      {
+        "productVariant": "111111",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "222222",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "333333",
+        "group": "pozostale"
+      },
+      {
+        "productVariant": "test321321",
+        "group": "pozostale",
+        "enabled": false,
+        "reason": "API dev /items/bulk: Produkt test321321 nie jest dostępny w sprzedaży (2026-10-16)."
+      }
+    ],
+    "settings": {
+      "enabled": true,
+      "catalogFile": "config/products.json",
+      "group": "random",
+      "productCount": [
+        1,
+        5
+      ],
+      "quantity": [
+        1,
+        10
+      ],
+      "editQuantities": true,
+      "editedQuantity": [
+        1,
+        10
+      ],
+      "seed": "09ac702ee67bdc3dea408e1e"
+    }
+  },
+  "expectedGroupRebates": {
+    "adamada": 10
+  },
+  "snapshots": [
+    {
+      "stage": "Po dodaniu produktów",
+      "capturedAt": "2026-10-16T06:01:53.648Z",
+      "order": {
+        "id": 5990,
+        "currencyCode": "PLN",
+        "itemsTotal": 342400,
+        "total": 344400,
+        "totalNet": 327993,
+        "shippingTotal": 2000,
+        "orderPromotionTotal": 0,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "poczta_polska",
+        "items": [
+          {
+            "id": 9220,
+            "code": "testhurtA",
+            "isbn": "9780306406157",
+            "productName": "test WHOLESALE",
+            "quantity": 1,
+            "unitPrice": 100,
+            "originalUnitPrice": 100,
+            "discountedUnitPrice": 100,
+            "unitPriceNet": 95,
+            "discountedUnitPriceNet": 95,
+            "rebatePercent": 0,
+            "total": 100,
+            "totalNetSalesAfterDiscount": 95,
+            "lineDifference": 0
+          },
+          {
+            "id": 9221,
+            "code": "testhurtC",
+            "productName": "Testowy produkt dla hurtowni C",
+            "quantity": 1,
+            "unitPrice": 30000,
+            "originalUnitPrice": 30000,
+            "discountedUnitPrice": 30000,
+            "unitPriceNet": 28571,
+            "discountedUnitPriceNet": 28571,
+            "rebatePercent": 0,
+            "total": 30000,
+            "totalNetSalesAfterDiscount": 28571,
+            "lineDifference": 0
+          },
+          {
+            "id": 9222,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 6,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 600,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 571,
+            "rebatePercent": 0,
+            "total": 3600,
+            "totalNetSalesAfterDiscount": 3426,
+            "lineDifference": 0
+          },
+          {
+            "id": 9223,
+            "code": "432423",
+            "productName": "dfgdfsghdsfh",
+            "quantity": 9,
+            "unitPrice": 2100,
+            "originalUnitPrice": 2100,
+            "discountedUnitPrice": 2100,
+            "unitPriceNet": 2000,
+            "discountedUnitPriceNet": 2000,
+            "rebatePercent": 0,
+            "total": 18900,
+            "totalNetSalesAfterDiscount": 18000,
+            "lineDifference": 0
+          },
+          {
+            "id": 9224,
+            "code": "D414",
+            "isbn": "9788384081792",
+            "productName": "ebook 15.06 - zmiana nazwy",
+            "quantity": 7,
+            "unitPrice": 41400,
+            "originalUnitPrice": 41400,
+            "discountedUnitPrice": 41400,
+            "unitPriceNet": 39429,
+            "discountedUnitPriceNet": 39428,
+            "rebatePercent": 0,
+            "total": 289800,
+            "totalNetSalesAfterDiscount": 275996,
+            "lineDifference": 0
+          }
+        ]
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "capturedAt": "2026-10-16T06:02:00.579Z",
+      "order": {
+        "id": 5990,
+        "currencyCode": "PLN",
+        "itemsTotal": 184090,
+        "total": 186090,
+        "totalNet": 177228,
+        "shippingTotal": 2000,
+        "orderPromotionTotal": -184110,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "poczta_polska",
+        "items": [
+          {
+            "id": 9220,
+            "code": "testhurtA",
+            "isbn": "9780306406157",
+            "productName": "test WHOLESALE",
+            "quantity": 1,
+            "unitPrice": 100,
+            "originalUnitPrice": 100,
+            "discountedUnitPrice": 49,
+            "unitPriceNet": 95,
+            "discountedUnitPriceNet": 47,
+            "rebatePercent": 51,
+            "total": 49,
+            "totalNetSalesAfterDiscount": 47,
+            "lineDifference": 0
+          },
+          {
+            "id": 9221,
+            "code": "testhurtC",
+            "productName": "Testowy produkt dla hurtowni C",
+            "quantity": 6,
+            "unitPrice": 30000,
+            "originalUnitPrice": 30000,
+            "discountedUnitPrice": 15000,
+            "unitPriceNet": 28571,
+            "discountedUnitPriceNet": 14285,
+            "rebatePercent": 50,
+            "total": 89996,
+            "totalNetSalesAfterDiscount": 85710,
+            "lineDifference": -4
+          },
+          {
+            "id": 9222,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 6,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 300,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 285,
+            "rebatePercent": 50,
+            "total": 1796,
+            "totalNetSalesAfterDiscount": 1710,
+            "lineDifference": -4
+          },
+          {
+            "id": 9223,
+            "code": "432423",
+            "productName": "dfgdfsghdsfh",
+            "quantity": 9,
+            "unitPrice": 2100,
+            "originalUnitPrice": 2100,
+            "discountedUnitPrice": 1050,
+            "unitPriceNet": 2000,
+            "discountedUnitPriceNet": 1000,
+            "rebatePercent": 50,
+            "total": 9450,
+            "totalNetSalesAfterDiscount": 9000,
+            "lineDifference": 0
+          },
+          {
+            "id": 9224,
+            "code": "D414",
+            "isbn": "9788384081792",
+            "productName": "ebook 15.06 - zmiana nazwy",
+            "quantity": 4,
+            "unitPrice": 41400,
+            "originalUnitPrice": 41400,
+            "discountedUnitPrice": 20700,
+            "unitPriceNet": 39429,
+            "discountedUnitPriceNet": 19714,
+            "rebatePercent": 50,
+            "total": 82799,
+            "totalNetSalesAfterDiscount": 78856,
+            "lineDifference": -1
+          }
+        ]
+      }
+    },
+    {
+      "stage": "Po wyborze płatności",
+      "capturedAt": "2026-10-16T06:02:04.273Z",
+      "order": {
+        "id": 5990,
+        "currencyCode": "PLN",
+        "itemsTotal": 184090,
+        "total": 186090,
+        "totalNet": 177228,
+        "shippingTotal": 2000,
+        "orderPromotionTotal": -184110,
+        "shipmentPackageQuantity": 0,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "poczta_polska",
+        "items": [
+          {
+            "id": 9220,
+            "code": "testhurtA",
+            "isbn": "9780306406157",
+            "productName": "test WHOLESALE",
+            "quantity": 1,
+            "unitPrice": 100,
+            "originalUnitPrice": 100,
+            "discountedUnitPrice": 49,
+            "unitPriceNet": 95,
+            "discountedUnitPriceNet": 47,
+            "rebatePercent": 51,
+            "total": 49,
+            "totalNetSalesAfterDiscount": 47,
+            "lineDifference": 0
+          },
+          {
+            "id": 9221,
+            "code": "testhurtC",
+            "productName": "Testowy produkt dla hurtowni C",
+            "quantity": 6,
+            "unitPrice": 30000,
+            "originalUnitPrice": 30000,
+            "discountedUnitPrice": 15000,
+            "unitPriceNet": 28571,
+            "discountedUnitPriceNet": 14285,
+            "rebatePercent": 50,
+            "total": 89996,
+            "totalNetSalesAfterDiscount": 85710,
+            "lineDifference": -4
+          },
+          {
+            "id": 9222,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 6,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 300,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 285,
+            "rebatePercent": 50,
+            "total": 1796,
+            "totalNetSalesAfterDiscount": 1710,
+            "lineDifference": -4
+          },
+          {
+            "id": 9223,
+            "code": "432423",
+            "productName": "dfgdfsghdsfh",
+            "quantity": 9,
+            "unitPrice": 2100,
+            "originalUnitPrice": 2100,
+            "discountedUnitPrice": 1050,
+            "unitPriceNet": 2000,
+            "discountedUnitPriceNet": 1000,
+            "rebatePercent": 50,
+            "total": 9450,
+            "totalNetSalesAfterDiscount": 9000,
+            "lineDifference": 0
+          },
+          {
+            "id": 9224,
+            "code": "D414",
+            "isbn": "9788384081792",
+            "productName": "ebook 15.06 - zmiana nazwy",
+            "quantity": 4,
+            "unitPrice": 41400,
+            "originalUnitPrice": 41400,
+            "discountedUnitPrice": 20700,
+            "unitPriceNet": 39429,
+            "discountedUnitPriceNet": 19714,
+            "rebatePercent": 50,
+            "total": 82799,
+            "totalNetSalesAfterDiscount": 78856,
+            "lineDifference": -1
+          }
+        ]
+      }
+    },
+    {
+      "stage": "Przed finalizacją",
+      "capturedAt": "2026-10-16T06:02:07.949Z",
+      "order": {
+        "id": 5990,
+        "currencyCode": "PLN",
+        "itemsTotal": 184090,
+        "total": 187165,
+        "totalNet": 178252,
+        "shippingTotal": 3075,
+        "orderPromotionTotal": -184110,
+        "shipmentPackageQuantity": 1,
+        "paymentCode": "cash_on_delivery",
+        "shippingCode": "gls_wholesale",
+        "items": [
+          {
+            "id": 9220,
+            "code": "testhurtA",
+            "isbn": "9780306406157",
+            "productName": "test WHOLESALE",
+            "quantity": 1,
+            "unitPrice": 100,
+            "originalUnitPrice": 100,
+            "discountedUnitPrice": 49,
+            "unitPriceNet": 95,
+            "discountedUnitPriceNet": 47,
+            "rebatePercent": 51,
+            "total": 49,
+            "totalNetSalesAfterDiscount": 47,
+            "lineDifference": 0
+          },
+          {
+            "id": 9221,
+            "code": "testhurtC",
+            "productName": "Testowy produkt dla hurtowni C",
+            "quantity": 6,
+            "unitPrice": 30000,
+            "originalUnitPrice": 30000,
+            "discountedUnitPrice": 15000,
+            "unitPriceNet": 28571,
+            "discountedUnitPriceNet": 14285,
+            "rebatePercent": 50,
+            "total": 89996,
+            "totalNetSalesAfterDiscount": 85710,
+            "lineDifference": -4
+          },
+          {
+            "id": 9222,
+            "code": "222222",
+            "productName": "Matematyka klasa 5 – Hurt",
+            "quantity": 6,
+            "unitPrice": 600,
+            "originalUnitPrice": 600,
+            "discountedUnitPrice": 300,
+            "unitPriceNet": 571,
+            "discountedUnitPriceNet": 285,
+            "rebatePercent": 50,
+            "total": 1796,
+            "totalNetSalesAfterDiscount": 1710,
+            "lineDifference": -4
+          },
+          {
+            "id": 9223,
+            "code": "432423",
+            "productName": "dfgdfsghdsfh",
+            "quantity": 9,
+            "unitPrice": 2100,
+            "originalUnitPrice": 2100,
+            "discountedUnitPrice": 1050,
+            "unitPriceNet": 2000,
+            "discountedUnitPriceNet": 1000,
+            "rebatePercent": 50,
+            "total": 9450,
+            "totalNetSalesAfterDiscount": 9000,
+            "lineDifference": 0
+          },
+          {
+            "id": 9224,
+            "code": "D414",
+            "isbn": "9788384081792",
+            "productName": "ebook 15.06 - zmiana nazwy",
+            "quantity": 4,
+            "unitPrice": 41400,
+            "originalUnitPrice": 41400,
+            "discountedUnitPrice": 20700,
+            "unitPriceNet": 39429,
+            "discountedUnitPriceNet": 19714,
+            "rebatePercent": 50,
+            "total": 82799,
+            "totalNetSalesAfterDiscount": 78856,
+            "lineDifference": -1
+          }
+        ]
+      }
+    }
+  ],
+  "changes": [
+    {
+      "stage": "Po edycji ilości",
+      "code": "testhurtA",
+      "before": {
+        "id": 9220,
+        "code": "testhurtA",
+        "isbn": "9780306406157",
+        "productName": "test WHOLESALE",
+        "quantity": 1,
+        "unitPrice": 100,
+        "originalUnitPrice": 100,
+        "discountedUnitPrice": 100,
+        "unitPriceNet": 95,
+        "discountedUnitPriceNet": 95,
+        "rebatePercent": 0,
+        "total": 100,
+        "totalNetSalesAfterDiscount": 95,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9220,
+        "code": "testhurtA",
+        "isbn": "9780306406157",
+        "productName": "test WHOLESALE",
+        "quantity": 1,
+        "unitPrice": 100,
+        "originalUnitPrice": 100,
+        "discountedUnitPrice": 49,
+        "unitPriceNet": 95,
+        "discountedUnitPriceNet": 47,
+        "rebatePercent": 51,
+        "total": 49,
+        "totalNetSalesAfterDiscount": 47,
+        "lineDifference": 0
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "code": "testhurtC",
+      "before": {
+        "id": 9221,
+        "code": "testhurtC",
+        "productName": "Testowy produkt dla hurtowni C",
+        "quantity": 1,
+        "unitPrice": 30000,
+        "originalUnitPrice": 30000,
+        "discountedUnitPrice": 30000,
+        "unitPriceNet": 28571,
+        "discountedUnitPriceNet": 28571,
+        "rebatePercent": 0,
+        "total": 30000,
+        "totalNetSalesAfterDiscount": 28571,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9221,
+        "code": "testhurtC",
+        "productName": "Testowy produkt dla hurtowni C",
+        "quantity": 6,
+        "unitPrice": 30000,
+        "originalUnitPrice": 30000,
+        "discountedUnitPrice": 15000,
+        "unitPriceNet": 28571,
+        "discountedUnitPriceNet": 14285,
+        "rebatePercent": 50,
+        "total": 89996,
+        "totalNetSalesAfterDiscount": 85710,
+        "lineDifference": -4
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "code": "222222",
+      "before": {
+        "id": 9222,
+        "code": "222222",
+        "productName": "Matematyka klasa 5 – Hurt",
+        "quantity": 6,
+        "unitPrice": 600,
+        "originalUnitPrice": 600,
+        "discountedUnitPrice": 600,
+        "unitPriceNet": 571,
+        "discountedUnitPriceNet": 571,
+        "rebatePercent": 0,
+        "total": 3600,
+        "totalNetSalesAfterDiscount": 3426,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9222,
+        "code": "222222",
+        "productName": "Matematyka klasa 5 – Hurt",
+        "quantity": 6,
+        "unitPrice": 600,
+        "originalUnitPrice": 600,
+        "discountedUnitPrice": 300,
+        "unitPriceNet": 571,
+        "discountedUnitPriceNet": 285,
+        "rebatePercent": 50,
+        "total": 1796,
+        "totalNetSalesAfterDiscount": 1710,
+        "lineDifference": -4
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "code": "432423",
+      "before": {
+        "id": 9223,
+        "code": "432423",
+        "productName": "dfgdfsghdsfh",
+        "quantity": 9,
+        "unitPrice": 2100,
+        "originalUnitPrice": 2100,
+        "discountedUnitPrice": 2100,
+        "unitPriceNet": 2000,
+        "discountedUnitPriceNet": 2000,
+        "rebatePercent": 0,
+        "total": 18900,
+        "totalNetSalesAfterDiscount": 18000,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9223,
+        "code": "432423",
+        "productName": "dfgdfsghdsfh",
+        "quantity": 9,
+        "unitPrice": 2100,
+        "originalUnitPrice": 2100,
+        "discountedUnitPrice": 1050,
+        "unitPriceNet": 2000,
+        "discountedUnitPriceNet": 1000,
+        "rebatePercent": 50,
+        "total": 9450,
+        "totalNetSalesAfterDiscount": 9000,
+        "lineDifference": 0
+      }
+    },
+    {
+      "stage": "Po edycji ilości",
+      "code": "D414",
+      "before": {
+        "id": 9224,
+        "code": "D414",
+        "isbn": "9788384081792",
+        "productName": "ebook 15.06 - zmiana nazwy",
+        "quantity": 7,
+        "unitPrice": 41400,
+        "originalUnitPrice": 41400,
+        "discountedUnitPrice": 41400,
+        "unitPriceNet": 39429,
+        "discountedUnitPriceNet": 39428,
+        "rebatePercent": 0,
+        "total": 289800,
+        "totalNetSalesAfterDiscount": 275996,
+        "lineDifference": 0
+      },
+      "after": {
+        "id": 9224,
+        "code": "D414",
+        "isbn": "9788384081792",
+        "productName": "ebook 15.06 - zmiana nazwy",
+        "quantity": 4,
+        "unitPrice": 41400,
+        "originalUnitPrice": 41400,
+        "discountedUnitPrice": 20700,
+        "unitPriceNet": 39429,
+        "discountedUnitPriceNet": 19714,
+        "rebatePercent": 50,
+        "total": 82799,
+        "totalNetSalesAfterDiscount": 78856,
+        "lineDifference": -1
+      }
+    }
+  ],
+  "payments": [
+    {
+      "code": "cash_on_delivery",
+      "name": "Płatność przy odbiorze",
+      "rebatePercent": 50,
+      "orderItemTotal": 175323
+    },
+    {
+      "code": "bank_transfer_1_day",
+      "name": "Przelew 1-dniowy na konto GWO",
+      "rebatePercent": 75,
+      "orderItemTotal": 87668
+    },
+    {
+      "code": "payment_timely",
+      "name": "Płatność terminowa",
+      "rebatePercent": 25,
+      "orderItemTotal": 262995
+    }
+  ],
+  "shippingMethods": [
+    {
+      "code": "poczta_polska",
+      "name": "Poczta Polska"
+    },
+    {
+      "code": "gls_wholesale",
+      "name": "Przesyłka kurierska (GLS)"
+    },
+    {
+      "code": "testwys",
+      "name": "testowa wysyłka dla hurtowni"
+    }
+  ],
+  "checks": [
+    {
+      "name": "POST shop/authentication-token: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/authentication-token: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/authentication-token: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Uzyskano token API",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Utworzono nowy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders/{order_token}/items/bulk: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST shop/orders/{order_token}/items/bulk: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/bulk: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: ilość i kwoty D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: rabat procentowy D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po dodaniu produktów: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9220",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9221",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9223",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Spójne ilości edycji produktu 9224",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9220: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9220: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9220: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9221: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9221: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9221: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9222: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9222: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9222: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9223: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9223: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9223: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9224: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH shop/orders/{order_token}/items/9224: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}/items/9224: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: ilość i kwoty D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: rabat procentowy D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po edycji ilości: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "GET wholesale/orders/{order_token}/payments: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET wholesale/orders/{order_token}/payments: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/orders/{order_token}/payments: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Niepusta lista płatności",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Unikalne kody płatności",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Oferty płatności zawierają poprawne rabaty i kwoty",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Wybrana płatność dostępna",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Uprawnienia konta do płatności",
+      "status": "SKIP",
+      "detail": "Nie skonfigurowano oczekiwanej listy płatności."
+    },
+    {
+      "name": "Rabaty ofert płatności / Adamada",
+      "status": "SKIP",
+      "detail": "Uzupełnij paymentQuotes, groupRebatePercent lub allPaymentRebatePercent dla potwierdzonych produktów i ustawień konta."
+    },
+    {
+      "name": "PATCH wholesale/orders/{order_token}/payment-method: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PATCH wholesale/orders/{order_token}/payment-method: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/orders/{order_token}/payment-method: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: ilość i kwoty D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: rabat procentowy D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Po wyborze płatności: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "Wycena płatności zawiera kwotę produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Cena produktów netto po wyborze płatności zgodna z jej ofertą",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET wholesale/checkout-step-two/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET wholesale/checkout-step-two/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/checkout-step-two/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Niepusta lista dostaw",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Poprawne, unikalne kody dostaw",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Wybrana dostawa dostępna",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST wholesale/checkout-step-two/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "POST wholesale/checkout-step-two/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wholesale/checkout-step-two/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: brak przekierowania do logowania",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GET shop/orders/{order_token}: status",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shop/orders/{order_token}: odpowiedź nie jest HTML",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: właściwy koszyk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: produkty w odpowiedzi",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: ilość i kwoty testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: rabat procentowy testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: ilość i kwoty testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: rabat procentowy testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: ilość i kwoty 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: rabat procentowy 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: ilość i kwoty 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: rabat procentowy 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: ilość i kwoty D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: rabat procentowy D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Jednoznaczne dopasowanie produktu D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Liczba różnych produktów",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtA",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji testhurtC",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 222222",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji 432423",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Brak sprzecznych edycji kodu i ISBN",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Ilość pozycji D414",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: sumy są kwotami w groszach",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: suma pozycji",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: do zapłaty = produkty + dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: zapisana płatność",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: zapisana dostawa",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Przed finalizacją: oczekiwane ceny i rabaty",
+      "status": "SKIP",
+      "detail": "Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum."
+    },
+    {
+      "name": "Reguła zaokrągleń",
+      "status": "SKIP",
+      "detail": "Różnice pokazano w raporcie; brak potwierdzonej tolerancji biznesowej w groszach."
+    },
+    {
+      "name": "Finalizacja i dokumenty PDF",
+      "status": "SKIP",
+      "detail": "Uruchom z --complete na dedykowanym koncie dev."
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "endpoint": "shop/authentication-token",
+      "status": 200,
+      "durationMs": 1150
+    },
+    {
+      "method": "POST",
+      "endpoint": "shop/orders",
+      "status": 201,
+      "durationMs": 1062
+    },
+    {
+      "method": "POST",
+      "endpoint": "shop/orders/{order_token}/items/bulk",
+      "status": 201,
+      "durationMs": 1181
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 1054
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9220",
+      "status": 200,
+      "durationMs": 1251
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9221",
+      "status": 200,
+      "durationMs": 1123
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9222",
+      "status": 200,
+      "durationMs": 1181
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9223",
+      "status": 200,
+      "durationMs": 1158
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "shop/orders/{order_token}/items/9224",
+      "status": 200,
+      "durationMs": 1187
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 1022
+    },
+    {
+      "method": "GET",
+      "endpoint": "wholesale/orders/{order_token}/payments",
+      "status": 200,
+      "durationMs": 1225
+    },
+    {
+      "method": "PATCH",
+      "endpoint": "wholesale/orders/{order_token}/payment-method",
+      "status": 200,
+      "durationMs": 1537
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 929
+    },
+    {
+      "method": "GET",
+      "endpoint": "wholesale/checkout-step-two/{order_token}",
+      "status": 200,
+      "durationMs": 1150
+    },
+    {
+      "method": "POST",
+      "endpoint": "wholesale/checkout-step-two/{order_token}",
+      "status": 201,
+      "durationMs": 1429
+    },
+    {
+      "method": "GET",
+      "endpoint": "shop/orders/{order_token}",
+      "status": 200,
+      "durationMs": 1072
+    }
+  ],
+  "documents": [],
+  "orderId": 5990,
+  "selectedPayment": "cash_on_delivery",
+  "paymentQuoteTotalBasis": "net",
+  "shippingResponseShape": {
+    "topLevelKeys": [
+      "addressList",
+      "shippingMethods",
+      "defaultShippingAddress",
+      "defaultBillingAddress"
+    ],
+    "shippingMethodsType": "array",
+    "shippingMethodsKeys": []
+  },
+  "selectedShipping": "gls_wholesale"
+}

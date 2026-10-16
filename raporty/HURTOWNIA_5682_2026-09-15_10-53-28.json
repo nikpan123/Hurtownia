@@ -1,0 +1,207 @@
+﻿{
+    "generatedAt":  "2026-09-15T08:53:28.937Z",
+    "finalization":  {
+                         "statusCode":  200,
+                         "success":  true
+                     },
+    "order":  {
+                  "orderId":  "5682",
+                  "tokenValue":  "3mhgDcfTd7"
+              },
+    "initialProducts":  [
+                            {
+                                "type":  "productVariant",
+                                "code":  "POP1",
+                                "quantity":  3
+                            },
+                            {
+                                "type":  "productVariant",
+                                "code":  "4321",
+                                "quantity":  4
+                            },
+                            {
+                                "type":  "productVariant",
+                                "code":  "12",
+                                "quantity":  4
+                            }
+                        ],
+    "editedProducts":  [
+                           {
+                               "itemId":  8633,
+                               "productCode":  "POP1",
+                               "isbn":  "9788387788155",
+                               "productName":  "Ortografia dla szkoły podstawowej i gimnazjum.  Pisownia wyrazów z ó i u",
+                               "oldQuantity":  3,
+                               "newQuantity":  2
+                           },
+                           {
+                               "itemId":  8634,
+                               "productCode":  "4321",
+                               "isbn":  "9788385824350",
+                               "productName":  "Test książka",
+                               "oldQuantity":  4,
+                               "newQuantity":  10
+                           },
+                           {
+                               "itemId":  8635,
+                               "productCode":  "12",
+                               "isbn":  "9788381183611",
+                               "productName":  "historia cen dwa",
+                               "oldQuantity":  4,
+                               "newQuantity":  7
+                           }
+                       ],
+    "checkout":  {
+                     "shippingMethodCode":  "inpost_kurier",
+                     "shippingAddress":  {
+                                             "phoneNumber":  "776887314",
+                                             "company":  "Sklep Testowy",
+                                             "street":  "Kartuska",
+                                             "streetNumber":  "77",
+                                             "city":  "Gdańsk",
+                                             "postcode":  "80-122"
+                                         },
+                     "billingAddress":  {
+                                            "nip":  "7195315300",
+                                            "company":  "Automaty QA",
+                                            "street":  "Grunwaldzka",
+                                            "streetNumber":  "101",
+                                            "city":  "Gdańsk",
+                                            "postcode":  "80-244"
+                                        }
+                 },
+    "summary":  {
+                    "orderId":  5682,
+                    "tokenValue":  "3mhgDcfTd7",
+                    "currency":  "PLN",
+                    "products":  [
+                                     {
+                                         "code":  "POP1",
+                                         "name":  "Ortografia dla szkoły podstawowej i gimnazjum.  Pisownia wyrazów z ó i u",
+                                         "itemId":  8633,
+                                         "quantity":  2,
+                                         "originalUnitPrice":  "150,00 PLN",
+                                         "unitPrice":  "100,00 PLN",
+                                         "discountedUnitPrice":  "75,00 PLN",
+                                         "rebatePercent":  "50,00%",
+                                         "roundedRebatePercent":  "50,00%",
+                                         "effectiveDiscountPercent":  "50,00%",
+                                         "unitDiscount":  "75,00 PLN",
+                                         "grossBeforeDiscount":  "300,00 PLN",
+                                         "calculatedDiscountTotal":  "150,00 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "150,00 PLN",
+                                         "total":  "150,00 PLN",
+                                         "subtotal":  "150,00 PLN",
+                                         "totalDifference":  "0,00 PLN",
+                                         "unitPriceNet":  "95,24 PLN",
+                                         "discountedUnitPriceNet":  "71,43 PLN",
+                                         "totalNetSalesAfterDiscount":  "142,86 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "7,14 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  15000,
+                                                     "unitPrice":  10000,
+                                                     "discountedUnitPrice":  7500,
+                                                     "rebatePercent":  50,
+                                                     "roundedRebatePercent":  50,
+                                                     "total":  15000,
+                                                     "subtotal":  15000,
+                                                     "totalNetSalesAfterDiscount":  14286,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  0
+                                                 }
+                                     },
+                                     {
+                                         "code":  "4321",
+                                         "name":  "Test książka",
+                                         "itemId":  8634,
+                                         "quantity":  10,
+                                         "originalUnitPrice":  "34,00 PLN",
+                                         "unitPrice":  "34,00 PLN",
+                                         "discountedUnitPrice":  "25,50 PLN",
+                                         "rebatePercent":  "25,00%",
+                                         "roundedRebatePercent":  "25,00%",
+                                         "effectiveDiscountPercent":  "25,00%",
+                                         "unitDiscount":  "8,50 PLN",
+                                         "grossBeforeDiscount":  "340,00 PLN",
+                                         "calculatedDiscountTotal":  "85,00 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "255,00 PLN",
+                                         "total":  "254,94 PLN",
+                                         "subtotal":  "255,00 PLN",
+                                         "totalDifference":  "-0,06 PLN",
+                                         "unitPriceNet":  "32,38 PLN",
+                                         "discountedUnitPriceNet":  "24,28 PLN",
+                                         "totalNetSalesAfterDiscount":  "242,80 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "12,14 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  3400,
+                                                     "unitPrice":  3400,
+                                                     "discountedUnitPrice":  2550,
+                                                     "rebatePercent":  25,
+                                                     "roundedRebatePercent":  25,
+                                                     "total":  25494,
+                                                     "subtotal":  25500,
+                                                     "totalNetSalesAfterDiscount":  24280,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  -6
+                                                 }
+                                     },
+                                     {
+                                         "code":  "12",
+                                         "name":  "historia cen dwa",
+                                         "itemId":  8635,
+                                         "quantity":  7,
+                                         "originalUnitPrice":  "234,00 PLN",
+                                         "unitPrice":  "250,00 PLN",
+                                         "discountedUnitPrice":  "187,50 PLN",
+                                         "rebatePercent":  "19,90%",
+                                         "roundedRebatePercent":  "20,00%",
+                                         "effectiveDiscountPercent":  "19,87%",
+                                         "unitDiscount":  "46,50 PLN",
+                                         "grossBeforeDiscount":  "1638,00 PLN",
+                                         "calculatedDiscountTotal":  "325,50 PLN",
+                                         "calculatedTotalFromDiscountedUnitPrice":  "1312,50 PLN",
+                                         "total":  "1312,49 PLN",
+                                         "subtotal":  "1312,50 PLN",
+                                         "totalDifference":  "-0,01 PLN",
+                                         "unitPriceNet":  "238,10 PLN",
+                                         "discountedUnitPriceNet":  "178,57 PLN",
+                                         "totalNetSalesAfterDiscount":  "1249,99 PLN",
+                                         "taxRate":  "5,00%",
+                                         "taxValue":  "62,50 PLN",
+                                         "raw":  {
+                                                     "originalUnitPrice":  23400,
+                                                     "unitPrice":  25000,
+                                                     "discountedUnitPrice":  18750,
+                                                     "rebatePercent":  19.9,
+                                                     "roundedRebatePercent":  20,
+                                                     "total":  131249,
+                                                     "subtotal":  131250,
+                                                     "totalNetSalesAfterDiscount":  124999,
+                                                     "taxRate":  0.05,
+                                                     "totalDifference":  -1
+                                                 }
+                                     }
+                                 ],
+                    "differentProducts":  3,
+                    "totalQuantity":  19,
+                    "itemsTotal":  "1717,43 PLN",
+                    "calculatedItemsTotal":  "1717,43 PLN",
+                    "itemsTotalDifference":  "0,00 PLN",
+                    "orderPromotionTotal":  "-572,57 PLN",
+                    "shippingTotal":  "3465,00 PLN",
+                    "shippingTotalNet":  "3300,00 PLN",
+                    "shippingTaxRate":  "5,00%",
+                    "orderTotal":  "5182,43 PLN",
+                    "calculatedOrderTotalWithoutPromotion":  "5182,43 PLN",
+                    "orderTotalDifference":  "0,00 PLN",
+                    "totalNet":  "4935,65 PLN",
+                    "taxTotal":  "246,78 PLN",
+                    "paymentMethod":  "Płatność terminowa",
+                    "shippingMethod":  "testowa wysyłka dla hurtowni",
+                    "checkoutState":  "payment_selected",
+                    "paymentState":  "cart",
+                    "shippingState":  "cart"
+                }
+}

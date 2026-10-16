@@ -1,0 +1,111 @@
+{
+  "products": [
+    {
+      "code": "testAPI2",
+      "slug": "testapi2",
+      "purpose": "produkt utworzony przez panel, fallback nazwy i slugu",
+      "channels": {
+        "WHOLESALE": {
+          "visible": true,
+          "name": "testAPI2",
+          "slug": "testapi2",
+          "price": 5000,
+          "originalPrice": 5000,
+          "description": "",
+          "shortDescription": ""
+        },
+        "RETAIL": {
+          "visible": false,
+          "slug": "testapi2"
+        },
+        "ACADEMY": {
+          "visible": false,
+          "slug": "testapi2"
+        }
+      }
+    },
+    {
+      "code": "qa-catalog-fallback-mvakpqlr",
+      "slug": "qa-katalog-zolc-fallback-mvakpqlr",
+      "purpose": "nowy produkt QA — fallback pustych tłumaczeń kanałowych",
+      "source": "https://cms-ksiegarnia.gwodev.pl/products/10213/edit",
+      "channels": {
+        "WHOLESALE": {
+          "visible": true,
+          "name": "QA Katalog żółć fallback mvakpqlr",
+          "slug": "qa-katalog-zolc-fallback-mvakpqlr",
+          "shortDescription": "Główny krótki opis QA mvakpqlr",
+          "description": "",
+          "price": 5000,
+          "originalPrice": 5000,
+          "author": "QA Autor mvakpqlr",
+          "isbnNumber": "9780008428549"
+        },
+        "RETAIL": {
+          "visible": false,
+          "slug": "qa-katalog-zolc-fallback-mvakpqlr"
+        },
+        "ACADEMY": {
+          "visible": false,
+          "slug": "qa-katalog-zolc-fallback-mvakpqlr"
+        }
+      }
+    },
+    {
+      "code": "qa-catalog-override-mvakpqlr",
+      "slug": "qa-hurt-mvakpqlr",
+      "purpose": "nowy produkt QA — osobne tłumaczenia WHOLESALE",
+      "source": "https://cms-ksiegarnia.gwodev.pl/products/10214/edit",
+      "channels": {
+        "WHOLESALE": {
+          "visible": true,
+          "name": "QA Hurt żółć override mvakpqlr",
+          "slug": "qa-hurt-mvakpqlr",
+          "shortDescription": "Hurtowy krótki opis QA mvakpqlr",
+          "descriptionContains": "Hurtowy pełny opis QA mvakpqlr",
+          "price": 6000,
+          "originalPrice": 6000,
+          "author": "QA Autor mvakpqlr",
+          "isbnNumber": "9780000744968"
+        },
+        "RETAIL": {
+          "visible": false,
+          "slug": "qa-katalog-glowny-override-mvakpqlr"
+        },
+        "ACADEMY": {
+          "visible": false,
+          "slug": "qa-katalog-glowny-override-mvakpqlr"
+        }
+      }
+    }
+  ],
+  "filters": [
+    {
+      "name": "Adamada — takson potwierdzony przez API i CMS",
+      "channel": "WHOLESALE",
+      "query": {
+        "taxons[]": [
+          "WHOLESALE_ADAMADA"
+        ]
+      },
+      "expectedCodes": [
+        "D087",
+        "D090"
+      ]
+    },
+    {
+      "name": "Takson Adamada + nazwa produktu",
+      "channel": "WHOLESALE",
+      "query": {
+        "taxons[]": [
+          "WHOLESALE_ADAMADA"
+        ],
+        "name": "Kuka Muka"
+      },
+      "expectedCodes": [
+        "D087"
+      ]
+    }
+  ],
+  "note": "Produkty i niezależne oczekiwania testów. Wypełniane po utworzeniu fixture QA; filtry wymagają wartości rzeczywiście obsługiwanych przez API, nie zgadywanych etykiet."
+}
