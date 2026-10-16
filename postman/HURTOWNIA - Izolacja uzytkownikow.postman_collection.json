@@ -1,0 +1,819 @@
+{
+  "info": {
+    "_postman_id": "93591a54-e2b9-40c6-8c9c-26b4bc0337db",
+    "name": "HURTOWNIA — izolacja użytkowników A → B",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Odtworzenie zmiany cen w cudzym koszyku mimo odmowy HTTP 404. Tylko DEV. Kolekcja tworzy jeden nowy koszyk; nie wysyła complete i nie zmienia CMS.\n\n1. Zaimportuj plik przez Import w Postmanie.\n2. W Variables uzupełnij lokalnie iso_email_a, iso_email_b, iso_api_password i iso_tests_token_a. Opcjonalnie iso_tests_token_b oraz iso_gateway_cookie. Plik nie zawiera prawdziwych danych dostępowych.\n3. Domyślnie A to konto 1 z rabatem przy odbiorze 50%. B to konto 2 z rabatem 13%. Dla innych ustawień A zmień iso_expected_rebate_a. Rabat B nie jest narzucony w asercjach: sprawdzamy niezmienność rzeczywistego stanu A.\n4. Uruchom całą kolekcję przez Run, w kolejności 01–10, z jedną iteracją. Można też wysyłać żądania ręcznie po kolei. Każdą nową próbę zaczynaj od 01.\n5. Krok 09 używa JWT B, ale token koszyka nadal należy do A. Oczekiwane 403/404 to tylko połowa kontroli.\n6. Krok 10 odczytuje koszyk jako A i porównuje pola. Sprawdź Test Results i Visualize. Wynik pozostaje również w iso_result. Odmowa w kroku 09 i zmiany w kroku 10 oznaczają odtworzony błąd.\n7. Po zakończeniu tokeny robocze są domyślnie usuwane. Dla odwrotnego kierunku zamień e-maile A/B i ustaw rabat nowego A, np. 13%.\n\nHTML lub przekierowanie zamiast JSON oznacza problem sesji GitLab, a nie wynik izolacji. Skorzystaj ze swojego działającego dostępu do API w Postmanie. Hasła i tokeny wpisuj tylko lokalnie; nie eksportuj kolekcji z uzupełnionymi sekretami.\n\nDokumentacja kolejności i zatrzymywania: https://learning.postman.com/docs/tests-and-scripts/write-scripts/postman-sandbox-reference/pm-execution/"
+  },
+  "variable": [
+    {
+      "key": "iso_base_url",
+      "value": "https://ksiegarnia.gwodev.pl/api/v2",
+      "description": "Adres DEV; inne hosty są blokowane.",
+      "type": "string"
+    },
+    {
+      "key": "iso_email_a",
+      "value": "",
+      "description": "E-mail właściciela koszyka (konto 1). Uzupełnij lokalnie.",
+      "type": "string"
+    },
+    {
+      "key": "iso_email_b",
+      "value": "",
+      "description": "E-mail innego użytkownika (konto 2). Uzupełnij lokalnie.",
+      "type": "string"
+    },
+    {
+      "key": "iso_api_password",
+      "value": "",
+      "description": "Wspólne hasło API. Uzupełnij lokalnie.",
+      "type": "string"
+    },
+    {
+      "key": "iso_tests_token_a",
+      "value": "",
+      "description": "X-Tests-Token. Uzupełnij lokalnie.",
+      "type": "string"
+    },
+    {
+      "key": "iso_tests_token_b",
+      "value": "",
+      "description": "Opcjonalny X-Tests-Token B; pusty oznacza użycie tokenu A.",
+      "type": "string"
+    },
+    {
+      "key": "iso_gateway_cookie",
+      "value": "",
+      "description": "Opcjonalny nagłówek Cookie bramki GitLab. Pusty, gdy Postman ma działającą sesję.",
+      "type": "string"
+    },
+    {
+      "key": "iso_product_code",
+      "value": "5lp-1",
+      "description": "Kod wariantu produktu.",
+      "type": "string"
+    },
+    {
+      "key": "iso_payment_code",
+      "value": "cash_on_delivery",
+      "description": "Płatność dostępna kontu A.",
+      "type": "string"
+    },
+    {
+      "key": "iso_expected_rebate_a",
+      "value": "50",
+      "description": "Oczekiwany rabat A. Zmień dla innego konta lub wyczyść, aby nie wymagać określonego procentu.",
+      "type": "string"
+    },
+    {
+      "key": "iso_clear_tokens_after_run",
+      "value": "true",
+      "description": "Usuwa tokeny i stan roboczy po kroku 10; kolejną próbę zacznij od 01.",
+      "type": "string"
+    },
+    {
+      "key": "iso_jwt_a",
+      "value": "",
+      "description": "Ustawiane automatycznie — nie uzupełniaj.",
+      "type": "string"
+    },
+    {
+      "key": "iso_jwt_b",
+      "value": "",
+      "description": "Ustawiane automatycznie — nie uzupełniaj.",
+      "type": "string"
+    },
+    {
+      "key": "iso_cart_a",
+      "value": "",
+      "description": "Ustawiane automatycznie — nie uzupełniaj.",
+      "type": "string"
+    },
+    {
+      "key": "iso_before",
+      "value": "",
+      "description": "Ustawiane automatycznie — nie uzupełniaj.",
+      "type": "string"
+    },
+    {
+      "key": "iso_foreign_status",
+      "value": "",
+      "description": "Ustawiane automatycznie — nie uzupełniaj.",
+      "type": "string"
+    },
+    {
+      "key": "iso_result",
+      "value": "",
+      "description": "Końcowy wynik z porównaniem pól finansowych, bez danych logowania i tokenów.",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "(function prepare(pm,firstId){\n  const c=pm.collectionVariables;\n  if(pm.info.requestId===firstId)for(const key of ['iso_jwt_a','iso_jwt_b','iso_cart_a','iso_before','iso_foreign_status','iso_result','iso_setup_blocked'])c.unset(key);\n  function block(message){pm.test('Konfiguracja i kolejność',()=>{throw Error(message);});c.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n  if(c.get('iso_setup_blocked')==='true'){block('Popraw wcześniejszy błąd i zacznij od żądania 01.');return;}\n  const value=key=>String(pm.variables.get(key)??'').trim();\n  if(value('iso_base_url')!=='https://ksiegarnia.gwodev.pl/api/v2'){block('Kolekcja jest przeznaczona wyłącznie dla DEV: https://ksiegarnia.gwodev.pl/api/v2');return;}\n  if(!value('iso_tests_token_a')||!value('iso_email_a')||!value('iso_email_b')||!String(pm.variables.get('iso_api_password')??'')){block('Uzupełnij iso_email_a, iso_email_b, iso_api_password i iso_tests_token_a.');return;}\n  if(value('iso_email_a').toLowerCase()===value('iso_email_b').toLowerCase()){block('Potrzebne są dwa różne konta.');return;}\n  for(const key of ['iso_jwt_a','iso_jwt_b','iso_cart_a'])pm.variables.set(key,c.get(key)||'');\n  pm.variables.set('iso_tests_token_b_effective',value('iso_tests_token_b')||value('iso_tests_token_a'));\n  for(const actor of ['a','b'])pm.variables.set('iso_email_'+actor+'_json',JSON.stringify(value('iso_email_'+actor)));\n  pm.variables.set('iso_password_json',JSON.stringify(String(pm.variables.get('iso_api_password'))));\n  pm.variables.set('iso_product_json',JSON.stringify(value('iso_product_code')));\n  pm.variables.set('iso_payment_json',JSON.stringify(value('iso_payment_code')));\n  if(value('iso_gateway_cookie'))pm.request.headers.upsert({key:'Cookie',value:value('iso_gateway_cookie')});\n})(pm,\"42d38647-78ee-49f3-8822-b1d6cbf25589\");"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "id": "42d38647-78ee-49f3-8822-b1d6cbf25589",
+      "name": "01 — Logowanie konta A",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_a}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/shop/authentication-token",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "shop",
+            "authentication-token"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":{{iso_email_a_json}},\"apiPassword\":{{iso_password_json}}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function login(pm,h,actor){\n  if(!h.expected([200]))return;const b=h.json();if(!b)return;\n  const token=typeof b==='string'?b:b.token??b.accessToken??b.bearerToken??b.jwt??b.data?.token;\n  if(!h.test('Uzyskano token konta '+actor.toUpperCase(),typeof token==='string'&&token.length>0)){h.stop('Brak tokenu.');return;}\n  if(actor==='b'&&!h.test('Konta A i B otrzymały różne tokeny',token!==h.c.get('iso_jwt_a'))){h.stop('Nie potwierdzono dwóch odrębnych tożsamości.');return;}\n  h.c.set('iso_jwt_'+actor,token);\n})(pm,h,\"a\");"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "id": "dd67ab02-39c7-445d-8700-9ede9b2ee7ac",
+      "name": "02 — Logowanie konta B",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_b_effective}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/shop/authentication-token",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "shop",
+            "authentication-token"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":{{iso_email_b_json}},\"apiPassword\":{{iso_password_json}}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function requirePrevious(pm,keys){\n  const missing=keys.filter(k=>!pm.collectionVariables.get(k));\n  if(missing.length){pm.test('Wykonano poprzednie kroki',()=>{throw Error('Brak '+missing.join(', ')+'. Zacznij od 01.');});pm.collectionVariables.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n})(pm,[\"iso_jwt_a\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function login(pm,h,actor){\n  if(!h.expected([200]))return;const b=h.json();if(!b)return;\n  const token=typeof b==='string'?b:b.token??b.accessToken??b.bearerToken??b.jwt??b.data?.token;\n  if(!h.test('Uzyskano token konta '+actor.toUpperCase(),typeof token==='string'&&token.length>0)){h.stop('Brak tokenu.');return;}\n  if(actor==='b'&&!h.test('Konta A i B otrzymały różne tokeny',token!==h.c.get('iso_jwt_a'))){h.stop('Nie potwierdzono dwóch odrębnych tożsamości.');return;}\n  h.c.set('iso_jwt_'+actor,token);\n})(pm,h,\"b\");"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "id": "ecc1c4df-b325-4777-bf0c-85f221dc38bf",
+      "name": "03 — Konto A tworzy nowy koszyk",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_a}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{iso_jwt_a}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/shop/orders",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "shop",
+            "orders"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"localeCode\":\"pl_PL\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function requirePrevious(pm,keys){\n  const missing=keys.filter(k=>!pm.collectionVariables.get(k));\n  if(missing.length){pm.test('Wykonano poprzednie kroki',()=>{throw Error('Brak '+missing.join(', ')+'. Zacznij od 01.');});pm.collectionVariables.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n})(pm,[\"iso_jwt_a\",\"iso_jwt_b\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function createCart(pm,h){\n  if(!h.expected([200,201]))return;const b=h.json();if(!b)return;\n  if(!h.test('Utworzono koszyk A',typeof b.tokenValue==='string'&&b.tokenValue.length>0)){h.stop('Brak tokenValue.');return;}\n  h.c.set('iso_cart_a',b.tokenValue);\n})(pm,h,undefined);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "id": "dddd13a8-488b-44fa-a1b7-d80e80f649fd",
+      "name": "04 — Konto A dodaje 1 sztukę produktu",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_a}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{iso_jwt_a}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/shop/orders/{{iso_cart_a}}/items/bulk",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "shop",
+            "orders",
+            "{{iso_cart_a}}",
+            "items",
+            "bulk"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"items\":[{\"productVariant\":{{iso_product_json}},\"quantity\":1}]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function requirePrevious(pm,keys){\n  const missing=keys.filter(k=>!pm.collectionVariables.get(k));\n  if(missing.length){pm.test('Wykonano poprzednie kroki',()=>{throw Error('Brak '+missing.join(', ')+'. Zacznij od 01.');});pm.collectionVariables.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n})(pm,[\"iso_jwt_a\",\"iso_cart_a\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function accepted(pm,h,codes){h.expected(codes);})(pm,h,[200,201,204]);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "id": "db19e9b5-7539-4fe7-bcf7-e1ef48b9d070",
+      "name": "05 — Konto A odczytuje płatności",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_a}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{iso_jwt_a}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/wholesale/orders/{{iso_cart_a}}/payments",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "wholesale",
+            "orders",
+            "{{iso_cart_a}}",
+            "payments"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function requirePrevious(pm,keys){\n  const missing=keys.filter(k=>!pm.collectionVariables.get(k));\n  if(missing.length){pm.test('Wykonano poprzednie kroki',()=>{throw Error('Brak '+missing.join(', ')+'. Zacznij od 01.');});pm.collectionVariables.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n})(pm,[\"iso_jwt_a\",\"iso_cart_a\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function payments(pm,h){\n  if(!h.expected([200]))return;const b=h.json();if(!b)return;\n  if(!h.test('Wybrana płatność jest dostępna kontu A',Array.isArray(b)&&b.some(p=>p.code===pm.variables.get('iso_payment_code'))))h.stop('Wybierz dostępną płatność.');\n})(pm,h,undefined);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "id": "6330992f-a6f9-41fd-99d6-bc687ef30c0e",
+      "name": "06 — Konto A wybiera płatność",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_a}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/merge-patch+json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{iso_jwt_a}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/wholesale/orders/{{iso_cart_a}}/payment-method",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "wholesale",
+            "orders",
+            "{{iso_cart_a}}",
+            "payment-method"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"paymentMethodCode\":{{iso_payment_json}}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function requirePrevious(pm,keys){\n  const missing=keys.filter(k=>!pm.collectionVariables.get(k));\n  if(missing.length){pm.test('Wykonano poprzednie kroki',()=>{throw Error('Brak '+missing.join(', ')+'. Zacznij od 01.');});pm.collectionVariables.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n})(pm,[\"iso_jwt_a\",\"iso_cart_a\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function accepted(pm,h,codes){h.expected(codes);})(pm,h,[200,204]);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "id": "0150552b-2160-45a4-833c-e7abf1b0363e",
+      "name": "07 — Konto A odczytuje dostawy",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_a}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{iso_jwt_a}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/wholesale/checkout-step-two/{{iso_cart_a}}",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "wholesale",
+            "checkout-step-two",
+            "{{iso_cart_a}}"
+          ]
+        },
+        "description": "Przygotowanie zgodne z regresją; nie wybiera dostawy ani nie zatwierdza zamówienia."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function requirePrevious(pm,keys){\n  const missing=keys.filter(k=>!pm.collectionVariables.get(k));\n  if(missing.length){pm.test('Wykonano poprzednie kroki',()=>{throw Error('Brak '+missing.join(', ')+'. Zacznij od 01.');});pm.collectionVariables.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n})(pm,[\"iso_jwt_a\",\"iso_cart_a\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function shipping(pm,h){\n  if(!h.expected([200]))return;const b=h.json();if(!b)return;\n  const raw=b.shippingMethods,list=Array.isArray(raw)?raw:raw?.['hydra:member']??raw?.member;\n  if(!h.test('Konto A otrzymało listę dostaw',Array.isArray(list)&&list.length>0))h.stop('Nie uzyskano dostaw.');\n})(pm,h,undefined);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "id": "81f0eaac-fbaf-46d4-bde8-6faf80500b01",
+      "name": "08 — Konto A — zapisz stan PRZED",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_a}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{iso_jwt_a}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/shop/orders/{{iso_cart_a}}",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "shop",
+            "orders",
+            "{{iso_cart_a}}"
+          ]
+        },
+        "description": "Zapamiętuje ID, produkt i pola finansowe; pomija adresy i tokenValue."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function requirePrevious(pm,keys){\n  const missing=keys.filter(k=>!pm.collectionVariables.get(k));\n  if(missing.length){pm.test('Wykonano poprzednie kroki',()=>{throw Error('Brak '+missing.join(', ')+'. Zacznij od 01.');});pm.collectionVariables.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n})(pm,[\"iso_jwt_a\",\"iso_cart_a\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function before(pm,h){\n  if(!h.expected([200]))return;const b=h.json();if(!b)return;\n  if(!h.test('Koszyk zawiera jedną pozycję',Array.isArray(b.items)&&b.items.length===1)){h.stop('Nieprawidłowy koszyk.');return;}\n  const s=h.snapshot(b),i=s.items[0];\n  if(!h.test('Właściwy produkt, ilość i płatność',i.code===pm.variables.get('iso_product_code')&&i.quantity===1&&s.paymentCode===pm.variables.get('iso_payment_code'))){h.stop('Nieprawidłowe przygotowanie.');return;}\n  const wanted=String(pm.variables.get('iso_expected_rebate_a')??'').trim();\n  if(wanted&&!h.test('Rabat początkowy A: '+wanted+'%',Number.isFinite(Number(wanted))&&i.rebatePercent===Number(wanted),'Otrzymano '+i.rebatePercent+'%. Sprawdź konto A i iso_expected_rebate_a.')){h.stop('Nieprawidłowy rabat początkowy.');return;}\n  h.c.set('iso_before',JSON.stringify(s));console.log('Stan PRZED — kwoty w groszach',s);\n})(pm,h,undefined);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "id": "c031dffa-183a-48be-b4d5-e79b2449b9fa",
+      "name": "09 — Konto B — płatności CUDZEGO koszyka A",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_b_effective}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{iso_jwt_b}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/wholesale/orders/{{iso_cart_a}}/payments",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "wholesale",
+            "orders",
+            "{{iso_cart_a}}",
+            "payments"
+          ]
+        },
+        "description": "Jedyne obce żądanie: JWT B, token koszyka A. Po 403/404 nadal wykonaj krok 10."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function requirePrevious(pm,keys){\n  const missing=keys.filter(k=>!pm.collectionVariables.get(k));\n  if(missing.length){pm.test('Wykonano poprzednie kroki',()=>{throw Error('Brak '+missing.join(', ')+'. Zacznij od 01.');});pm.collectionVariables.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n})(pm,[\"iso_jwt_b\",\"iso_cart_a\",\"iso_before\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function foreign(pm,h){\n  h.c.set('iso_foreign_status',String(pm.response.code));\n  h.test('Obce konto otrzymało odmowę 403/404',[403,404].includes(pm.response.code),'Obce żądanie zwróciło HTTP '+pm.response.code+'. Porównanie koszyka nastąpi w kroku 10.');\n})(pm,h,undefined);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "id": "304b44a5-1b1f-4c0b-ad22-8f06d442f85b",
+      "name": "10 — Konto A — stan PO i porównanie",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Api-Channel",
+            "value": "WHOLESALE"
+          },
+          {
+            "key": "X-Tests-Token",
+            "value": "{{iso_tests_token_a}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{iso_jwt_a}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{iso_base_url}}/shop/orders/{{iso_cart_a}}",
+          "host": [
+            "{{iso_base_url}}"
+          ],
+          "path": [
+            "shop",
+            "orders",
+            "{{iso_cart_a}}"
+          ]
+        },
+        "description": "Wyniki: Test Results, Visualize i iso_result. Nie wysyła complete."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function requirePrevious(pm,keys){\n  const missing=keys.filter(k=>!pm.collectionVariables.get(k));\n  if(missing.length){pm.test('Wykonano poprzednie kroki',()=>{throw Error('Brak '+missing.join(', ')+'. Zacznij od 01.');});pm.collectionVariables.set('iso_setup_blocked','true');pm.execution.skipRequest();pm.execution.setNextRequest(null);}\n})(pm,[\"iso_jwt_a\",\"iso_cart_a\",\"iso_before\",\"iso_foreign_status\"]);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const h=(function helpers(pm){\n  const c=pm.collectionVariables;\n  const test=(name,condition,message)=>{pm.test(name,()=>{if(!condition)throw Error(message||name);});return condition;};\n  const stop=message=>{c.set('iso_setup_blocked','true');pm.execution.setNextRequest(null);console.warn(message);};\n  const expected=codes=>{const ok=test('Oczekiwany HTTP: '+codes.join('/'),codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code);if(!ok)stop('Sprawdź odpowiedź i sesję GitLab. Przygotowanie zostało przerwane.');return ok;};\n  const json=()=>{try{return pm.response.json();}catch{test('Odpowiedź jest JSON',false,'Możliwe przekierowanie do logowania GitLab.');stop('Brak JSON.');return null;}};\n  function snapshot(o){\n    const pick=(x,keys)=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]]));\n    return {id:o.id,...pick(o,['itemsTotal','shippingTotal','total','totalNet','orderPromotionTotal']),paymentCode:o.payments?.[0]?.method?.code,items:o.items.map(i=>({code:i.product?.code,...pick(i,['id','quantity','unitPrice','originalUnitPrice','discountedUnitPrice','unitPriceNet','discountedUnitPriceNet','totalNetSalesAfterDiscount','total','rebatePercent'])})).sort((a,b)=>String(a.code).localeCompare(String(b.code)))};\n  }\n  return {c,test,stop,expected,json,snapshot};\n})(pm);",
+              "(function after(pm,h,template){\n  if(!h.expected([200]))return;const b=h.json();if(!b)return;\n  if(!h.test('Końcowy odczyt zawiera pozycje',Array.isArray(b.items))){h.stop('Brak danych do porównania.');return;}\n  const before=JSON.parse(h.c.get('iso_before')),after=h.snapshot(b),changes=[],rows=[];\n  function compare(a,z,field){\n    if(a&&z&&typeof a==='object'&&typeof z==='object'){for(const key of new Set([...Object.keys(a),...Object.keys(z)]))compare(a[key],z[key],field?field+'.'+key:key);return;}\n    if(a!==z)changes.push({field,before:a??null,after:z??null});rows.push({field,before:a??'brak',after:z??'brak'});\n  }\n  compare(before,after,'');\n  h.test('Koszyk właściciela pozostał IDENTYCZNY',changes.length===0,changes.map(d=>d.field+': '+d.before+' → '+d.after).join('; '));\n  h.test('Rabat produktu pozostał bez zmian',before.items[0].rebatePercent===after.items[0]?.rebatePercent,'Rabat: '+before.items[0].rebatePercent+'% → '+after.items[0]?.rebatePercent+'%');\n  h.test('Produkty brutto bez zmian',before.itemsTotal===after.itemsTotal,'itemsTotal: '+before.itemsTotal+' → '+after.itemsTotal+' groszy');\n  h.test('Kwota do zapłaty bez zmian',before.total===after.total,'total: '+before.total+' → '+after.total+' groszy');\n  const status=Number(h.c.get('iso_foreign_status'));\n  const summary={outcome:[403,404].includes(status)&&changes.length===0?'PASS':'FAIL',foreignStatus:status,cartId:before.id,changeCount:changes.length,changes,before,after,completeSent:false};\n  h.c.set('iso_result',JSON.stringify(summary,null,2));console.log('Wynik izolacji',summary);console.table(changes);pm.visualizer.set(template,{...summary,rows});\n  if(String(pm.variables.get('iso_clear_tokens_after_run')).toLowerCase()==='true')for(const key of ['iso_jwt_a','iso_jwt_b','iso_cart_a','iso_before','iso_foreign_status'])h.c.unset(key);\n})(pm,h,\"<style>body{font:14px system-ui;color:#183044}table{border-collapse:collapse;width:100%}td,th{padding:9px;border-bottom:1px solid #ddd;text-align:left}th{background:#edf3f7}.FAIL{color:#a32929}.PASS{color:#147248}</style><h2 class=\\\"{{outcome}}\\\">Izolacja użytkowników: {{outcome}}</h2><p>Obce żądanie: HTTP {{foreignStatus}}. Koszyk: {{cartId}}. Liczba zmienionych pól: {{changeCount}}.</p><p>Oczekiwane: odmowa 403/404 i identyczny stan koszyka. Kwoty są w groszach, rebatePercent w procentach.</p><table><tr><th>Pole</th><th>Przed — konto A</th><th>Po obcym żądaniu — konto A</th></tr>{{#each rows}}<tr><td>{{field}}</td><td>{{before}}</td><td>{{after}}</td></tr>{{/each}}</table><p>Nie wysłano complete. Wynik zapisano także w zmiennej iso_result. Lista różnic znajduje się w Postman Console.</p>\");"
+            ]
+          }
+        }
+      ],
+      "response": []
+    }
+  ]
+}

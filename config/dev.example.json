@@ -38,6 +38,7 @@
       "availableShippingCodes": null,
       "paymentQuotes": {},
       "paymentQuoteTotalBasis": "net",
+      "enforcePaymentQuoteTotal": false,
       "allPaymentRebatePercent": null,
       "groupRebatePercent": {"adamada": 10},
       "afterPayment": {},

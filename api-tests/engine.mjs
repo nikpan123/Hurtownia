@@ -8,8 +8,8 @@ import { pickAvailableMethod } from './checkout.mjs';
 
 export function normalizeOrder(o) {
   return {
-    id:o.id, tokenValue:o.tokenValue, state:o.state, currencyCode:o.currencyCode,
-    itemsTotal:o.itemsTotal, total:o.total, totalNet:o.totalNet, shippingTotal:o.shippingTotal,
+    id:o.id, number:o.number, tokenValue:o.tokenValue, state:o.state, currencyCode:o.currencyCode,
+    itemsTotal:o.itemsTotal, total:o.total, totalNet:o.totalNet, shippingTotal:o.shippingTotal, shippingTotalNet:o.shippingTotalNet, shippingTaxRate:o.shippingTaxRate,
     orderPromotionTotal:o.orderPromotionTotal, shipmentPackageQuantity:o.shipmentPackageQuantity,
     paymentCode:o.payments?.[0]?.method?.code ?? o.payments?.[0]?.method,
     shippingCode:o.shipments?.[0]?.method?.code ?? o.shipments?.[0]?.method,
@@ -24,7 +24,7 @@ export function normalizeOrder(o) {
   };
 }
 
-export async function runScenario(config, credentials, {complete=false, allowLocal=false, allowTest=false, fetchImpl=fetch, directory,signal,onProgress=()=>{},choosePayment,chooseShipping,beforeComplete,interactiveMode='manual'} = {}) {
+export async function runScenario(config, credentials, {complete=false, allowLocal=false, allowTest=false, fetchImpl=fetch, directory,signal,onProgress=()=>{},choosePayment,chooseShipping,beforeComplete,interactiveMode='manual',verifyDatabase} = {}) {
   config=await prepareProducts(config);
   validateConfig(config, {allowLocal,allowTest});
   const s = config.scenario;
@@ -35,20 +35,28 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
   await mkdir(dir,{recursive:true});
   const report = {
     generatedAt:new Date().toISOString(), environment:config.environment, baseUrl:config.baseUrl, scenario:s.name,
-    status:'RUNNING', finalization:'nie wykonano', products:s.products, productSelection:s.productSelection, expectedGroupRebates:s.expectations?.groupRebatePercent, snapshots:[], changes:[],
+    status:'RUNNING', account:s.account, finalization:'nie wykonano', products:s.products, productSelection:s.productSelection, expectedGroupRebates:s.expectations?.groupRebatePercent, snapshots:[], changes:[],
     checkoutSelection:{seed:checkoutSeed,algorithm:choosePayment||chooseShipping?'frontend-choice':'sha256-method-v1',paymentMode:choosePayment?interactiveMode:s.randomCheckout?.payment?'random':'fixed',shippingMode:chooseShipping?interactiveMode:s.randomCheckout?.shipping?'random':'fixed'},
-    payments:[], shippingMethods:[], checks:[], requests:[], documents:[]
+    payments:[], shippingMethods:[], checks:[], observations:[], requests:[], documents:[], stages:[], completeRequested:complete, completionBlocked:false
   };
   let bearer, token;
   const secretValues = [credentials.email,credentials.password,credentials.testsToken,credentials.cookie,...(credentials.cookies??[]).map(c=>c.value)].filter(Boolean);
   const redact = input => {
     return redactText(input,[...secretValues,bearer,token]);
   };
-  function check(name, condition, detail='') {
-    report.checks.push({name,status:condition?'PASS':'FAIL',detail:condition?'':redact(detail)});
-    if (!condition) throw new Error(name + (detail ? ': '+redact(detail) : ''));
+  let activeStage;
+  function finishStage(){if(!activeStage)return;const checks=report.checks.filter(c=>c.stage===activeStage.name);activeStage.status=checks.some(c=>c.status==='FAIL')?'FAIL':checks.some(c=>c.status==='PASS')?'PASS':'SKIP';activeStage.finishedAt=new Date().toISOString();}
+  function startStage(name){finishStage();activeStage={name,status:'RUNNING',startedAt:new Date().toISOString()};report.stages.push(activeStage);}
+  function financial(name,condition,detail='',comparison){
+    const c={name,stage:activeStage?.name,status:condition?'PASS':'FAIL',detail:condition?'':redact(detail),type:'financial',blocksFinalization:!condition,...(comparison?{comparison:{...comparison,delta:typeof comparison.actual==='number'&&typeof comparison.expected==='number'?comparison.actual-comparison.expected:undefined}}:{})};
+    report.checks.push(c);if(!condition){if(report.finalization==='nie wykonano')report.completionBlocked=true;onProgress('NIEZGODNOŚĆ — '+name+': '+redact(detail)+'; kontynuuję diagnostykę.');}
   }
-  const skip = (name, detail) => report.checks.push({name,status:'SKIP',detail});
+  function check(name, condition, detail='') {
+    report.checks.push({name,stage:activeStage?.name,status:condition?'PASS':'FAIL',detail:condition?'':redact(detail),type:'critical'});
+    if (!condition) throw Object.assign(new Error(name + (detail ? ': '+redact(detail) : '')),{checkRecorded:true});
+  }
+  const skip = (name, detail) => report.checks.push({name,stage:activeStage?.name,status:'SKIP',detail});
+  const observe=(name,detail,comparison)=>report.observations.push({name,stage:activeStage?.name,detail:redact(detail),comparison,blocksFinalization:false});
   async function request(method, endpoint, body, {expected, binary=false, document=false} = {}) {
     signal?.throwIfAborted();
     const url = new URL(endpoint,config.baseUrl+'/');
@@ -132,9 +140,9 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
         for (const [code,fields] of Object.entries(value)) {
           const item=order.items.find(i=>i.product?.code===code);
           check(stage+': obecność '+code,!!item);
-          for (const [field,want] of Object.entries(fields)) check(`${stage}: ${code}.${field}`,isDeepStrictEqual(item[field],want),`oczekiwano ${JSON.stringify(want)}, otrzymano ${JSON.stringify(item[field])}`);
+          for (const [field,want] of Object.entries(fields)) financial(`${stage}: ${code}.${field}`,isDeepStrictEqual(item[field],want),`oczekiwano ${JSON.stringify(want)}, otrzymano ${JSON.stringify(item[field])}`,{field,product:code,expected:want,actual:item[field],unit:typeof want==='number'&&/price|total/i.test(field)?'minor':'value'});
         }
-      } else check(stage+': '+key,isDeepStrictEqual(order[key],value),`oczekiwano ${JSON.stringify(value)}, otrzymano ${JSON.stringify(order[key])}`);
+      } else financial(stage+': '+key,isDeepStrictEqual(order[key],value),`oczekiwano ${JSON.stringify(value)}, otrzymano ${JSON.stringify(order[key])}`,{field:key,expected:value,actual:order[key],unit:typeof value==='number'&&/price|total/i.test(key)?'minor':'value'});
     }
   }
   async function snapshot(stage, {edited=false, expectations, selected=false, verifyGroupRebates=false}={}) {
@@ -151,17 +159,18 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
       check(stage+': rabat procentowy '+i.code, typeof i.rebatePercent==='number' && i.rebatePercent>=0 && i.rebatePercent<=100);
       if (verifyGroupRebates || selected) {
         const planned=s.products.find(p=>p.productVariant?p.productVariant===i.code:isbn(p.isbn)===isbn(i.isbn));
-        const expectedPercent=s.expectations?.groupRebatePercent?.[planned?.group];
-        if (expectedPercent!=null) check(`${stage}: rabat grupy ${planned.group} dla ${i.code}`,i.rebatePercent===expectedPercent,`oczekiwano ${expectedPercent}%, otrzymano ${i.rebatePercent}%`);
+        const expectedPercent=s.expectations?.groupRebatePercent?.[planned?.group]??s.expectations?.paymentRebatePercentByCode?.[selectedPaymentCode];
+        if (expectedPercent!=null) financial(`${stage}: rabat grupy ${planned.group} dla ${i.code}`,i.rebatePercent===expectedPercent,`oczekiwano ${expectedPercent}%, otrzymano ${i.rebatePercent}%`,{field:'rebatePercent',product:i.code,expected:expectedPercent,actual:i.rebatePercent,unit:'percent'});
       }
       const tolerance=s.expectations?.lineRoundingToleranceMinor;
-      if (tolerance!=null) check(stage+': zaokrąglenie pozycji '+i.code,Math.abs(i.lineDifference)<=tolerance,`różnica ${i.lineDifference} groszy, tolerancja ${tolerance}`);
+      if (tolerance!=null) financial(stage+': zaokrąglenie pozycji '+i.code,Math.abs(i.lineDifference)<=tolerance,`różnica ${i.lineDifference} groszy, tolerancja ${tolerance}`,{product:i.code,field:'total',expected:i.discountedUnitPrice*i.quantity,actual:i.total,unit:'minor'});
+      if(i.rebatePercent===0&&i.unitPrice===i.discountedUnitPrice&&i.unitPriceNet!==i.discountedUnitPriceNet)observe(stage+': różne jednostkowe pola netto przy rabacie 0% / '+i.code,`unitPriceNet: ${i.unitPriceNet}; discountedUnitPriceNet: ${i.discountedUnitPriceNet} groszy. Nie ustalono reguły, która wymaga równości tych zaokrąglonych pól. Sama ta różnica nie potwierdza błędnej kwoty zamówienia i nie blokuje zapisu.`,{product:i.code,field:'discountedUnitPriceNet',expected:i.unitPriceNet,actual:i.discountedUnitPriceNet,unit:'minor'});
     }
     verifyPlan(o,edited);
     check(stage+': sumy są kwotami w groszach',['itemsTotal','shippingTotal','total','totalNet'].every(k=>Number.isSafeInteger(o[k])&&o[k]>=0));
-    check(stage+': suma pozycji',o.itemsTotal===o.items.reduce((sum,i)=>sum+i.total,0));
+    financial(stage+': suma pozycji',o.itemsTotal===o.items.reduce((sum,i)=>sum+i.total,0),'Suma total pozycji musi odpowiadać itemsTotal.',{field:'itemsTotal',expected:o.items.reduce((sum,i)=>sum+i.total,0),actual:o.itemsTotal,unit:'minor'});
     // Historyczne odpowiedzi pokazują, że orderPromotionTotal jest już ujęte w itemsTotal.
-    check(stage+': do zapłaty = produkty + dostawa',o.total===o.itemsTotal+o.shippingTotal);
+    financial(stage+': do zapłaty = produkty + dostawa',o.total===o.itemsTotal+o.shippingTotal,'total musi odpowiadać itemsTotal + shippingTotal.',{field:'total',expected:o.itemsTotal+o.shippingTotal,actual:o.total,unit:'minor'});
     if (selected) {
       check(stage+': zapisana płatność',normalized.paymentCode===selectedPaymentCode);
       check(stage+': zapisana dostawa',normalized.shippingCode===selectedShippingCode);
@@ -170,15 +179,18 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
     return o;
   }
   try {
+    startStage('Logowanie');
     const {data:auth}=await request('POST','shop/authentication-token',{email:credentials.email,apiPassword:credentials.password});
     bearer=typeof auth==='string'?auth:auth?.token??auth?.accessToken??auth?.bearerToken??auth?.jwt??auth?.data?.token??auth?.data?.accessToken;
     check('Uzyskano token API',typeof bearer==='string'&&!!bearer);
+    startStage('Utworzenie koszyka i dodanie produktów');
     const {data:created}=await request('POST','shop/orders',{localeCode:'pl_PL'});
     token=created?.tokenValue;
     check('Utworzono nowy koszyk',typeof token==='string'&&!!token);
     report.orderId=created.id;
     await request('POST',orderPath()+'/items/bulk',{items:s.products.map(p=>({...(p.productVariant?{productVariant:p.productVariant}:{isbn:p.isbn}),quantity:p.quantity}))});
     let order=await snapshot('Po dodaniu produktów');
+    startStage('Edycja ilości');
     const edits=new Map();
     for (const p of s.products.filter(p=>p.newQuantity!==undefined)) {
       const i=matched(p,order);
@@ -187,6 +199,7 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
     }
     for (const [id,quantity] of edits) await request('PATCH',orderPath()+'/items/'+encodeURIComponent(id),{quantity});
     order=await snapshot('Po edycji ilości',{edited:true});
+    startStage('Płatność i rabaty');
     const {data:payments}=await request('GET',wholesalePath()+'/payments');
     check('Niepusta lista płatności',Array.isArray(payments)&&payments.length>0);
     report.payments=payments.map(p=>({code:p.code,name:p.name,rebatePercent:p.rebatePercent,orderItemTotal:p.orderItemTotal}));
@@ -202,12 +215,13 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
     const groups=[...new Set(s.products.map(p=>p.group))];
     const groupPaymentRebate=groups.length===1?s.expectations?.groupRebatePercent?.[groups[0]]:undefined;
     const expectedPaymentRebate=groupPaymentRebate??s.expectations?.allPaymentRebatePercent;
-    if (!Object.keys(s.expectations?.paymentQuotes??{}).length && expectedPaymentRebate==null) skip('Rabaty ofert płatności / Adamada','Uzupełnij paymentQuotes, groupRebatePercent lub allPaymentRebatePercent dla potwierdzonych produktów i ustawień konta.');
-    if (expectedPaymentRebate!=null) for (const p of payments) check('Oczekiwany rabat dla każdej płatności: '+p.code,p.rebatePercent===expectedPaymentRebate,`oczekiwano ${expectedPaymentRebate}%, otrzymano ${p.rebatePercent}%`);
+    if (!Object.keys(s.expectations?.paymentQuotes??{}).length && !Object.keys(s.expectations?.paymentRebatePercentByCode??{}).length && expectedPaymentRebate==null) skip('Rabaty ofert płatności / Adamada','Uzupełnij paymentQuotes, groupRebatePercent lub allPaymentRebatePercent dla potwierdzonych produktów i ustawień konta.');
+    if (expectedPaymentRebate!=null) for (const p of payments) financial('Oczekiwany rabat dla każdej płatności: '+p.code,p.rebatePercent===expectedPaymentRebate,`oczekiwano ${expectedPaymentRebate}%, otrzymano ${p.rebatePercent}%`,{field:'rebatePercent',payment:p.code,expected:expectedPaymentRebate,actual:p.rebatePercent,unit:'percent'});
+    if(expectedPaymentRebate==null&&s.expectations?.paymentRebatePercentByCode)for(const p of payments){const expected=s.expectations.paymentRebatePercentByCode[p.code];financial('Wzorzec rabatu konta: '+p.code,Number.isFinite(expected)&&p.rebatePercent===expected,`oczekiwano ${expected??'brak wzorca'}%, otrzymano ${p.rebatePercent}%`,{field:'rebatePercent',payment:p.code,expected:expected,actual:p.rebatePercent,unit:'percent'});}
     for (const [code,fields] of Object.entries(s.expectations?.paymentQuotes??{})) {
       const p=payments.find(p=>p.code===code);
       check('Oferta płatności istnieje: '+code,!!p);
-      for (const [field,value] of Object.entries(fields)) check(`Oferta ${code}: ${field}`,isDeepStrictEqual(p[field],value));
+      for (const [field,value] of Object.entries(fields)) financial(`Oferta ${code}: ${field}`,isDeepStrictEqual(p[field],value),`oczekiwano ${value}, otrzymano ${p[field]}`,{field,payment:code,expected:value,actual:p[field],unit:field==='orderItemTotal'?'minor':'value'});
     }
     await request('PATCH',wholesalePath()+'/payment-method',{paymentMethodCode:selectedPaymentCode});
     order=await snapshot('Po wyborze płatności',{edited:true,expectations:s.expectations?.afterPayment,verifyGroupRebates:true});
@@ -216,10 +230,16 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
     check('Wycena płatności zawiera kwotę produktów',Number.isSafeInteger(quote.orderItemTotal)&&quote.orderItemTotal>=0);
     const quoteBasis=s.expectations?.paymentQuoteTotalBasis;
     report.paymentQuoteTotalBasis=quoteBasis??'nieustalona';
+    report.paymentQuoteComparisonEnforced=s.expectations?.enforcePaymentQuoteTotal===true;
     if (quoteBasis==='net' || quoteBasis==='gross') {
       const actual=quoteBasis==='net'?order.items.reduce((sum,i)=>sum+i.totalNetSalesAfterDiscount,0):order.itemsTotal;
-      check('Cena produktów '+(quoteBasis==='net'?'netto':'brutto')+' po wyborze płatności zgodna z jej ofertą',actual===quote.orderItemTotal,
-        `Oferta: ${quote.orderItemTotal} groszy; produkty ${quoteBasis==='net'?'netto':'brutto'}: ${actual} groszy.`);
+      if(report.paymentQuoteComparisonEnforced){
+      financial('Cena produktów '+(quoteBasis==='net'?'netto':'brutto')+' po wyborze płatności zgodna z jej ofertą',actual===quote.orderItemTotal,
+        `Oferta: ${quote.orderItemTotal} groszy; produkty ${quoteBasis==='net'?'netto':'brutto'}: ${actual} groszy.`,{field:'orderItemTotal',payment:selectedPaymentCode,expected:quote.orderItemTotal,actual,unit:'minor',expectedSource:'GET /wholesale/orders/{token}/payments — orderItemTotal',actualSource:'GET /shop/orders/{token} — '+(quoteBasis==='net'?'suma totalNetSalesAfterDiscount':'itemsTotal')});
+      }else{
+        observe('Zestawienie oferty płatności i produktów '+(quoteBasis==='net'?'netto':'brutto'),`Oferta: ${quote.orderItemTotal} groszy; produkty: ${actual} groszy; różnica: ${actual-quote.orderItemTotal} groszy. Porównanie informacyjne — nie potwierdzono wspólnej reguły naliczania i zaokrąglania.`,{field:'orderItemTotal',payment:selectedPaymentCode,expected:quote.orderItemTotal,actual,unit:'minor'});
+        skip('Ścisła zgodność oferty płatności z sumą produktów','Brak potwierdzonej reguły naliczania i zaokrąglania. Zapisano obserwację; enforcePaymentQuoteTotal=true włącza wymaganie ścisłej równości.');
+      }
     } else skip('Porównanie ceny z ofertą płatności','Ustaw paymentQuoteTotalBasis: net lub gross zgodnie z kontraktem orderItemTotal.');
     for (const code of s.forbiddenPaymentCodes??[]) {
       check('Zabroniona płatność nie jest oferowana: '+code,!payments.some(p=>p.code===code));
@@ -227,6 +247,7 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
       const after=await snapshot('Po odrzuceniu płatności '+code,{edited:true});
       check('Odrzucenie nie zmienia płatności i kwot',isDeepStrictEqual(normalizeOrder(after),normalizeOrder(order)));
     }
+    startStage('Dostawa i podsumowanie');
     const checkout=`wholesale/checkout-step-two/${encodeURIComponent(token)}`;
     const {data:stepTwo}=await request('GET',checkout);
     const rawShipping=stepTwo?.shippingMethods;
@@ -243,7 +264,16 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
     await request('POST',checkout,{orderTokenValue:token,shippingMethodCode:selectedShippingCode,shippingAddress:s.shippingAddress,billingAddress:s.billingAddress});
     order=await snapshot('Przed finalizacją',{edited:true,selected:true,expectations:s.expectations?.beforeComplete});
     if (s.expectations?.lineRoundingToleranceMinor==null) skip('Reguła zaokrągleń','Różnice pokazano w raporcie; brak potwierdzonej tolerancji biznesowej w groszach.');
-    if (complete) {
+    startStage('Finalizacja');
+    if(complete&&report.checks.some(c=>c.status==='FAIL')){
+      report.finalization='zablokowana — wykryto niezgodności przed zapisem';
+      skip('Zapis zamówienia zablokowany','Nie wysłano PATCH complete. Wykryte różnice zachowano jako FAIL; dalsze etapy koszyka sprawdzono diagnostycznie.');
+      report.finalizationBlockReasons=report.checks.filter(c=>c.status==='FAIL').map(c=>({name:c.name,stage:c.stage}));
+      startStage('Dokumenty PDF');
+      skip('Dokumenty PDF','Nie wykonano, ponieważ zapis zamówienia został zablokowany.');
+      startStage('Porównanie baz');
+      skip('Porównanie baz','Nie wykonano, ponieważ zapis zamówienia został zablokowany.');
+    } else if (complete) {
       if(beforeComplete)await beforeComplete({order:publicOrder(order),shippingAddress:s.shippingAddress,billingAddress:s.billingAddress});
       signal?.throwIfAborted();
       report.finalization='rozpoczęta — wynik niepotwierdzony';
@@ -254,6 +284,9 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
       if(typeof after.state==='string')check('Zamówienie opuściło stan koszyka',after.state!=='cart');
       else skip('Zamówienie opuściło stan koszyka','API przyjęło complete, ale GET zamówienia nie zwraca pola state. Zmiana stanu nie została osobno potwierdzona.');
       check('Kwoty nie zmieniły się przy finalizacji',after.total===order.total && after.totalNet===order.totalNet && after.itemsTotal===order.itemsTotal && after.shippingTotal===order.shippingTotal);
+      for(const field of ['shippingTotalNet','shipmentPackageQuantity'])if(order[field]!==undefined)check(field+': bez zmiany przy finalizacji',after[field]===order[field],`przed ${order[field]}, po ${after[field]}`);
+      report.finalization='potwierdzona przez API';
+      startStage('Dokumenty PDF');
       const documents={...final,...after,pdfSummary:after.pdfSummary??final?.pdfSummary,paymentForm:after.paymentForm??final?.paymentForm,checkoutInformation:after.checkoutInformation??final?.checkoutInformation};
       for (const info of s.expectations?.checkoutInformationIncludes??[]) check('checkoutInformation zawiera '+info,Array.isArray(documents.checkoutInformation)?documents.checkoutInformation.includes(info):typeof documents.checkoutInformation==='object'&&documents.checkoutInformation!==null ? Object.hasOwn(documents.checkoutInformation,info):String(documents.checkoutInformation??'').includes(info));
       for (const kind of ['pdfSummary','paymentForm']) {
@@ -276,13 +309,21 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
         report.documents.push({kind,file,bytes:bytes.length});
       }
       report.finalization='potwierdzona przez API';
+      startStage('Porównanie baz');
+      if(verifyDatabase){onProgress('Porównanie zapisu z bazami Sylius i transfer');const result=await verifyDatabase(publicOrder(after),s.products);report.databaseComparison=result;report.checks.push(...result.checks);if(result.checks.some(c=>c.status==='FAIL'))throw new Error('Wykryto różnice API / baza — szczegóły w porównaniu bazy.');}
+      else skip('Porównanie z bazą Sylius i transfer','Włącz porównanie z bazą w panelu lub HURT_VERIFY_DATABASE=true.');
       skip('E-mail, treść PDF i baza transferowa','Brak integracji ze skrzynką, ekstraktorem PDF i bazą transferową.');
     } else skip('Finalizacja i dokumenty PDF','Uruchom z --complete na dedykowanym koncie dev.');
-    report.status='PASS';
+    report.status=report.checks.some(c=>c.status==='FAIL')?'FAIL':'PASS';
+    if(report.status==='FAIL')report.error=report.checks.filter(c=>c.status==='FAIL').map(c=>c.name+(c.detail?': '+c.detail:'')).join('\n');
   } catch (error) {
     report.status='FAIL'; report.error=redact(error.message);
-    if (!report.checks.some(c=>c.status==='FAIL')) report.checks.push({name:'Przebieg',status:'FAIL',detail:report.error});
+    if (!error.checkRecorded) report.checks.push({name:'Przerwanie przebiegu',stage:activeStage?.name,status:'FAIL',type:'critical',detail:report.error});
+    report.interrupted=true;
   } finally {
+    finishStage();
+    if(complete&&report.interrupted&&report.finalization==='nie wykonano'){report.completionBlocked=true;report.finalization='zablokowana — przebieg przerwany przed zapisem';}
+    for(const name of ['Logowanie','Utworzenie koszyka i dodanie produktów','Edycja ilości','Płatność i rabaty','Dostawa i podsumowanie','Finalizacja','Dokumenty PDF','Porównanie baz'])if(!report.stages.some(s=>s.name===name))report.stages.push({name,status:'SKIP',reason:report.interrupted?'Nie osiągnięto etapu — przebieg przerwano.':!complete?'Nie uruchamiano finalizacji w tym wariancie.':'Etap zależny nie został uruchomiony.'});
     // Usuwamy token koszyka oraz ewentualne sekrety odbite w odpowiedzi API.
     for (const snapshot of report.snapshots) delete snapshot.order.tokenValue;
     const scrub = value => typeof value==='string' ? redact(value) : Array.isArray(value) ? value.map(scrub) : value && typeof value==='object' ? Object.fromEntries(Object.entries(value).map(([k,v])=>[k,scrub(v)])) : value;

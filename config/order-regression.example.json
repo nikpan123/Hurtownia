@@ -1,0 +1,72 @@
+{
+  "groups": {
+    "pozostale": [
+      {
+        "productVariant": "5lp-1"
+      },
+      {
+        "productVariant": "POP1"
+      }
+    ],
+    "adamada": [
+      {
+        "productVariant": "D087"
+      },
+      {
+        "productVariant": "D090"
+      }
+    ]
+  },
+  "quantities": [
+    2,
+    6,
+    1
+  ],
+  "invalidQuantities": [
+    -1,
+    0,
+    1.5
+  ],
+  "adamadaRebatePercent": 10,
+  "paymentRebates": {
+    "bank_transfer": 23
+  },
+  "maxCombinations": 48,
+  "nonPackageShippingCodes": [],
+  "validationStatuses": {
+    "quantity": [
+      400,
+      422
+    ],
+    "product": [
+      400,
+      404,
+      422
+    ],
+    "payment": [
+      400,
+      404,
+      422
+    ],
+    "shipping": [
+      400,
+      404,
+      422
+    ],
+    "complete": [
+      400,
+      422
+    ]
+  },
+  "packages": {
+    "shippingCode": "gls_wholesale",
+    "paymentCode": "cash_on_delivery",
+    "paymentSurchargeGrossMinor": null,
+    "product": {
+      "productVariant": "5lp-1",
+      "unitWeightGrams": null
+    },
+    "calculator": null,
+    "note": "Uzupełnij niezależny wzorzec z CMS. calculator: singlePackageWeight, priceIsNet, taxPercent, weightRanges:[{from,to,priceMinor}]. Granice w gramach włącznie. Ceny w groszach."
+  }
+}

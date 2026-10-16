@@ -23,6 +23,7 @@ export async function fixtureConfig(baseUrl) {
   c.scenario.expectations.afterPayment={itemsTotal:22500,items:{testhurtA:{quantity:3,rebatePercent:25,productName:'Produkt demonstracyjny WHOLESALE'}}};
   c.scenario.expectations.paymentQuotes={cash_on_delivery:{rebatePercent:25,orderItemTotal:22500}};
   c.scenario.expectations.paymentQuoteTotalBasis='gross';
+  c.scenario.expectations.enforcePaymentQuoteTotal=true;
   c.scenario.expectations.checkoutInformationIncludes=['shop_billing'];
   c.scenario.expectations.requirePaymentForm=true;
   c.scenario.expectations.lineRoundingToleranceMinor=0;
@@ -50,6 +51,15 @@ test('Pełny checkout, historia cen, dokumenty i brak sekretów w raporcie',asyn
 test('Bez --complete nie finalizuje i nie pobiera PDF',async()=>{
   const r=await exercise({},false);assert.equal(r.report.status,'PASS',r.report.error);
   assert(!r.requests.some(r=>r.url.endsWith('/complete')));assert.equal(r.report.documents.length,0);
+});
+
+test('Wzorzec rabatów wybranego konta odrzuca ofertę z rabatem innego użytkownika',async()=>{
+  for(const rebate of [25,13]){
+    const r=await exercise({},false,c=>{c.scenario.expectations.paymentRebatePercentByCode={cash_on_delivery:rebate,bank_transfer_1_day:rebate};});
+    assert.equal(r.report.status,rebate===25?'PASS':'FAIL');
+    if(rebate===13)assert(r.report.checks.some(c=>c.name==='Wzorzec rabatu konta: cash_on_delivery'&&c.status==='FAIL'));
+    assert(!r.requests.some(r=>r.url.endsWith('/complete')));
+  }
 });
 
 test('Brak pola state jest jawnie pominiętą kontrolą i nie blokuje pobrania dokumentów po complete',async()=>{
@@ -162,10 +172,14 @@ test('Oferta Adamady 10% i pozycja 50% dają jednoznaczny błąd przed complete'
   assert.equal(r.report.status,'FAIL');assert(r.report.error.includes('oczekiwano 10%, otrzymano 50%'));
   assert(!r.requests.some(r=>r.url.endsWith('/complete')));
 });
-test('Niepoprawne oferty Adamady zatrzymują test przed wyborem płatności',async()=>{
+test('Niepoprawne oferty Adamady pozwalają sprawdzić koszyk, ale blokują zapis',async()=>{
   const r=await exercise({itemRebatePercent:10,paymentRebatePercent:25},true,adamadaScenario);
   assert.equal(r.report.status,'FAIL');assert(r.report.error.includes('oczekiwano 10%, otrzymano 25%'));
-  assert(!r.requests.some(r=>r.url.endsWith('/payment-method')));
+  assert(r.requests.some(r=>r.url.endsWith('/payment-method')));
+  assert(r.report.snapshots.some(s=>s.stage==='Przed finalizacją'));
+  assert(!r.requests.some(r=>r.url.endsWith('/complete')));
+  assert.equal(r.report.completionBlocked,true);
+  assert.equal(r.report.stages.find(s=>s.name==='Dokumenty PDF').status,'SKIP');
 });
 test('Reguła 10% Adamady nie jest stosowana do pozostałych produktów',async()=>{
   const r=await exercise({},false,c=>{c.scenario.products[0].group='pozostale';});
@@ -184,4 +198,36 @@ test('Ciasteczka respektują domenę, ścieżkę, secure i wygaśnięcie',()=>{
   const cookies=[{name:'a',value:'1',domain:'.gwodev.pl',path:'/',secure:true,expires:-1},{name:'gitlab',value:'secret',domain:'gitlab.gwo.pl',path:'/'},{name:'admin',value:'secret',domain:'ksiegarnia.gwodev.pl',path:'/admin'},{name:'expired',value:'secret',domain:'ksiegarnia.gwodev.pl',path:'/',expires:1}];
   assert.equal(cookieHeader(cookies,'https://ksiegarnia.gwodev.pl/api/v2'),'a=1');
   assert.equal(cookieHeader(cookies,'http://ksiegarnia.gwodev.pl/api/v2'),'');
+});
+
+test('Automatyczne porównanie bazy uruchamia się po complete i zapisuje wszystkie różnice bez ponownego zamówienia',async()=>{
+  const mock=await startMock();try{let calls=0;const result=await runScenario(await fixtureConfig(mock.baseUrl),credentials,{complete:true,allowLocal:true,directory:await mkdtemp(path.join(os.tmpdir(),'hurt-db-hook-')),verifyDatabase:async(order)=>{calls++;assert(!order.tokenValue);return {checks:[{name:'Cena w bazie',status:'FAIL',detail:'API: 100; baza: 99'},{name:'Ilość w bazie',status:'FAIL',detail:'API: 3; baza: 2'}],snapshot:{}};}});assert.equal(calls,1);assert.equal(result.report.status,'FAIL');assert.equal(result.report.finalization,'potwierdzona przez API');assert.equal(result.report.databaseComparison.checks.length,2);assert.equal(mock.requests.filter(r=>r.url.endsWith('/complete')).length,1);}finally{await mock.close();}
+});
+
+
+test('Różne zaokrąglone pola netto przy rabacie 0% są obserwacją, a poprawne brutto pozwala zapisać zamówienie',async()=>{
+  const r=await exercise({itemRebatePercent:0,paymentRebatePercent:0,netUnitRoundingOffset:-1,quoteNet:true},true,c=>{
+    c.scenario.expectations.enforcePaymentQuoteTotal=false;
+    c.scenario.expectations.paymentQuoteTotalBasis='net';
+    c.scenario.expectations.paymentQuotes={};c.scenario.expectations.afterPayment={};
+  });
+  assert.equal(r.report.status,'PASS',r.report.error);
+  assert.equal(r.report.completionBlocked,false);
+  assert.equal(r.requests.filter(r=>r.url.endsWith('/complete')).length,1);
+  assert(r.report.observations.some(o=>o.name.includes('różne jednostkowe pola netto')&&o.blocksFinalization===false));
+  assert(r.html.includes('Obserwacje — nie są błędami'));
+});
+
+test('Oferta porównywana informacyjnie nie blokuje zapisu, ale potwierdzona ścisła reguła blokuje',async()=>{
+  for(const strict of [false,true]){
+    const r=await exercise({quoteNet:true},true,c=>{
+      c.scenario.expectations.enforcePaymentQuoteTotal=strict;
+      c.scenario.expectations.paymentQuotes={};
+    });
+    assert.equal(r.report.status,strict?'FAIL':'PASS',r.report.error);
+    assert.equal(r.requests.some(r=>r.url.endsWith('/complete')),!strict);
+    assert.equal(r.report.paymentQuoteComparisonEnforced,strict);
+    if(strict)assert(r.report.checks.some(c=>c.status==='FAIL'&&c.comparison?.field==='orderItemTotal'));
+    else assert(r.report.observations.some(o=>o.comparison?.field==='orderItemTotal'&&o.comparison.actual!==o.comparison.expected));
+  }
 });

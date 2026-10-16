@@ -1,0 +1,222 @@
+[
+  {
+    "id": "HURT-BUG-37162-01",
+    "title": "Oryginalny payload: m-F8P × 9 i D414 × 5 — trzy nowe koszyki",
+    "suite": "redmine-37162"
+  },
+  {
+    "id": "HURT-BUG-37162-02",
+    "title": "Sam produkt m-F8P × 9",
+    "suite": "redmine-37162"
+  },
+  {
+    "id": "HURT-BUG-37162-03",
+    "title": "Sam produkt D414 × 5",
+    "suite": "redmine-37162"
+  },
+  {
+    "id": "HURT-BUG-37162-04",
+    "title": "Odwrotna kolejność w żądaniu zbiorczym",
+    "suite": "redmine-37162"
+  },
+  {
+    "id": "HURT-BUG-37162-05",
+    "title": "Dodawanie kolejno: m-F8P, następnie D414",
+    "suite": "redmine-37162"
+  },
+  {
+    "id": "HURT-BUG-37162-06",
+    "title": "Dodawanie kolejno: D414, następnie m-F8P",
+    "suite": "redmine-37162"
+  },
+  {
+    "id": "HURT-36926-01",
+    "title": "Poprawny zapis: HTTP 201 i puste body",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-02",
+    "title": "Odczyt zapisanych pól adresu dostawy",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-03",
+    "title": "Odczyt zapisanych pól adresu faktury",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-04",
+    "title": "Zapis dostępnej metody dostawy",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-05",
+    "title": "Opcjonalne flagi pominięte: brak zapisu do książki i zmiany domyślnych",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-06",
+    "title": "carrierName trafia do order.notes",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-07",
+    "title": "Adres dostawy: brak company",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-08",
+    "title": "Adres dostawy: puste company",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-09",
+    "title": "Adres dostawy: brak street",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-10",
+    "title": "Adres dostawy: puste street",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-11",
+    "title": "Adres dostawy: brak streetNumber",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-12",
+    "title": "Adres dostawy: puste streetNumber",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-13",
+    "title": "Adres dostawy: brak city",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-14",
+    "title": "Adres dostawy: puste city",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-15",
+    "title": "Adres dostawy: brak postcode",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-16",
+    "title": "Adres dostawy: puste postcode",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-17",
+    "title": "Adres dostawy: brak phoneNumber",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-18",
+    "title": "Adres dostawy: puste phoneNumber",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-19",
+    "title": "Adres faktury: brak company",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-20",
+    "title": "Adres faktury: puste company",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-21",
+    "title": "Adres faktury: brak street",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-22",
+    "title": "Adres faktury: puste street",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-23",
+    "title": "Adres faktury: brak streetNumber",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-24",
+    "title": "Adres faktury: puste streetNumber",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-25",
+    "title": "Adres faktury: brak city",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-26",
+    "title": "Adres faktury: puste city",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-27",
+    "title": "Adres faktury: brak postcode",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-28",
+    "title": "Adres faktury: puste postcode",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-29",
+    "title": "Adres faktury: brak nip",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-30",
+    "title": "Adres faktury: puste nip",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-31",
+    "title": "Brak obiektu shippingAddress",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-32",
+    "title": "Brak obiektu billingAddress",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-33",
+    "title": "Brak shippingMethodCode",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-34",
+    "title": "Niedostępna metoda dostawy",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-35",
+    "title": "Nieistniejący token zamówienia w URL",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-36",
+    "title": "Brak tokenu w URL",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-37",
+    "title": "Zapis obu adresów do książki i usunięcie tylko danych QA",
+    "suite": "redmine-36926"
+  },
+  {
+    "id": "HURT-36926-38",
+    "title": "Ustawienie i aktualizacja domyślnych adresów dla kanału",
+    "suite": "redmine-36926"
+  }
+]

@@ -1,6 +1,7 @@
 import { loadEnv, loadConfig, validateConfig, credentialsFor } from './config.mjs';
 import { runScenario } from './engine.mjs';
 import { prepareProducts } from './products.mjs';
+import {databaseVerifier} from './database.mjs';
 
 try {
   await loadEnv();
@@ -29,7 +30,8 @@ try {
     const prepared=await prepareProducts(config);
     console.log(JSON.stringify({environment:config.environment,baseUrl:config.baseUrl,enabled:config.enabled,scenario:config.scenario?.name,products:prepared.scenario?.products,seed:prepared.scenario?.productSelection?.seed??config.scenario?.randomCheckout?.seed,group:prepared.scenario?.productSelection?.group,payment:config.scenario?.randomCheckout?.payment?'Losowanie z listy API bieżącego koszyka':config.scenario?.paymentMethodCode,shipping:config.scenario?.randomCheckout?.shipping?'Losowanie z listy API po wyborze płatności':config.scenario?.shippingMethodCode,complete:args.includes('--complete'),networkRequests:0},null,2));
   } else {
-    const result=await runScenario(config,await credentialsFor(config),{complete:args.includes('--complete'),allowTest});
+    const verifyDatabase=process.env.HURT_VERIFY_DATABASE==='true'?databaseVerifier({vars:process.env,sessionFile:config.sessionFile??'.auth/dev.json'}):undefined;
+    const result=await runScenario(config,await credentialsFor(config),{complete:args.includes('--complete'),allowTest,verifyDatabase});
     console.log(result.report.status+' — '+result.directory);
     if (result.report.error) console.error(result.report.error);
     process.exitCode=result.report.status==='PASS'?0:1;

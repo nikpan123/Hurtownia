@@ -1,3 +1,4 @@
+import {accountSummaries} from './account-summary.mjs';
 import http from 'node:http';
 import {readFile,readdir,realpath} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
@@ -6,16 +7,34 @@ import {parseEnv} from 'node:util';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {ApiClient} from '../api-tests/http.mjs';
+import {runShipmentRegression} from '../api-tests/redmine-37162.mjs';
+import {runAddressRegression} from '../api-tests/redmine-36926.mjs';
 import {runScenario} from '../api-tests/engine.mjs';
 import {runCatalog} from '../api-tests/catalog.mjs';
 import {ChoiceGate,validateSelection,availableProducts} from './wizard.mjs';
 import {redactText} from '../api-tests/config.mjs';
 import {runProductCreation,runRounding,runDescriptions,productPayload} from '../api-tests/features.mjs';
+import {runOrderRegression} from '../api-tests/order-regression.mjs';
+import {withShippingConfiguration,validateShippingProfile} from '../api-tests/shipping-cms.mjs';
+import {databaseVerifier,verifySavedReport} from '../api-tests/database.mjs';
+import {saveFeatureReport} from '../api-tests/feature-report.mjs';
+import {renderDocumentation} from './documentation.mjs';
+import {secondAccountFromEnv} from '../api-tests/second-account.mjs';
+import {checkoutForAccount} from './checkout-account.mjs';
+import {saveCustomEmail} from './custom-user.mjs';
+import {readWholesalerRebates} from '../api-tests/wholesaler-cms.mjs';
 
 const workspace=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const reportRoot=path.join(workspace,'raporty-api');
 const secret=randomBytes(24).toString('hex');
 const definitions={
+  'redmine-36926':{name:'Redmine #36926 — adresy w drugim kroku koszyka',script:'',args:[]},
+  'redmine-37162':{name:'Redmine #37162 — ShipmentInterface: Got NULL',script:'',args:[]},
+  database:{name:'Porównanie zapisanego zamówienia z bazą',script:'',args:[]},
+  regression:{name:'Regresja koszyka — wiele przypadków',script:'',args:[]},
+  'regression-order':{name:'Regresja zamówienia z zapisem',script:'',args:[]},
+  packages:{name:'Paczki GLS',script:'',args:[]},
+  'packages-profile':{name:'Paczki GLS — tymczasowa konfiguracja CMS',script:'',args:[]},
   cart:{name:'Koszyk',script:'api-tests/run.mjs',args:['--config','config/dev.local.json']},
   wizard:{name:'Zamówienie krok po kroku',script:'',args:[]},
   order:{name:'Pełne zamówienie',script:'api-tests/run.mjs',args:['--config','config/dev.local.json','--complete']},
@@ -25,7 +44,8 @@ const definitions={
   descriptions:{name:'Opisy produktów zależne od kanału — API',script:'',args:[]},
   login:{name:'Logowanie GitLab',script:'api-tests/login.mjs',args:[]}
 };
-const jobs=[];let currentChild;let currentController;let launching=false;const gates=new Map();
+let lastCustomProfile;
+const jobs=[];let currentChild;let currentController;let launching=false;let definingUser=false;const gates=new Map();
 async function env() {
   let local={};try{local=parseEnv(await readFile(path.join(workspace,'.env'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
   return {...process.env,...local};
@@ -55,20 +75,44 @@ async function reports() {
 }
 async function state() {
   const {config,credentials,vars}=await settings();const all=await reports();
-  return {baseUrl:config.baseUrl,environment:config.environment,reports:all,jobs:jobs.slice(-15).reverse(),suites:Object.entries(definitions).filter(([id])=>id!=='login').map(([id,d])=>({id,name:d.name})),
-    settings:{credentialsReady:!!(credentials.email&&credentials.password&&credentials.testsToken),gatewaySession:!!(credentials.cookie||credentials.cookies?.length),adminReady:!!(vars.SYLIUS_ADMIN_EMAIL&&vars.SYLIUS_ADMIN_PASSWORD),randomProducts:config.scenario?.randomProducts,randomCheckout:config.scenario?.randomCheckout,groupRebates:config.scenario?.expectations?.groupRebatePercent,paymentQuoteTotalBasis:config.scenario?.expectations?.paymentQuoteTotalBasis,testEnvironmentEnabled:false}};
+  let accountReference={};try{accountReference=JSON.parse(await readFile(path.join(workspace,'config/order-regression.local.json'),'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
+  return {accounts:accountSummaries(config,credentials,vars,accountReference,lastCustomProfile),customEmail:vars.HURT_CUSTOM_EMAIL??'',baseUrl:config.baseUrl,environment:config.environment,reports:all,jobs:jobs.slice(-15).reverse(),suites:Object.entries(definitions).filter(([id])=>id!=='login').map(([id,d])=>({id,name:d.name})),
+    settings:{secondAccountReady:!!(vars.HURT_SECOND_EMAIL&&vars.HURT_SECOND_API_PASSWORD),credentialsReady:!!(credentials.email&&credentials.password&&credentials.testsToken),gatewaySession:!!(credentials.cookie||credentials.cookies?.length),adminReady:!!(vars.SYLIUS_ADMIN_EMAIL&&vars.SYLIUS_ADMIN_PASSWORD),randomProducts:config.scenario?.randomProducts,randomCheckout:config.scenario?.randomCheckout,groupRebates:config.scenario?.expectations?.groupRebatePercent,paymentQuoteTotalBasis:config.scenario?.expectations?.paymentQuoteTotalBasis,testEnvironmentEnabled:false}};
 }
 async function executeSuite(body,vars,options) {
-  const {config:cartConfig,credentials}=await settings();
+  let {config:cartConfig,credentials}=await settings();
+  if(['cart','order','wizard'].includes(body.suite)){
+    const reference=JSON.parse(await readFile(path.join(workspace,'config/order-regression.local.json'),'utf8'));
+    const profile=body.account==='custom'?await readWholesalerRebates(vars.HURT_CUSTOM_EMAIL,{vars,sessionFile:cartConfig.sessionFile??'.auth/dev.json',signal:options.signal}):undefined;
+    if(profile)lastCustomProfile={email:vars.HURT_CUSTOM_EMAIL,profile};
+    const selected=checkoutForAccount(cartConfig,credentials,vars,body.account??'primary',reference.paymentRebates,profile);cartConfig=selected.config;credentials=selected.credentials;
+  }
+  const dbOptions={vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json'),signal:options.signal};
+  if(body.verifyDatabase===true||vars.HURT_VERIFY_DATABASE==='true')options={...options,verifyDatabase:databaseVerifier(dbOptions)};
+  if(body.suite==='database'){
+    if(typeof body.reportId!=='string'||!/^[a-z0-9_-]+$/i.test(body.reportId))throw new Error('Wybierz raport zamówienia');
+    const source=JSON.parse(await readFile(await safeReportPath(reportRoot,[body.reportId,'raport.json']),'utf8'));const report=await verifySavedReport(source,dbOptions);const directory=path.join(reportRoot,'database-'+new Date().toISOString().replace(/[:.]/g,'-')+'-'+randomUUID().slice(0,8));await saveFeatureReport(report,directory);return {report,directory};
+  }
   if(!credentials.testsToken||(body.suite!=='product-create'&&(!credentials.email||!credentials.password)))throw new Error('Uzupełnij wymagane dane API w .env.');
+  if(body.suite==='redmine-37162')return runShipmentRegression(cartConfig,credentials,options);
+  if(body.suite==='redmine-36926')return runAddressRegression(cartConfig,credentials,{...options,otherRunning:async()=>false});
+  if(['regression','regression-order','packages','packages-profile'].includes(body.suite)){
+    const settings=JSON.parse(await readFile(path.join(workspace,'config/order-regression.local.json'),'utf8'));
+    const run=()=>runOrderRegression(cartConfig,credentials,{...options,settings,secondAccount:secondAccountFromEnv(vars,credentials),complete:body.suite==='regression-order',packagesOnly:body.suite.startsWith('packages')});
+    if(body.suite==='packages-profile'){
+      validateShippingProfile(body.profile);if(!settings.packages?.product?.unitWeightGrams)throw new Error('Uzupełnij potwierdzoną wagę produktu przed zmianą CMS');settings.packages.calculator=body.profile;delete settings.packages.quantities;
+      return withShippingConfiguration({profile:body.profile,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json'),onProgress:options.onProgress,signal:options.signal},run);
+    }
+    return run();
+  }
   if(body.suite==='product-create')return runProductCreation(cartConfig,credentials,{...options,input:body.input,adminEmail:vars.SYLIUS_ADMIN_EMAIL,adminPassword:vars.SYLIUS_ADMIN_PASSWORD});
   if(body.suite==='rounding')return runRounding(cartConfig,credentials,options);
   if(body.suite==='descriptions')return runDescriptions(cartConfig,credentials,options);
   if(body.suite==='wizard') {
-    cartConfig.scenario.products=validateSelection(body.items,await wizardProducts());
+    cartConfig.scenario.products=validateSelection(body.items,await wizardProducts(body.account??'primary'));
     cartConfig.scenario.randomProducts={enabled:false};
     cartConfig.scenario.productSelection={source:body.automatic?'frontend':'manual',group:cartConfig.scenario.products[0].group};
-    cartConfig.scenario.name='Zamówienie krok po kroku';
+    cartConfig.scenario.name='Zamówienie krok po kroku — '+cartConfig.scenario.account.label;
     return runScenario(cartConfig,credentials,{...options,complete:true,interactiveMode:body.automatic?'ui-random':'manual'});
   }
   if(['cart','order'].includes(body.suite)) {
@@ -83,15 +127,20 @@ async function executeSuite(body,vars,options) {
   return runCatalog(config,credentials,{...options,create:body.suite==='catalog-create',adminEmail:vars[config.creation?.adminEmailEnv??'SYLIUS_ADMIN_EMAIL'],adminPassword:vars[config.creation?.adminPasswordEnv??'SYLIUS_ADMIN_PASSWORD']});
 }
 async function launch(body,runner) {
-  if(launching||currentChild||currentController)throw Object.assign(new Error('Poczekaj na zakończenie aktualnego przebiegu.'),{status:409});
+  if(launching||definingUser||currentChild||currentController)throw Object.assign(new Error('Poczekaj na zakończenie aktualnego przebiegu lub odczytu użytkownika.'),{status:409});
   launching=true;
   try {
   const d=definitions[body.suite];if(!d)throw Object.assign(new Error('Nieznany zestaw testów.'),{status:400});
+  if(!['login','database'].includes(body.suite)){
+    try{await readFile(path.join(workspace,'.auth/shipping-restore.json'),'utf8');throw new Error('Najpierw przywróć konfigurację GLS: npm run packages:restore. Istnieje niedokończony dziennik zmian CMS.');}catch(e){if(e.code!=='ENOENT')throw e;}
+  }
   if(body.suite==='product-create')productPayload(body.input);
+  if(body.suite==='packages-profile')validateShippingProfile(body.profile);
+  if(body.account!==undefined&&(!['cart','order','wizard'].includes(body.suite)||!['primary','secondary','custom'].includes(body.account)))throw new Error('Wybór konta dotyczy koszyka, zamówienia i formularza.');
   const args=[d.script,...d.args];
   if(body.seed){if(!['cart','order'].includes(body.suite))throw new Error('Ziarno dotyczy koszyka i zamówienia.');if(typeof body.seed!=='string'||body.seed.length>128)throw new Error('Niepoprawne ziarno.');args.push('--seed',body.seed);}
   const vars=await env();
-  const job={id:randomUUID(),suite:body.suite,name:d.name,status:'RUNNING',startedAt:new Date().toISOString(),log:'',seed:body.seed??null,automatic:body.suite==='wizard'&&body.automatic===true};
+  const job={id:randomUUID(),suite:body.suite,name:d.name+(['cart','order','wizard'].includes(body.suite)?' — '+(body.account==='custom'?'Użytkownik zdefiniowany':body.account==='secondary'?'Konto 2':'Konto 1'):''),account:body.account??'primary',status:'RUNNING',startedAt:new Date().toISOString(),log:'',seed:body.seed??null,automatic:body.suite==='wizard'&&body.automatic===true};
   const sensitive=Object.fromEntries(Object.entries(vars).filter(([k])=>/PASSWORD|TOKEN|COOKIE|EMAIL|USERNAME/i.test(k)));
   jobs.push(job);
   const append=chunk=>{job.log=(job.log+scrub(chunk.toString(),sensitive)).slice(-64000);};
@@ -107,11 +156,13 @@ async function launch(body,runner) {
     Promise.resolve().then(()=>runner(body,vars,{signal:controller.signal,onProgress:line=>append(line+'\n'),...interactive})).then(result=>{
       job.status=controller.signal.aborted?'CANCELLED':result.report.status;
       job.error=result.report.error??null;
+      job.completionBlocked=result.report.completionBlocked??false;
+      job.finalization=result.report.finalization;
       if(body.suite==='product-create'){job.creation=result.report.creation;job.lastResponse=result.report.lastResponse;}
       if(body.suite==='wizard')job.lastOrder=result.report.snapshots?.at(-1)?.order;
       append('\n'+job.status+' — '+result.directory+'\n');
       if(result.report.error)append(result.report.error+'\n');
-    }).catch(error=>{job.status=controller.signal.aborted?'CANCELLED':'FAIL';append(error.message+'\n');}).finally(()=>{job.finishedAt=new Date().toISOString();job.wizard=null;gates.delete(job.id);if(currentController===controller)currentController=null;});
+    }).catch(error=>{job.status=error.code==='RESTORE_FAILED'?'FAIL':controller.signal.aborted?'CANCELLED':'FAIL';job.error=error.message;append(error.message+'\n');}).finally(()=>{job.finishedAt=new Date().toISOString();job.wizard=null;gates.delete(job.id);if(currentController===controller)currentController=null;});
     return job;
   }
   let child;
@@ -124,8 +175,8 @@ async function launch(body,runner) {
   return job;
   } finally {launching=false;}
 }
-async function wizardProducts() {
-  const {config,credentials}=await settings();
+async function wizardProducts(account='primary') {
+  const base=await settings();const profile=account==='custom'?await readWholesalerRebates(base.vars.HURT_CUSTOM_EMAIL,{vars:base.vars,sessionFile:base.config.sessionFile??'.auth/dev.json'}):undefined;const {config,credentials}=checkoutForAccount(base.config,base.credentials,base.vars,account,{},profile);
   if(!credentials.email||!credentials.password||!credentials.testsToken)throw new Error('Uzupełnij HURT_EMAIL, HURT_API_PASSWORD i HURT_TESTS_TOKEN w .env.');
   const api=new ApiClient(config,credentials);await api.loginShop();
   const catalog=JSON.parse(await readFile(path.join(workspace,'config/products.json'),'utf8')).products.filter(p=>p.enabled!==false);
@@ -177,10 +228,17 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
       if(req.method==='POST') {
         if(req.headers.origin!==origin||req.headers['x-ui-token']!==secret||!(req.headers['content-type']??'').includes('application/json'))return send(403,{error:'Odśwież panel przed wykonaniem operacji.'});
         const body=await jsonBody(req);
+        if(url.pathname==='/api/account/custom'){
+          if(launching||definingUser||currentChild||currentController)return send(409,{error:'Poczekaj na zakończenie testu lub odczytu przed zmianą użytkownika.'});
+          definingUser=true;
+          try{const {vars,config}=await settings();const profile=await readWholesalerRebates(body.email,{vars,sessionFile:config.sessionFile??'.auth/dev.json'});
+            const saved=await saveCustomEmail(body.email,path.join(workspace,'.env'));lastCustomProfile={email:saved.email,profile};return send(200,{...saved,profile});
+          }finally{definingUser=false;}
+        }
         if(url.pathname==='/api/run')return send(202,await launch(body,runSuite));
         if(url.pathname==='/api/preview')return send(200,await preview(body));
         if(url.pathname==='/api/product/preview')return send(200,productPayload(body.input));
-        if(url.pathname==='/api/wizard/products')return send(200,{products:await wizardProducts()});
+        if(url.pathname==='/api/wizard/products')return send(200,{products:await wizardProducts(body.account??'primary')});
         if(url.pathname==='/api/wizard/choice'){
           const gate=gates.get(body.id);if(!gate)throw new Error('Brak aktywnego etapu zamówienia.');
           gate.submit(body.requestId,body.value);return send(200,{ok:true});
@@ -192,6 +250,11 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
         }
       }
       if(req.method!=='GET')return send(404,{error:'Nie znaleziono.'});
+      if(url.pathname==='/api/documentation')return send(200,renderDocumentation(await readFile(path.join(workspace,'README.md'),'utf8')));
+      if(url.pathname==='/README.md'){
+        res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Content-Disposition':'attachment; filename="README.md"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+        return res.end(await readFile(path.join(workspace,'README.md')));
+      }
       if(url.pathname==='/api/state')return send(200,await state());
       if(url.pathname.startsWith('/reports/')) {
         const file=await safeReportPath(reportRoot,url.pathname.slice('/reports/'.length).split('/').map(decodeURIComponent));

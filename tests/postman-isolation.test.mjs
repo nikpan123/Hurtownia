@@ -1,0 +1,47 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+
+const file=new URL('../postman/HURTOWNIA - Izolacja uzytkownikow.postman_collection.json',import.meta.url);
+async function exercise({mutated=false,baseUrl,foreignStatus=404}={}){
+  const collection=JSON.parse(await readFile(file,'utf8')),values=new Map(collection.variable.map(v=>[v.key,v.value]));
+  values.set('iso_email_a','a@example.invalid');values.set('iso_email_b','b@example.invalid');values.set('iso_api_password','private-"password\\withchars');values.set('iso_tests_token_a','private-tests');
+  if(baseUrl)values.set('iso_base_url',baseUrl);
+  const tests=[],sent=[];let visual;
+  const before={id:100,itemsTotal:920,shippingTotal:2000,total:2920,totalNet:2781,orderPromotionTotal:-920,payments:[{method:{code:'cash_on_delivery'}}],items:[{id:1,product:{code:'5lp-1'},quantity:1,unitPrice:1840,originalUnitPrice:1840,discountedUnitPrice:920,unitPriceNet:1752,discountedUnitPriceNet:876,totalNetSalesAfterDiscount:876,total:920,rebatePercent:50}]};
+  const after=structuredClone(before);if(mutated){after.itemsTotal=1600;after.total=3600;after.items[0].rebatePercent=13;after.items[0].discountedUnitPrice=1600;after.items[0].total=1600;}
+  const responses=[{token:'private-jwt-a'},{token:'private-jwt-b'},{id:100,tokenValue:'private-cart-a'},{},[{code:'cash_on_delivery'}],null,{shippingMethods:[{code:'gls_wholesale'}]},before,{message:'Not found'},after];
+  for(const [index,item]of collection.item.entries()){
+    const local=new Map();let skipped=false;
+    const pm={collectionVariables:{get:k=>values.get(k),set:(k,v)=>values.set(k,v),unset:k=>values.delete(k)},variables:{get:k=>local.has(k)?local.get(k):values.get(k),set:(k,v)=>local.set(k,v)},info:{requestId:item.id},request:{headers:{upsert:()=>{}}},execution:{skipRequest:()=>skipped=true,setNextRequest:()=>{}},test:(name,fn)=>{try{fn();tests.push({name,status:'PASS'});}catch(error){tests.push({name,status:'FAIL',detail:error.message});}},response:{code:index===2||index===3?201:index===5?204:index===8?foreignStatus:200,json:()=>{if(responses[index]===null)throw Error('empty');return structuredClone(responses[index]);}},visualizer:{set:(template,data)=>visual=data}};
+    const run=event=>vm.runInNewContext(event.script.exec.join('\n'),{pm,console:{log(){},warn(){},table(){}}});
+    for(const event of [...collection.event,...item.event].filter(e=>e.listen==='prerequest'))run(event);
+    if(skipped)continue;
+    const resolve=text=>text.replace(/\{\{([^}]+)\}\}/g,(_,key)=>String(pm.variables.get(key)??''));
+    const token=item.request.auth.type==='bearer'?resolve(item.request.auth.bearer[0].value):null;
+    const body=item.request.body?JSON.parse(resolve(item.request.body.raw)):undefined;
+    sent.push({method:item.request.method,url:resolve(item.request.url.raw),token,body});
+    for(const event of item.event.filter(e=>e.listen==='test'))run(event);
+  }
+  return {values,tests,sent,visual,collection};
+}
+test('Kolekcja Postmana wykonuje dokładnie jedną obcą operację i wykrywa zmianę mimo 404',async()=>{
+  for(const mutated of [false,true]){
+    const r=await exercise({mutated});assert.equal(r.sent.length,10);
+    assert(r.sent.slice(2).every((q,i)=>q.token===(i===6?'private-jwt-b':'private-jwt-a')));
+    assert(r.sent.slice(3).every(q=>q.url.includes('private-cart-a')));
+    assert(!r.sent.some(q=>q.url.endsWith('/complete')));
+    assert.equal(r.sent[0].body.apiPassword,'private-"password\\withchars');
+    const result=JSON.parse(r.values.get('iso_result'));assert.equal(result.outcome,mutated?'FAIL':'PASS');
+    assert.equal(r.tests.find(t=>t.name.includes('IDENTYCZNY')).status,mutated?'FAIL':'PASS');
+    assert.equal(r.visual.outcome,result.outcome);assert(!r.values.has('iso_jwt_a'));assert(!r.values.has('iso_jwt_b'));assert(!r.values.has('iso_cart_a'));
+    for(const secret of ['private-jwt','private-cart','private-tests','private-"password'])assert(!JSON.stringify(result).includes(secret));
+    if(mutated)assert(result.changes.some(d=>d.field==='items.0.rebatePercent'&&d.before===50&&d.after===13));
+  }
+});
+test('Kolekcja blokuje inne środowiska i nie uznaje 401 za potwierdzoną izolację',async()=>{
+  const blocked=await exercise({baseUrl:'https://ksiegarnia.gwotest.pl/api/v2'});assert.equal(blocked.sent.length,0);assert(blocked.tests.some(t=>t.status==='FAIL'));
+  const invalid=await exercise({foreignStatus:401});assert.equal(JSON.parse(invalid.values.get('iso_result')).outcome,'FAIL');
+  const original=JSON.parse(await readFile(file,'utf8'));for(const key of ['iso_email_a','iso_email_b','iso_api_password','iso_tests_token_a','iso_tests_token_b','iso_gateway_cookie','iso_jwt_a','iso_jwt_b'])assert.equal(original.variable.find(v=>v.key===key).value,'');
+});

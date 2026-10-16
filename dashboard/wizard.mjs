@@ -35,7 +35,7 @@ export function validateSelection(items,catalog) {
   const selected=items.map(item=>{
     const p=catalog.find(p=>p.productVariant===item.productVariant);
     if(!p||used.has(p.productVariant)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>10)throw new Error('Produkt niedostępny, powtórzony lub ilość poza zakresem 1–10.');
-    used.add(p.productVariant);return {productVariant:p.productVariant,group:p.group,quantity:item.quantity};
+    used.add(p.productVariant);return {productVariant:p.productVariant,...(p.merchandiseCode?{merchandiseCode:p.merchandiseCode}:{}),group:p.group,quantity:item.quantity};
   });
   if(new Set(selected.map(p=>p.group)).size!==1)throw new Error('Nie można łączyć Adamady z pozostałymi produktami.');
   return selected;

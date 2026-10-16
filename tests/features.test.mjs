@@ -12,11 +12,11 @@ const fixtures=[fixture('qa-one',false),fixture('qa-two',true)];
 function mock({deny=false,wrongPrice=false,no23=false,wrongName=false}={}){
   const calls=[];const orders=new Map();let serial=0;
   const fetchImpl=async(url,options)=>{
-    url=new URL(url);const endpoint=url.pathname.replace('/api/v2/',''),body=options.body?JSON.parse(options.body):null,channel=options.headers['X-Api-Channel'];calls.push({method:options.method,endpoint,body});
+    url=new URL(url);const endpoint=url.pathname.replace('/api/v2/',''),body=options.body?JSON.parse(options.body):null,channel=options.headers['X-Api-Channel'];calls.push({method:options.method,endpoint,body,channel});
     const response=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json'}});
     if(endpoint.endsWith('authentication-token'))return response({token:'private-jwt-mock'});
     if(endpoint==='admin/products')return deny?response({message:'Access Denied.'},403):response({id:1,...body},201);
-    if(endpoint==='admin/product-variants')return response({...body,channelPricings:{[input.channel]:{id:55,...body.channelPricings[input.channel]}}},201);
+    if(endpoint==='admin/product-variants')return response({...body,channelPricings:{[channel]:{id:55,...body.channelPricings[channel]}}},201);
     if(endpoint==='shop/orders'&&options.method==='POST'){const token='private-order-'+(++serial);orders.set(token,{quantity:1,channel});return response({id:serial,tokenValue:token},201);}
     if(endpoint.startsWith('shop/products-dto-by-slug/')){const slug=endpoint.split('/').at(-1);const f=fixtures.find(f=>f.channels[channel].slug===slug);return response({...f.channels[channel],code:f.code});}
     if(endpoint==='shop/products-dto')return response({data:fixtures.map(f=>({code:f.code,...f.channels[channel]}))});
@@ -39,13 +39,17 @@ test('Kwoty PLN są zamieniane na grosze dokładnie; formularz odrzuca obce kody
   assert.throws(()=>productPayload({...input,code:'istniejacy-produkt'}));assert.throws(()=>productPayload({...input,minimumPrice:'19'}));
 });
 test('Tworzenie wykonuje wyłącznie logowanie i dwa POST-y, potwierdza zapisane ceny',async()=>{
-  const m=mock();const r=await runProductCreation(config,credentials,await options({...m,input,adminEmail:'admin@example.invalid',adminPassword:'private-admin-pass'}));
+  for(const channel of ['WHOLESALE','RETAIL','ACADEMY']){
+  const m=mock();const r=await runProductCreation(config,credentials,await options({...m,input:{...input,channel},adminEmail:'admin@example.invalid',adminPassword:'private-admin-pass'}));
   assert.equal(r.report.status,'PASS',JSON.stringify(r.report.tests));assert.equal(r.report.creation.state,'variant_created');
   assert.deepEqual(m.calls.map(c=>c.endpoint),['admin/authentication-token','admin/products','admin/product-variants']);
+  assert.deepEqual(m.calls.slice(1).map(c=>c.channel),[channel,channel]);
+  }
 });
 test('403 kończy tworzenie bez POST wariantu i bez testów katalogu; nie ujawnia tokenu',async()=>{
   const m=mock({deny:true});const r=await runProductCreation(config,credentials,await options({...m,input,adminEmail:'admin@example.invalid',adminPassword:'private-admin-pass'}));
-  assert.equal(r.report.status,'FAIL');assert.equal(r.report.lastResponse.status,403);assert.equal(m.calls.length,2);
+  assert.equal(r.report.status,'FAIL');assert.equal(r.report.lastResponse.status,403);assert.equal(m.calls.length,3);
+  assert.equal(m.calls[2].method,'GET');assert.equal(r.report.accessDiagnostic.readStatus,403);assert.match(r.report.blockedReason,/403/);
   const saved=await readFile(path.join(r.directory,'raport.json'),'utf8');for(const secret of ['private-admin-pass','private-jwt-mock',...Object.values(credentials)])assert(!saved.includes(secret));
 });
 const settings={productVariant:'5lp-1',baseGrossMinor:1840,baseNetMinor:1752,rebatePercent:23,quantities:[1,6],anchors:{1:{discountedUnitPriceNet:1349},6:{total:8499}}};

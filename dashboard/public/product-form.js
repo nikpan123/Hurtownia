@@ -19,5 +19,5 @@ function renderProductForm(){
   $('product-result').innerHTML=badge(job.status)+`<pre>${esc(job.log)}</pre>${job.creation?.state==='product_created'?'<p>Produkt został utworzony, ale wariant lub cennik nie zostały potwierdzone. Użyj zapisanego kodu do sprawdzenia rekordu; nie powtarzaj tworzenia tego produktu.</p>':''}${job.status==='PASS'?'<p>Serwer potwierdził utworzenie produktu i wariantu z cennikiem. Aktywację i dostępność w sklepie sprawdź osobno w CMS.</p>':''}${report?`<button class="secondary" data-report="${esc(report.id)}">Raport samego tworzenia →</button>`:''}`;
   $('product-api-response').hidden=!job.lastResponse;if(job.lastResponse)$('product-api-response').textContent=JSON.stringify(job.lastResponse,null,2);
 }
-if(['wizard','create-product'].includes(location.hash.slice(1)))setView(location.hash.slice(1));
+if(['wizard','create-product','documentation'].includes(location.hash.slice(1)))setView(location.hash.slice(1));
 refresh();setInterval(refresh,1800);

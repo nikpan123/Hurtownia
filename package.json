@@ -13,7 +13,14 @@
     "ui": "node dashboard/server.mjs",
     "prices": "node api-tests/features-run.mjs --suite rounding",
     "descriptions": "node api-tests/features-run.mjs --suite descriptions",
-    "setup": "node api-tests/setup.mjs"
+    "setup": "node api-tests/setup.mjs",
+    "regression": "node api-tests/order-regression-run.mjs",
+    "packages": "node api-tests/order-regression-run.mjs --packages",
+    "packages:restore": "node api-tests/shipping-restore.mjs",
+    "database": "node api-tests/database-run.mjs",
+    "reports:refresh": "node api-tests/refresh-reports.mjs",
+    "redmine:37162": "node api-tests/redmine-37162-run.mjs",
+    "redmine:36926": "node api-tests/redmine-36926-run.mjs"
   },
   "engines": {
     "node": ">=22"

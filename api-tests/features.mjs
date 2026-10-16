@@ -18,6 +18,15 @@ async function context(config,credentials,options,scenario,kind){
   const request=async(method,endpoint,args={},statuses=[200])=>{
     const r=await api.request(method,endpoint,args);
     if(kind==='product-create')report.lastResponse={status:r.status,body:Object.fromEntries(Object.entries(r.data??{}).filter(([k])=>['id','code','translations','channelPricings','title','detail','message','hydra:title','hydra:description','violations'].includes(k)))};
+    if(kind==='product-create'&&r.status===401)report.blockedReason='API nie zaakceptowało tokenu administratora. Sprawdź konfigurację uwierzytelniania admin API; logowanie w CMS i GitLab jest osobne.';
+    if(kind==='product-create'&&method==='POST'&&endpoint==='admin/products'&&r.status===403){
+      report.blockedReason='Zapis produktu odrzucony przez admin API (403) po zalogowaniu administratora. Produkt i wariant nie zostały utworzone. Nie ponawiaj zapisu bez wyjaśnienia odmowy dostępu.';
+      try{
+        const probe=await api.request('GET','admin/products',{token:'admin',channel:args.channel,query:{page:1,itemsPerPage:1}});
+        report.accessDiagnostic={channel:args.channel,readStatus:probe.status,writeStatus:r.status};
+        report.tables.push({title:'Diagnostyka dostępu administratora',headers:['Sprawdzenie','HTTP','Wniosek'],rows:[['POST admin/products',r.status,'Odmowa zapisu'],['GET admin/products',probe.status,probe.status===403?'API odmawia również odczytu. Backend musi sprawdzić reguły dostępu i obsługę ról dla tokenu administratora.':probe.status===200?'Odczyt działa; backend musi sprawdzić uprawnienia operacji tworzenia.':'Sprawdź odpowiedź endpointu odczytu.']]});
+      }catch(e){report.accessDiagnostic={error:api.clean(e.message)};}
+    }
     assert(statuses.includes(r.status),`HTTP ${r.status}; ${r.data?.detail??r.data?.message??r.data?.['hydra:description']??''}`);
     return r.data;
   };
@@ -60,11 +69,11 @@ export async function runProductCreation(config,credentials,options={}){
   try{
     if(await test('Logowanie administratora',async()=>{assert(options.adminEmail&&options.adminPassword,'Uzupełnij SYLIUS_ADMIN_EMAIL i SYLIUS_ADMIN_PASSWORD');await c.api.loginAdmin(options.adminEmail,options.adminPassword);})){ 
       const ok=await test('Utworzenie produktu: POST admin/products',async()=>{
-        const r=await request('POST','admin/products',{token:'admin',body:payload.product},[201]);
+        const r=await request('POST','admin/products',{channel:options.input.channel,token:'admin',body:payload.product},[201]);
         assert.equal(r.code,payload.product.code,'Serwer zwrócił inny kod produktu');report.creation.state='product_created';report.creation.id=r.id;
       });
       if(ok)await test('Utworzenie wariantu i cen: POST admin/product-variants',async()=>{
-        const r=await request('POST','admin/product-variants',{token:'admin',body:payload.variant},[201]);
+        const r=await request('POST','admin/product-variants',{channel:options.input.channel,token:'admin',body:payload.variant},[201]);
         assert.equal(r.code,payload.variant.code,'Serwer zwrócił inny kod wariantu');
         for(const [key,value]of Object.entries(payload.variant.channelPricings[options.input.channel]))assert.deepEqual(r.channelPricings?.[options.input.channel]?.[key],value,'Zapisany cennik: '+key);
         report.creation.state='variant_created';

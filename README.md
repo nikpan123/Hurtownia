@@ -1,8 +1,12 @@
 # Hurtownia — testy API i lokalny panel testowy
 
+[Redmine #36926 — adresy w drugim kroku koszyka](REDMINE-36926.md): 38 przypadków API obejmujących zapis i walidację. Domyślne adresy są jawnie pomijane do zapewnienia pełnego przywrócenia stanu; pozostałe luki są opisane w raporcie. Uruchomienie: `Testuj-Redmine-36926-dev.cmd`.
+
+Regresja [Redmine #37162 — ShipmentInterface: Got NULL](REDMINE-37162.md) jest dostępna w panelu jako **Sprawdź #37162** lub przez `Testuj-Redmine-37162-dev.cmd`. Obejmuje sześć scenariuszy, osiem nowych koszyków i raport HTML/JSON. Kod został sprawdzony na atrapach API; nie wykonano jeszcze tych testów na DEV/TEST.
+
 Projekt do testowania API księgarni hurtowej GWO bez docelowego frontendu. Zawiera scenariusze koszyka i zamówienia, testy katalogu, kontrole cen i tłumaczeń produktów oraz panel w przeglądarce z raportami i formularzami testowymi.
 
-Testy API wykonuje **Node.js i `fetch`**. Playwright służy do logowania przez bramkę GitLab i zapisania lokalnej sesji. Scenariusze zakupowe nie wymagają gotowego interfejsu sklepu. Panel zawiera własny, uproszczony formularz zamówienia; jego automat wybiera opcje w tej karcie przeglądarki.
+Testy API wykonuje **Node.js i `fetch`**. Playwright służy do logowania przez bramkę GitLab, tymczasowej konfiguracji CMS oraz opcjonalnego odczytu baz przez phpMyAdmin. Scenariusze zakupowe nie wymagają gotowego interfejsu sklepu. Panel zawiera własny, uproszczony formularz zamówienia; jego automat wybiera opcje w tej karcie przeglądarki.
 
 ## Spis treści
 
@@ -90,12 +94,15 @@ Wartości wpisuj lokalnie, nigdy w README, kodzie, raporcie ani commicie.
 | `HURT_DEV_BASE_URL` | Opcjonalne nadpisanie adresu API dev |
 | `SYLIUS_ADMIN_EMAIL` | Administrator do logowania przez admin API |
 | `SYLIUS_ADMIN_PASSWORD` | Hasło administratora do admin API |
-| `BROWSER_CHANNEL` | Przeglądarka logowania, domyślnie `msedge` |
+| `BROWSER_CHANNEL` | Przeglądarka logowania, CMS i phpMyAdmin, domyślnie `msedge` |
+| `HURT_VERIFY_DATABASE` | `true` włącza porównanie z bazami po finalizacji; domyślnie false |
 | `HURT_TEST_EMAIL`, `HURT_TEST_API_PASSWORD`, `HURT_TEST_TESTS_TOKEN`, `HURT_TEST_GATEWAY_COOKIE` | Dane przyszłego środowiska test; nie odblokowują go |
 
 Logowanie GitLab zapisuje sesję w `.auth/dev.json` (lub ścieżce `sessionFile` z konfiguracji). Jeśli podano `HURT_GATEWAY_COOKIE`, ma on pierwszeństwo przed plikiem sesji. Nieaktualny ręczny cookie może więc blokować dostęp mimo ponownego logowania w przeglądarce.
 
 Logowanie w CMS nie przekazuje automatycznie uprawnień do JSON admin API. Odpowiedź `403` po udanym logowaniu administratora oznacza odmowę wykonania operacji, a nie konieczność ponownego wpisania hasła hurtownika.
+
+Po odmowie `403` przy tworzeniu formularz wykonuje dodatkowy odczyt `GET admin/products` w wybranym kanale. Raport pokazuje osobno wynik odczytu i zapisu, bez zapisywania tokenu i listy produktów. Jeżeli oba żądania zwracają `403`, backend musi sprawdzić reguły dostępu do admin API oraz obsługę ról administratora. Nie jest to potwierdzenie błędnego body produktu. Test nie ponawia zapisu i nie tworzy wariantu po odmowie.
 
 ## Panel i dostępne scenariusze
 
@@ -130,6 +137,201 @@ Po pobraniu dostępnych produktów:
 - Karta musi pozostać otwarta. Zamknięcie karty może pozostawić przebieg oczekujący na wybór; nie cofa koszyka.
 
 Tryb ręczny czeka na ostatni przycisk zatwierdzenia. Oba tryby korzystają z tych samych kontroli wyceny co scenariusz API. Błąd rabatu lub sumy nie jest pomijany po to, aby doprowadzić do zapisu.
+
+## Instrukcja panelu: wszystkie testy krok po kroku
+
+W menu panelu wybierz **Dokumentacja testów**. Treść pochodzi bezpośrednio z tego README, bez osobnej kopii. Spis treści pozwala przejść do rozdziału; pole wyszukiwania filtruje tytuły rozdziałów. Przycisk **Pobierz README.md** zapisuje plik. Wejście do dokumentacji nie uruchamia testów ani logowania. Kwoty i produkty poniżej opisują bieżącą konfigurację; własne ustawienia mogą zmienić zakres przebiegu.
+
+### Wybór konta przed testem
+
+W nagłówku panelu ustaw **Konto do koszyka / zamówienia**: Konto 1 (HURT_EMAIL / HURT_API_PASSWORD) albo Konto 2 (HURT_SECOND_EMAIL / HURT_SECOND_API_PASSWORD). Konto 2 jest dostępne po uzupełnieniu jego danych w .env.
+
+1. Wybierz konto przed uruchomieniem Koszyka, Pełnego zamówienia lub formularza krok po kroku.
+2. Test loguje wyłącznie wybranego hurtownika, tworzy jego koszyk i pobiera jego dostępne płatności oraz dostawy. Raport i nazwa przebiegu wskazują numer konta.
+3. Dla konta 2 rabat Adamady i rabaty według metod pochodzą z HURT_SECOND_REBATE_*; dla konta 1 rabaty metod z order-regression.local.json i pozostałe oczekiwania z konfiguracji koszyka. Przy zmianie na konto 2 nie używamy kwot, ofert, zabronionych metod ani list dostępności zapisanych jako szczególne oczekiwania konta 1; pozostają kontrole ogólne i niezależne rabaty konta 2.
+4. Zmiana konta w formularzu usuwa dotychczasowy wybór produktów. Pobierz je ponownie dla nowego konta. W trakcie przebiegu wybór konta jest zablokowany.
+
+Wspólne pozostają adresy QA z konfiguracji, pula produktów i sesja bramki GitLab. Wybór nie zmienia danych w .env. Regresja nadal korzysta z obu kont, jeśli zostały skonfigurowane; paczki, katalog, opisy i ceny używają pierwszego konta. Tworzenie produktu korzysta z administratora API.
+
+### Koszyk — jeden przebieg bez finalizacji
+
+1. Odczytaj konfigurację i przygotuj plan produktów: losowany z puli albo wskazany w pliku. Adamada i pozostałe produkty mają osobne koszyki.
+2. Zaloguj hurtownika przez API i utwórz nowy koszyk.
+3. Dodaj produkty zbiorczo i pobierz koszyk. Sprawdź zgodność produktów i ilości z planem, typy kwot, rabaty oraz sumy.
+4. Zmień ilości zgodnie z planem i ponownie sprawdź koszyk; zapisz różnice cen i ilości w raporcie.
+5. Pobierz płatności dostępne dla tego koszyka. Wybierz jedną zgodnie z konfiguracją lub losowaniem, ustaw ją i sprawdź rabaty oraz zgodność wyceny z ofertą.
+6. Pobierz dostępne dostawy już po ustawieniu płatności. Wybierz dostawę, prześlij adres wysyłki i faktury, odczytaj podsumowanie.
+7. Sprawdź, czy API zachowało wybrane metody, produkty, ilości i oczekiwane wartości. Zapisz HTML i JSON z żądaniami oraz pomiarami.
+
+Pozostaje rzeczywisty koszyk dev. Nie następuje complete, pobranie PDF ani porównanie zapisu finalnego w bazach. Oczekiwania biznesowe zależą od wypełnienia konfiguracji; samo sprawdzenie sum nie dowodzi poprawności wszystkich cen.
+
+### Pełne zamówienie — jeden przebieg z zapisem
+
+1. Wykonaj kroki testu Koszyk, włącznie z kontrolą podsumowania przed zapisem.
+2. Wyślij PATCH complete dokładnie raz. Timeout nie powoduje automatycznego ponowienia, ponieważ serwer mógł już zapisać zamówienie.
+3. Pobierz zamówienie po zapisie i porównaj kwoty przed i po finalizacji, wybrane metody oraz dostępne pola paczek.
+4. Sprawdź wymagane przez konfigurację informacje checkoutInformation i linki dokumentów.
+5. Pobierz dokumenty PDF wskazane przez API. Sprawdź typ odpowiedzi i początek pliku PDF; zapisz je przy raporcie.
+6. Jeśli zaznaczono porównanie baz, odczytaj zapis Syliusa i transferu dla tego zamówienia i dołącz wyniki.
+
+Zapis może uruchomić e-mail i transfer. Test nie potwierdza doręczenia wiadomości ani wizualnej i tekstowej treści PDF. Błąd kontroli po complete nie cofa zamówienia.
+
+### Regresja koszyka — wiele przypadków bez finalizacji
+
+1. Zaloguj hurtownika. Użyj ustalonych produktów obu grup: obecnie 5lp-1 i POP1 oraz osobno Adamada D087 i D090.
+2. Dla każdej grupy pobierz płatności, a dla każdej płatności dostępne dostawy. Sprawdź poprawność i unikalność kodów ofert.
+3. Dla każdej pary płatność–dostawa utwórz osobny koszyk. Limit wynosi obecnie 48 par; kombinacje ponad limit otrzymują SKIP.
+4. Dodaj pierwszy produkt grupy, wybierz płatność i sprawdź rabat. Wzorce: Adamada 10%; pozostałe — bank_transfer 23%, cash_on_delivery 50%, bank_transfer_1_day 75%, payment_timely 25%.
+5. Zmieniaj ilości kolejno na 2, 6 i 1. Po każdej zmianie sprawdź ilość, rabat, poprawność kwot, sumę pozycji oraz produkty + dostawa = do zapłaty. Porównaj aktualną ofertę płatności z kwotą produktów według skonfigurowanej podstawy netto/brutto.
+6. Ustaw dostawę dostępną dla danego koszyka i sprawdź zapisane kody płatności oraz dostawy. Dla dostawy bez kalkulatora oczekuj braku paczek.
+7. W osobnym koszyku dodaj dwa produkty tej samej grupy. Dodaj pierwszy ponownie: mają pozostać dwie różne pozycje, a ilość pierwszej ma wzrosnąć do 2. Usuń pierwszą pozycję i sprawdź pozostałą.
+8. Dla każdej grupy wyślij ilości -1, 0 i 1,5, nieistniejące kody produktu, płatności i dostawy oraz niepełny adres. Każde żądanie ma zostać odrzucone zgodnym z konfiguracją błędem walidacji, a odczyt po próbie ma potwierdzić brak zmian koszyka. HTTP 500 i 401 nie zaliczają walidacji.
+9. Uruchom sprawdzenia paczek opisane poniżej. Jeśli skonfigurowano drugie konto, uruchom również kontrole jego rabatów i izolacji koszyków.
+10. Zapisz oddzielny wynik każdego przypadku, rzeczywiste żądania i pomiary. Niewykonane kontrole oznacz SKIP wraz z przyczyną.
+
+Nie finalizuje zamówień. Bez kompletu kontroli raport może mieć INCOMPLETE nawet przy braku FAIL. Przekroczenie zapasu wymaga niezależnie znanego stanu magazynowego; ponowne complete i istniejąca płatność zabroniona dla konta wymagają osobnych wzorców i pozostają pominięte.
+
+### Regresja zamówienia — także zapis i PDF
+
+1. Wykonaj regresję koszyka.
+2. Sprawdź odrzucenie finalizacji pustego koszyka bez zmiany jego stanu.
+3. Dla poprawnie rozpoznanych kombinacji uruchom pełne zamówienie: maksymalnie po jednym dla każdej grupy i jedno dla paczek, czyli do 3 poprawnych zamówień.
+4. Sprawdź PDF-y i niezmienność wyceny po zapisie; opcjonalnie porównaj bazy. Raporty finalizacji są dostępne jako odnośniki w raporcie regresji.
+5. Spróbuj dodać mieszany koszyk Adamada + pozostałe. Jeśli API odrzuci już dodanie, blokada jest potwierdzona; jeśli pozwoli dodać i wybrać metody, complete ma go odrzucić.
+
+Jeśli backend błędnie zaakceptuje negatywną próbę complete, także ona może stworzyć zamówienie. Raport pokaże FAIL; test nie powtarza zapisu.
+
+### Paczki i koszt dostawy GLS
+
+1. Utwórz oddzielny koszyk produktu referencyjnego, wybierz wskazaną płatność i gls_wholesale.
+2. Sprawdź ilości 1, 38, 39, 76 i 77 sztuk produktu o potwierdzonej wadze 210 g. Przy limicie 8000 g są to wagi 210, 7980, 8190, 15960 i 16170 g, czyli oczekiwane 1, 1, 2, 2 i 3 paczki.
+3. Wylicz wzorzec niezależnie od odpowiedzi API: zaokrąglij w górę wagę podzieloną przez pojemność paczki; dobierz cenę jednostkową z przedziału wagi całego koszyka.
+4. Porównaj shipmentPackageQuantity, shippingTotal i shippingTotalNet, uwzględniając netto/brutto cennika, VAT i wskazaną dopłatę płatności. Obecny wzorzec: do 8000 g 15 zł netto za paczkę, powyżej 10 zł netto za paczkę, VAT 5%, dopłata przy odbiorze 15 zł brutto.
+5. Po większej ilości zmniejsz ją do 1 i sprawdź ponowne przeliczenie. Na końcu wykonaj ponownie przypadek 1 sztuki w oddzielnym koszyku.
+6. Jeśli API oferuje personal_collection, zmień metodę i sprawdź, czy liczba paczek wynosi 0. Niedostępna metoda daje SKIP, nie wynik pozytywny tej kontroli.
+
+Przycisk paczek nie zapisuje zamówienia ani nie zmienia CMS. Zapis paczek w bazie można potwierdzić regresją z finalizacją i porównaniem baz.
+
+### Paczki — tymczasowa konfiguracja CMS
+
+1. Wypełnij profil: pojemność paczki, dwa przedziały wagowe, ceny i netto/brutto. Panel sprawdza format i poprawność przedziałów.
+2. Zaloguj automat do CMS, odczytaj aktualną konfigurację GLS i zachowaj dziennik przywracania.
+3. Ustaw profil testowy i odczytaj go ponownie, aby potwierdzić zapis.
+4. Dobierz osiągalne ilości produktu przed i za progami; jeśli waga produktu nie pozwala trafić dokładnie w próg, sprawdzaj najbliższe osiągalne wagi. Wykonaj test API paczek.
+5. Po sukcesie, błędzie lub zwykłym anulowaniu przywróć początkowe ustawienia CMS i potwierdź je odczytem.
+6. Dołącz audyt i wynik przywracania do raportu. Po awarii procesu niedokończony dziennik blokuje kolejne przebiegi zmieniające dane; użyj packages:restore. Obca zmiana konfiguracji wymaga uzgodnienia zamiast jej nadpisania.
+
+Ustawienia GLS są wspólne dla dev. Ten scenariusz nie finalizuje zamówienia.
+
+### Zamówienie krok po kroku — formularz ręczny i automat
+
+1. Pobierz produkty z puli testowej, które API udostępnia obecnie w WHOLESALE.
+2. Wybierz do 5 produktów jednej grupy i ilości 1–10; albo uruchom losowanie automatyczne.
+3. Utwórz koszyk, sprawdź produkty i ilości. Pokaż dostępne płatności, ich rabaty i wyceny; zaczekaj na wybór ręczny albo wybierz automatycznie.
+4. Pobierz dostawy po ustawieniu płatności. Pokaż ich wybór i zaktualizowaną wycenę.
+5. Pokaż podsumowanie, adresy i kwotę do zapłaty. Tryb ręczny czeka na zatwierdzenie; automat przechodzi aż do zapisu bez dodatkowego kliknięcia.
+6. Wykonaj finalizację i kontrole pełnego zamówienia, pobierz PDF-y, opcjonalnie porównaj bazy i udostępnij raport.
+
+Karta automatu musi pozostać otwarta. Zamknięcie lub zatrzymanie nie cofa operacji przyjętych przez API.
+
+### Katalog produktów — lista i szczegóły
+
+1. Zaloguj API i wykonaj sprawdzenia dla skonfigurowanych kanałów WHOLESALE, RETAIL i ACADEMY.
+2. Pobierz wszystkie strony katalogu: sprawdź strukturę, paginację, pola produktów oraz brak powtarzających się kodów.
+3. Sprawdź domyślne page=1 i limit=10, limity 1, 2, 10 i 50 oraz stronę za końcem listy.
+4. Porównaj domyślne sortowanie z jawnym sortowaniem po pozycji. Sprawdź nazwę rosnąco/malejąco i zachowanie kompletu produktów przy odwróceniu sortowania pozycji.
+5. Sprawdź wyszukiwanie po nazwie, ISBN i autorze, jeżeli są dane referencyjne, oraz frazę bez wyników.
+6. Porównaj produkty z listy ze szczegółami po slugu. Sprawdź nieistniejący slug i żądanie ze znakami specjalnymi.
+7. Porównaj niezależne oczekiwania produktów i poprawnych filtrów z konfiguracji. Dla filtrów publication_type[], subjects[], primary_school[], high_school[] i taxons[] sprawdź także wartości bez dopasowań. Brak wzorca dodatniego filtra daje SKIP.
+8. Wyślij niepoprawne page, limit, order_by i sort oraz nieprawidłowy i brakujący nagłówek kanału. Oceń odrzucenie według kontraktu.
+9. Zapisz osobny wynik i odpowiedzi w raporcie. Sam brak HTTP 500 nie potwierdza poprawności wyniku wyszukiwania.
+
+Przycisk katalogu służy do odczytu; tworzenie produktu ma osobny formularz.
+
+### Nowy produkt API — formularz tworzenia
+
+1. Wpisz nowe kody qa-, nazwę, slug, kanał cennika, cenę, oryginalną cenę i minimum price.
+2. Sprawdź dane lokalnie: format kodów i slugu, długości i ceny; minimum price nie może przekraczać ceny. Pokaż dwa planowane JSON-y.
+3. Po kliknięciu tworzenia zaloguj administratora do API, uzyskując osobny token administratora.
+4. Wyślij POST admin/products i oczekuj HTTP 201 oraz zgodnego kodu produktu.
+5. Dopiero po sukcesie wyślij POST admin/product-variants z powiązaniem produktu i cennikiem. Sprawdź HTTP 201, kod wariantu oraz zwrócone ceny.
+6. Zapisz wynik obu etapów i raport. Błąd drugiego etapu może pozostawić sam produkt; nie ma automatycznego wycofania pierwszego POST.
+
+Produkt pozostaje na dev. Dostęp do CMS w przeglądarce nie zastępuje uprawnień JWT do admin API. HTTP 401 oznacza problem uwierzytelnienia, 403 odmowę dostępu. Ten kontrakt nie ustawia opisów kanałowych, typu, aktywacji i wszystkich powiązań potrzebnych do sprzedaży. Sukces zapisu cennika nie potwierdza widoczności w katalogu ani gotowości do zamówienia.
+
+### Zaokrąglenia cen — wzorzec starej hurtowni
+
+1. Utwórz koszyk produktu referencyjnego i sprawdź bazowe ceny: brutto 18,40 zł, zgodną cenę oryginalną i oczekiwaną cenę netto.
+2. Pobierz płatności i znajdź dostępną ofertę z rabatem 23%. Bez niej pomiń pomiary z wyjaśnieniem; zwykły przycisk nie zmienia rabatów konta.
+3. Ustaw tę płatność i zmieniaj ilości według konfiguracji, obecnie 1–10 sztuk.
+4. Dla każdej ilości zapisz cenę netto po rabacie, sumę netto i brutto. Sprawdź ilość, rabat, niezmienność ceny bazowej oraz zgodność sum.
+5. Dla ilości z niezależnym wzorcem porównaj konkretne pola: 13,49 zł netto za sztukę przy 1 sztuce oraz 84,99 zł brutto przy 6 sztukach. Pozostałe ilości bez wzorca są obserwacjami i kontrolą spójności.
+6. Zapisz tabelę pomiarów i różnic w groszach. Nie finalizuj zamówienia.
+
+### Opisy produktów zależne od kanału
+
+1. Odczytaj niezależne wzorce produktów: opisy główne, nadpisania kanałowe, slugi i widoczność w kanałach.
+2. Dla każdego widocznego produktu i kanału pobierz szczegóły po slugu. Porównaj kod, nazwę, slug, pełny i krótki opis zgodnie z wypełnionymi wzorcami. Dla RETAIL i ACADEMY sprawdź też dane główne.
+3. Wyszukaj produkt na liście i porównaj jego nazwę oraz slug.
+4. Utwórz koszyk danego kanału, dodaj produkt i sprawdź productName oraz variantName, jeśli ustalono wzorzec nazwy wariantu.
+5. Zapisz wyniki i jawne pominięcia: niewidoczne produkty, brak wzorca wariantu, walidacje i zakładki CMS, specjalne typy, kursy, e-maile, PDF oraz integracje zewnętrzne.
+
+Tworzy koszyki, ale nie finalizuje ich ani nie zmienia opisów produktów w CMS.
+
+### Porównanie zapisanego zamówienia z bazą
+
+1. Wybierz raport z potwierdzoną finalizacją i kliknij Porównaj z bazą albo zaznacz kontrolę baz przed uruchomieniem zamówienia.
+2. Powiąż id API z sylius_order.id, a numer zamówienia Syliusa z nOrderID w bazie transferowej. Nie wyszukuj po prostu ostatniego zamówienia.
+3. Wykonaj stałe SELECT-y przez phpMyAdmin. Porównaj rekord nagłówka, walutę, stan i kwoty.
+4. Porównaj produkty, kody z uwzględnieniem mapowania kodów handlowych, pełne nazwy, ilości, ceny i rabaty. Sprawdź brak nieoczekiwanych pozycji.
+5. Porównaj płatność, dostawę i szczegóły paczek w sylius_shipment oraz pozycję KWys w transferze. Oddziel koszt paczek od opłaty płatności i przelicz skale groszy API oraz kwot dziesiętnych bazy.
+6. Jeśli transfer nie jest jeszcze widoczny, ponów wyłącznie odczyt do 3 razy, co 2 sekundy. Nie powtarzaj zamówienia.
+7. Zapisz wyniki każdej kontroli i snapshot finansowy. Brak danych lub różnica nie oznaczają PASS.
+
+Nie wykonuje zmian SQL. Porównanie starego raportu używa jego historycznego snapshotu API i aktualnego rekordu bazy.
+
+### Podgląd API i logowanie GitLab
+
+1. W Podglądzie API wybierz listę lub szczegóły, kanał i parametry. Wyślij żądanie GET, obejrzyj status, czas i JSON. To ręczna inspekcja odpowiedzi, nie pełny test jej zgodności z wzorcem.
+2. Gdy bramka GitLab przekierowuje do logowania, w Konfiguracji uruchom logowanie, dokończ logowanie i ewentualne 2FA. Sesja zostanie zapisana lokalnie do kolejnych żądań API.
+3. Samo logowanie nie sprawdza poprawności koszyka ani tworzenia produktu. Panel i raporty nie wyświetlają haseł i tokenów.
+
+### Drugie konto — konfiguracja i przebieg kontroli
+
+Uzupełnij lokalny .env. Pola pozostają puste w repozytoryjnym .env.example; nie przesyłaj haseł do rozmowy ani Gita.
+
+| Zmienna | Co wpisać |
+| --- | --- |
+| HURT_SECOND_EMAIL | E-mail innego hurtownika dev |
+| HURT_SECOND_API_PASSWORD | Jego apiPassword, nie hasło GitLab |
+| HURT_SECOND_TESTS_TOKEN | Opcjonalny token testów; puste używa HURT_TESTS_TOKEN |
+| HURT_SECOND_REBATE_BANK_TRANSFER | Oczekiwany procent rabatu zwykłego przelewu bankowego |
+| HURT_SECOND_REBATE_CASH_ON_DELIVERY | Oczekiwany procent rabatu przy odbiorze |
+| HURT_SECOND_REBATE_BANK_TRANSFER_1_DAY | Oczekiwany procent rabatu przelewu jednodniowego |
+| HURT_SECOND_REBATE_PAYMENT_TIMELY | Oczekiwany procent rabatu płatności terminowej |
+| HURT_SECOND_REBATE_ADAMADA | Oczekiwany procent rabatu Adamady |
+
+Rabaty wpisz jako procenty 0–100 (np. 12 lub 12,5), także 0 przy braku rabatu. Wypełnij rabaty metod dostępnych dla drugiego konta; niedostępne metody pozostaw puste. Sam wpis w .env stanowi oczekiwanie testu, nie zmienia ustawień CMS. Ustaw je wcześniej na koncie drugiego hurtownika. Dodatkowe metody oferowane przez API wymagają dopisania ich wzorca w integracji. Niedostępna metoda ze skonfigurowanym rabatem otrzymuje SKIP; sam procent nie oznacza jej dostępności.
+
+Wzorce odczytane z ekranów CMS: pierwsze konto — przelew bankowy 23%, odbiór 50%, przelew jednodniowy 75%, terminowa 25%, Adamada 10%. Drugie konto — odpowiednio 47%, 13%, 30,5%, 90% i 20%. Te wartości nie są wyznaczane z odpowiedzi badanego API.
+
+1. Uruchom Regresję koszyka albo Regresję zamówienia. Testy wyłącznie paczek nie używają drugiego konta.
+2. Sprawdź, czy to różne konta, zaloguj drugiego użytkownika i używaj osobnego tokenu API. Wspólna może być sesja bramki GitLab.
+3. Dla obu grup produktów drugiego konta sprawdź rabaty oferowane przez każdą dostępną płatność. Ustawiaj płatności i odczytuj koszyk, porównując rabat każdej pozycji z niezależną wartością .env. Pierwsze konto ma własne wzorce w order-regression.local.json.
+4. Utwórz własny koszyk konta A i sprawdź, że właściciel może go odczytać, pobrać płatności i dostawy.
+5. Jako konto B spróbuj odczytać koszyk A, jego płatności i dostawy oraz zmienić ilość, dodać produkt, ustawić płatność i dostawę oraz usunąć pozycję. Każda próba ma zwrócić 403 albo 404; po próbie właściciel odczytuje koszyk i sprawdza brak zmian.
+6. Powtórz te same próby w odwrotnym kierunku. Po nieudanej kontroli zapisu przerwij dalsze mutacje tego koszyka, zachowując FAIL.
+7. Pokaż osobne wyniki w raporcie regresji. Bez danych drugiego konta jest SKIP; niepoprawne dane, brak oczekiwanego rabatu, obcy odczyt lub zmiana dają FAIL. HTTP 401 nie zalicza izolacji — oba konta muszą być poprawnie zalogowane.
+
+Kontrole drugiego konta tworzą wyłącznie koszyki, bez complete i PDF, także w regresji z zapisem. Test zakłada, że cudzy token koszyka nie zastępuje uprawnień zalogowanego właściciela; jeśli projekt API celowo udostępnia koszyki na podstawie samego tokenu, wymaga to uzgodnienia kontraktu, a wyniku nie należy automatycznie uznawać za poprawną izolację.
+
+## Co oznacza „ziarno losowania”?
+
+Ziarno (`seed`) to tekst sterujący losowym wyborem produktów, ilości, płatności i dostawy. Pozwala powtórzyć wybór z wcześniejszego testu, np. podczas sprawdzania zgłoszonego błędu. Nie jest hasłem ani tokenem dostępu.
+
+W panelu pole **Powtórz losowanie** jest opcjonalne. Pozostaw je puste, aby użyć losowania wynikającego z konfiguracji testu. Aby odtworzyć wcześniejszy przebieg, skopiuj wartość **Ziarno losowania** z jego raportu i wklej ją do tego pola. Możesz też wpisać własny tekst, np. `proba-1`, i używać go w kolejnych uruchomieniach.
+
+Ten sam tekst odtwarza wybory tylko przy tej samej liście produktów, ustawieniach i dostępnych metodach API. Nie przywraca dawnych cen, rabatów, stanów magazynowych ani zamówienia. Pole w panelu dotyczy testów koszyka i zamówienia; nie steruje regresją ani testami paczek.
 
 ## Polecenia i pliki startowe
 
@@ -249,7 +451,7 @@ Scenariusz zamówienia sprawdza m.in.:
 - oczekiwania zapisane w `expectations` oraz opcjonalne zaokrąglenia pozycji;
 - niezmienione kwoty przy finalizacji i obecność wymaganych linków do dokumentów.
 
-`paymentQuoteTotalBasis: "net"` porównuje `orderItemTotal` oferty płatności z sumą `totalNetSalesAfterDiscount` produktów, bez dostawy. To konfigurowana interpretacja kontraktu. Ustawienie `"gross"` porównuje z `itemsTotal`. Brak ustalenia podstawy daje pominiętą kontrolę zamiast zgadywania.
+`paymentQuoteTotalBasis: "net"` porównuje `orderItemTotal` oferty płatności z sumą `totalNetSalesAfterDiscount` produktów, bez dostawy. To konfigurowane zestawienie pól, domyślnie informacyjne. Ścisłą kontrolę równości i blokadę zapisu włącza dopiero `enforcePaymentQuoteTotal: true`, po potwierdzeniu wspólnej reguły naliczania i zaokrąglania. Ustawienie `"gross"` porównuje z `itemsTotal`. Brak ustalenia podstawy daje pominiętą kontrolę zamiast zgadywania.
 
 ### Osobny test zaokrągleń
 
@@ -369,6 +571,8 @@ Te ścieżki należą do `http://127.0.0.1:18767`, nie do Syliusa.
 | --- | --- | --- |
 | GET | `/` | Interfejs panelu |
 | GET | `/app.js`, `/wizard.js`, `/product-form.js`, `/style.css` | Zasoby panelu |
+| GET | `/api/documentation` | Bieżący README jako bezpiecznie sformatowana dokumentacja i spis treści |
+| GET | `/README.md` | Pobranie źródłowego README projektu |
 | GET | `/api/state` | Stan danych, przebiegów i raportów; bez haseł/tokenów |
 | POST | `/api/run` | Uruchomienie dozwolonego zestawu: `cart`, `order`, `wizard`, `catalog`, `product-create`, `rounding`, `descriptions`, `login` |
 | POST | `/api/stop` | Zatrzymanie aktywnego przebiegu po jego identyfikatorze |
@@ -409,7 +613,7 @@ Raport zakupowy zawiera plan produktów, migawki cen, rabatów i sum, historię 
 
 Po wysłaniu `complete` program **nie ponawia** tej operacji po timeoutach. Brak odpowiedzi może oznaczać zapisane zamówienie. Sprawdź stan w CMS przed kolejną próbą. Jeżeli API nie zwraca `state`, kontrola zmiany stanu jest SKIP; przyjęcie `complete`, kwoty i dokumenty są sprawdzane osobno.
 
-Pobranie poprawnego pliku PDF nie potwierdza jego treści ani doręczenia e-maila. Projekt nie ma integracji z bazą transferową, skrzynką odbiorczą ani ekstraktorem zawartości PDF. Nie oznacza tych kontroli jako wykonanych.
+Pobranie poprawnego pliku PDF nie potwierdza jego treści ani doręczenia e-maila. Odczyt bazy transferowej i Syliusa jest opcjonalny (sekcja Porównanie API z bazą poniżej). Skrzynka odbiorcza i ekstraktor zawartości PDF nie są zintegrowane; ich kontrole pozostają pominięte.
 
 ## Testy samego narzędzia
 
@@ -517,3 +721,165 @@ Projekt nie wykonuje sam commitów, push ani zmian historii. Zmiany cen/rabatów
 | Brak `*.local.json` po pobraniu repozytorium | Wykonaj `npm.cmd run setup`, a następnie uzupełnij konfigurację |
 
 Backend i dane dev mogą się zmieniać. Raport jest dowodem konkretnego przebiegu w określonym czasie; wcześniejszy PASS nie gwarantuje wyniku kolejnego zamówienia.
+
+
+## Regresja zamówienia i paczek
+
+Panel startowy udostępnia **Regresję zamówienia** (bez finalizacji lub z zapisem) oraz **Paczki i koszt dostawy**. Poprzedni test losowy i formularz zamówienia nadal działają. Regresja używa ustalonych produktów i oczekiwań, a metody płatności i dostawy pobiera z bieżącego API.
+
+```powershell
+npm.cmd run setup
+npm.cmd run regression
+npm.cmd run regression -- --complete
+npm.cmd run packages
+npm.cmd run packages -- --complete
+```
+
+Konfiguracja: `config/order-regression.local.json` (ignorowana przez Git), wzór: `config/order-regression.example.json`. Nowa kopia projektu wymaga potwierdzenia własnych produktów, wag, rabatów i taryfy; wartości brakujące nie są pobierane z odpowiedzi badanego API jako wzorzec.
+
+| Ustawienie | Znaczenie |
+| --- | --- |
+| `groups` | Po dwa znane produkty grup `adamada` i `pozostale`; kody wariantów API |
+| `quantities` | Kolejne dodatnie ilości po wyborze płatności, np. 2, 6, 1 |
+| `invalidQuantities` | Ilości, które zgodnie z przyjętym kontraktem mają być odrzucone: -1, 0, 1.5; jeśli 0 ma usuwać pozycję, zmień ten zestaw i kontrakt testu |
+| `adamadaRebatePercent` | Niezależny oczekiwany rabat Adamada, 10% |
+| `paymentRebates` | Oczekiwane rabaty konta według kodów płatności. Brak wpisu oznacza tylko sprawdzenie spójności z ofertą API, nie poprawności ustawień konta |
+| `maxCombinations` | Limit 1–96 kombinacji w jednym przebiegu. Każda pominięta z powodu limitu jest widoczna jako SKIP |
+| `nonPackageShippingCodes` | Potwierdzone w CMS dostawy bez kalkulatora paczek, np. `personal_collection` (flat_rate) |
+| `validationStatuses` | Konkretne dozwolone statusy walidacji; 401, 403 i 500 nie zaliczają testu negatywnego |
+| `packages.product.unitWeightGrams` | Waga jednej sztuki potwierdzona w CMS, w gramach |
+| `packages.paymentCode` | Dostępna płatność używana do niezależnych pomiarów kosztu GLS |
+| `packages.paymentSurchargeGrossMinor` | Potwierdzona dopłata tej płatności dla GLS w groszach, także jawne 0. Przy cash_on_delivery na dev odczytano 1500. Nie wolno pomijać dopłaty przy porównaniu shippingTotal |
+| `packages.calculator` | Niezależny wzorzec: singlePackageWeight (g), priceIsNet, taxPercent, weightRanges: from/to włącznie i priceMinor w groszach |
+| `packages.quantities` | Opcjonalne ilości referencyjne. Bez nich test dobiera najbliższe osiągalne wagi przed/na/za progami paczek i przedziałów |
+
+### Zakres przypadków
+
+- Każda dostępna płatność, a następnie dostawy dostępne po jej zapisaniu. Każda kombinacja ma nowy koszyk; obie grupy produktów są testowane oddzielnie.
+- Przeliczenie po zmianie ilości, rabat pozycji, świeża oferta płatności, sumy pozycji i suma produktów z dostawą. Pola pieniężne muszą być nieujemnymi całkowitymi kwotami w groszach.
+- Kilka produktów jednej grupy, ponowne dodanie produktu zwiększające ilość oraz `DELETE /api/v2/shop/orders/{tokenValue}/items/{itemId}` usuwające pozycję.
+- Ilości niepoprawne, nieistniejące produkty/płatności/dostawy i niepełny adres. Po odrzuceniu porównywany jest stan koszyka, aby wykryć częściowy zapis.
+- Dla GLS: `shipmentPackageQuantity`, `shippingTotal`, `shippingTotalNet`, wzrost i spadek ilości oraz przejście na metodę bez kalkulatora. Liczba paczek = sufit(waga/pojemność), cena paczki pochodzi z przedziału wagi całego zamówienia. Wzorzec kosztu uwzględnia dopłatę płatności i VAT, z zaokrągleniem do grosza.
+- Wariant `--complete`: zapis maksymalnie po jednym poprawnym zamówieniu dla każdej grupy i dla scenariusza paczek (do 3), pobranie PDF przez istniejący silnik, kontrola niezmienności kosztu netto dostawy i liczby paczek. Dodatkowo próba odrzucenia pustego oraz mieszanego koszyka Adamada. Jeżeli backend błędnie zaakceptuje negatywną próbę complete, zamówienie może powstać; test zgłosi FAIL i nie ponowi żądania.
+
+Nie zakładamy, że sprawdzenie kilku osiągalnych wag książki 210 g potwierdza dokładnie granicę 8000/8001 g. Do dokładnych granic można użyć tymczasowego profilu, np. 420 g i książki 210 g: 1, 2, 3 szt. dają wagi poniżej, na i powyżej limitu. Nie zmieniamy wagi istniejących produktów.
+
+Bez włączenia porównania baz zapisy `sylius_shipment.shipment_package_details` i transfer `orders_items` z kodem KWys mają SKIP. Izolacja między klientami jest sprawdzana po skonfigurowaniu drugiego konta. Pozostałe niepotwierdzone zakresy: przekroczenie zapasu bez referencyjnego stanu magazynowego, kontrakt ponownego complete i niedostępna dla konta płatność istniejąca w systemie. E-mail i treść PDF nadal nie są sprawdzane przez ekstraktor. Jeśli brak błędów, ale są pominięcia, zbiorczy raport ma INCOMPLETE, nie pełny PASS.
+
+### Tymczasowa konfiguracja GLS przez CMS
+
+W karcie paczek rozwiń **Test z tymczasową zmianą ustawień CMS**. Wpisz wagę jednej paczki, granicę dwóch przedziałów, ceny w zł oraz netto/brutto. Przycisk uruchamia kolejno zapis profilu w CMS, test API i przywrócenie ustawień początkowych. Nie jest to zapis przez admin JSON API: ustawienia przygotowuje Playwright w CMS, a badany koszyk obsługuje natywne HTTP API.
+
+Mechanizm jest ograniczony do dev, `shipping-methods/6/edit?_channel_code=WHOLESALE`, kodu `gls_wholesale`, kalkulatora `weight_range_shipping` i kategorii podatkowej `books` / VAT 5%. Liczba wierszy przedziałów musi odpowiadać CMS (obecnie 2). Nie zmienia kanałów, dostępności, kodu dostawy ani podatków. Wykorzystuje `BROWSER_CHANNEL` (domyślnie msedge), sesję GitLab z `.auth/dev.json` oraz `SYLIUS_ADMIN_EMAIL` i `SYLIUS_ADMIN_PASSWORD`. Sesja CMS z ręcznie otwartego okna nie jest automatycznie współdzielona.
+
+Przed zmianą powstaje `.auth/shipping-restore.json`; zawiera tylko kopię konfiguracji, bez haseł, tokenów i cookies. Istniejący dziennik blokuje nową zmianę. Przywracanie w finally działa również po błędzie i zatrzymaniu testu; po nim następuje odczyt kontrolny. Po zabiciu procesu lub komputera finally może się nie wykonać — wtedy użyj:
+
+```powershell
+npm.cmd run packages:restore
+```
+
+Jeżeli ktoś w międzyczasie zmienił konfigurację, test nie nadpisze jego wartości i zachowa dziennik do ręcznego uzgodnienia. Nie uruchamiaj równolegle innych narzędzi/testów GLS podczas tego scenariusza: ustawienia są wspólne dla dev. Automatyczne przywrócenie nie jest transakcją bazodanową.
+
+Raport zawiera tabelę każdej kombinacji, pomiary cen i paczek oraz wynik przywracania. Osobne raporty finalizacji i PDF znajdują się w podfolderach final-*. W scenariuszu zmiany CMS zachowywany jest `shipping-config-audit.json` i zrzut `shipping-restored.png` (pliki lokalne, ignorowane przez Git). Nowe identyfikatory zestawów `POST /api/run`: regression, regression-order, packages, packages-profile; ostatni przyjmuje obiekt profile. Pozostałe zabezpieczenia lokalnego panelu i blokada gwotest nadal obowiązują.
+
+## Porównanie API z bazą po finalizacji
+
+Na ekranie startowym zaznacz **Po zapisie porównaj z bazą Sylius i transfer** przed uruchomieniem zamówienia lub regresji z zapisem. Opcja działa także dla formularza krok po kroku. Alternatywnie ustaw `HURT_VERIFY_DATABASE=true` w `.env` dla CLI. Kontrola następuje po potwierdzeniu finalizacji i pobraniu dokumentów; jej błąd nie ponawia complete i nie cofa zamówienia. Przy raportach z potwierdzoną finalizacją dostępny jest przycisk **Porównaj z bazą** — wykonuje sam odczyt, bez tworzenia nowego zamówienia.
+
+```powershell
+npm.cmd run database -- --report IDENTYFIKATOR-RAPORTU-ZAMOWIENIA
+```
+
+Dostęp został zweryfikowany przez `https://phpmyadmin.gwodev.pl/`. Baza Syliusa to **bookshop2**, baza transferowa **gwo_transfer**. Integracja wykonuje wyłącznie stałe SELECT-y z liczbowym id zamówienia. Nie ma dowolnego SQL ani operacji INSERT/UPDATE/DELETE. Nie wymaga bezpośredniego hasła DB: używa sesji GitLab `.auth/dev.json`, Edge i dostępu phpMyAdmin w tej sesji. Jeśli phpMyAdmin wymaga dodatkowego logowania, automat zgłosi błąd; nie przejmuje sesji z ręcznie otwartego okna.
+
+API `id` odpowiada `bookshop2.sylius_order.id`. Transferowe **nOrderID odpowiada sylius_order.number**, a nie id. Potwierdzony przykład: id 5998 → numer 30001604 → transfer nOrderID 30001604. Faktyczna tabela pozycji transferu na tym środowisku to **orders_items**, podczas gdy opis zadania używał order_items.
+
+| Tabela | Porównywane dane |
+| --- | --- |
+| `bookshop2.sylius_order` | Jeden rekord, id, numer, stan inny niż cart, waluta, items_total, total |
+| `sylius_order_item` + `sylius_product_variant` | Kod wariantu, liczba pozycji, ilość, cena oryginalna i jednostkowa, suma pozycji, nazwa produktu |
+| `sylius_payment` + `sylius_payment_method` | Jedna płatność, kod metody, kwota i waluta |
+| `sylius_shipment` + `sylius_shipping_method` | Kod dostawy, koszt przesyłki oraz shipment_package_details: JSON, liczba paczek, cena jednostkowa i netto/brutto |
+| `sylius_adjustment` | Korekty typów shipping/payment: koszt przesyłki i opłata płatności |
+| `gwo_transfer.orders` | Jeden rekord właściwego numeru, flaga hurtowni, waluta i dPrice zgodne z total API |
+| `gwo_transfer.orders_items` | Kod handlowy vcIDT, nAmount, rabat, ceny netto/brutto przed i po rabacie; brak nadmiarowych produktów |
+| Pozycja `KWys` | Liczba paczek, cena z shipment_package_details oraz koszt samych paczek netto i brutto |
+
+**shippingTotal API zawiera koszt przesyłki i opłatę płatności. KWys zawiera koszt samych paczek.** Porównanie rozdziela te składniki na podstawie korekty payment w Syliusie. Potwierdzony przykład GLS + payment_timely: paczka 15,75 zł brutto + opłata 10,00 zł = shippingTotal 25,75 zł; KWys 15,75 zł. Dla netto opłata jest przeliczana według `shippingTaxRate` API (ułamek 0.05 dla zweryfikowanego scenariusza książek 5%). W transferze odczytano dVATPercent=0.05 dla KWys, ale 5.00 dla książki — nie wolno bezpośrednio traktować obu pól jako procentu w tej samej skali. Inne kategorie podatkowe opłaty wymagają osobnego kontraktu i rozszerzenia mapowania.
+
+API używa groszy, transfer DECIMAL(9,3) w PLN. Porównanie zachowuje trzecią cyfrę i nie zaokrągla różnic 0,001 zł do pozornego sukcesu. Kod handlowy może różnić się od kodu wariantu — mapowanie pochodzi z planu produktów. Odczyty dotyczą jednego zamówienia; nie pobieramy adresów, e-maili, numerów podatkowych ani tokenów zamówień.
+
+Raport zamówienia pokazuje sekcję **Porównanie API / baza** oraz finansowy snapshot odczytu. Samodzielne porównanie daje osobny raport typu database. Brak wpisu transferowego jest sprawdzany do 3 razy (przerwa 2 s); nie powstaje kolejne zamówienie. Błędy odczytu i różnice nie są zaliczane jako PASS.
+
+JSON szczegółów paczek ma limit odczytu 400 znaków; dłuższy zapis zgłasza FAIL zamiast porównania uciętych danych. Historyczne raporty z uszkodzonym przez dawne maskowanie kodem płatności mają SKIP dla tego kodu. Porównanie istniejącego raportu odnosi aktualny zapis bazy do historycznego snapshotu API, nie do nowego GET API.
+
+Nazwy produktów są odczytywane przez SELECT w porcjach Base64 po 40 znaków, następnie dekodowane i sprawdzane względem CHAR_LENGTH z bazy. Zapobiega to fałszywym różnicom powodowanym skracaniem długich komórek przez phpMyAdmin oraz jego sposobem prezentowania spacji. Nie skracamy ani nie upraszczamy właściwej nazwy przy porównaniu. Jeśli pełna wartość nie zostanie odczytana, kontrola zgłasza błąd zamiast porównywać skrót z API.
+
+Zestaw `POST /api/run` o identyfikatorze `database` przyjmuje `reportId`. Pole `verifyDatabase: true` w uruchomieniu zamówienia włącza automatyczne porównanie po jego zapisie. Moduł `api-tests/database.mjs` zawiera komplet SELECT-ów i mapowanie pól.
+
+## Raporty wyjaśnione dla osób spoza zespołu API
+
+Każdy format raportu (koszyk/zamówienie, katalog, tworzenie produktu, ceny, opisy, regresja, paczki i baza) zawiera sekcję **Raport prostym językiem**. Pokazuje cel, źródło oczekiwań, liczbę rzeczywiście zaliczonych i niezaliczonych kontroli oraz konkretne powody pominięć. Powtarzające się pominięcie jednej metody dostawy jest zgrupowane z podaniem liczby wystąpień.
+
+Sekcja **Co i jak sprawdzono — każdy przypadek** zawiera rozwijany opis celu, planu kroków, oczekiwanego wyniku i wyniku zapisanego w przebiegu. Błędy są domyślnie rozwinięte. Nowe przebiegi regresji przypisują do każdego przypadku faktyczne żądania i pomiary cen/ilości/paczek. Plan kroków nie jest dowodem ich pełnego wykonania: FAIL może przerwać przypadek, a SKIP nie oznacza sukcesu. Dla starszych raportów bez takiej ewidencji opisy wskazują wspólne tabele i listę żądań zamiast odtwarzać brakujące dane.
+
+PASS potwierdza wyłącznie wykonane warunki, FAIL oznacza niezgodność lub błąd kontroli, SKIP brak potwierdzenia danego warunku, a INCOMPLETE brak błędów przy niepełnym pokryciu. Niektóre starsze silniki nadają PASS mimo pominięć — opis raportu jawnie ostrzega wtedy, że pełne pokrycie nie zostało potwierdzone. Słownik wyjaśnia API, regresję, kanały, kwoty w groszach, kod wariantu, kod handlowy i KWys.
+
+Nowe pliki JSON zawierają także pole `explanation` w wersji 1. Historyczne HTML można rozbudować bez ponownego uruchamiania API:
+
+```powershell
+npm.cmd run reports:refresh
+```
+
+Polecenie odczytuje zapisane raporty, również w podfolderach finalizacji, i aktualizuje wyłącznie `raport.html`. Zachowuje bajty `raport.json`, wyniki i dokumenty PDF. Nie wykonuje logowania, żądań sieciowych, zapisów zamówień ani odczytów bazy. Nie dopisuje historycznym testom wyników, których wcześniej nie utrwalono.
+
+Porównanie pozycji transferu sumuje ilości i wartości netto/brutto wszystkich rekordów tego samego kodu, także gdy transfer rozbija pozycję na pojedyncze sztuki. Nadal sprawdza rabat i ceny każdego rekordu; dodatkowy rekord zwiększający ilość lub wartość daje FAIL. Porównanie pełnej wartości pozycji wykrywa różnice zaokrągleń niewidoczne przy samym sprawdzaniu ceny jednostkowej. Formularz zachowuje kod handlowy z puli produktów; dla starszych raportów bez mapowania samodzielny odczyt uzupełnia je z aktualnego config/products.json. W przypadku zmiany mapowania od czasu zamówienia trzeba najpierw potwierdzić historyczny kod w CMS.
+
+## Użytkownik zdefiniowany — własny e-mail i rabaty z CMS
+
+1. W nagłówku wybierz **Użytkownik zdefiniowany**. Wpisz e-mail hurtownika dev i kliknij **Zapisz e-mail i odczytaj rabaty z CMS**.
+2. Panel wyszuka dokładnie jednego hurtownika po e-mailu w Syliusie. Odczyta jego id, UID i pięć rabatów, również z nieaktywnych pól formularza, bez klikania Zapisz w CMS.
+3. Po udanym odczycie zapisze wyłącznie `HURT_CUSTOM_EMAIL` w lokalnym `.env`. Używa wspólnego hasła `HURT_API_PASSWORD` i tokenu środowiska pierwszego konta. Nie zmienia `HURT_EMAIL`, haseł ani drugiego konta. Nieznany e-mail albo błąd CMS nie nadpisują poprzedniego wyboru.
+4. Uruchom Koszyk, Pełne zamówienie lub formularz krok po kroku. Niezapisana zmiana adresu blokuje uruchomienie z poprzednim e-mailem. Test ponownie odczyta aktualne rabaty z CMS jako niezależny wzorzec, zaloguje wskazanego użytkownika przez API i wybierze z jego dostępnych metod.
+5. Raport wskazuje użytkownika zdefiniowanego i zawiera źródło wzorców rabatów wraz z id/UID i czasem odczytu. E-mail jest maskowany w żądaniach i raportach. Sam zapis adresu i pobranie rabatów nie tworzą koszyka ani zamówienia.
+
+Wymagany jest dostęp administratora do CMS: SYLIUS_ADMIN_EMAIL, SYLIUS_ADMIN_PASSWORD i ważna sesja GitLab. Błąd odczytu zatrzymuje test; wartości nie są kopiowane z odpowiedzi badanego API. Konto 1 i Konto 2 nadal działają zgodnie ze swoimi osobnymi ustawieniami. Regresja dwóch kont nie używa wyboru użytkownika zdefiniowanego.
+
+Nowy lokalny endpoint: `POST /api/account/custom` z body `{ "email": "uzytkownik@example.org" }`, chroniony tokenem panelu i Origin. Nie pozwala zmieniać dowolnych kluczy .env. Zapis pliku jest atomowy; hasła i pozostałe ustawienia są zachowywane. Nie zmieniaj ręcznie .env podczas zapisywania z panelu.
+
+### UID i tabela tmp_whole_sale_wholesaler
+
+CMS pozwala powiązać e-mail z id hurtownika oraz zewnętrznym UID. Kolumna `tmp_whole_sale_wholesaler.uid` jest unikalnym UID, a jej `id` jest odrębnym identyfikatorem rekordu tej tabeli. Nie wolno utożsamiać tych identyfikatorów. Tabela zawiera user_rebate_1, user_rebate_2, user_rebate_3 i user_rebate_5, ale nie kompletny zestaw pięciu nazwanych rabatów widocznych w CMS.
+
+Odczyt 16.10.2026 dla potwierdzonego UID pierwszego konta nie znalazł rekordu w tej tabeli. Dlatego obecna integracja użytkownika zdefiniowanego korzysta z CMS, a nie z tabeli tmp. Nie zgadujemy mapowania numerów user_rebate_* na metody płatności ani źródła rabatu Adamady. Automatyczne porównanie tych rabatów z bazą wymaga potwierdzenia aktualnej tabeli i mapowania; nie jest jeszcze częścią testu.
+
+Dodatkowo potwierdzono powiązanie drugiego konta: CMS id 195 → UID 235820 → tmp_whole_sale_wholesaler.id 2. Odczyt tmp dla tego UID zwrócił user_rebate_1=30,50, user_rebate_2=0, user_rebate_3=30, user_rebate_5=0, podczas gdy ekran CMS miał odpowiednio nazwane rabaty 47 / 13 / 30,5 / 90 oraz Adamada 20. Te dane nie wystarczają do ustalenia równoważnego aktualnego wzorca w bazie. Nie kopiujemy wartości tmp do CMS ani nie nadpisujemy nimi oczekiwań.
+
+
+## Diagnostyka cen i blokada zapisu zamówienia
+
+Niezgodności finansowe z potwierdzonym wzorcem (ceny, rabaty, sumy oraz oferta płatności przy włączonej ścisłej kontroli) są zapisywane jako FAIL. Test kontynuuje edycję koszyka, wybór płatności i dostawy oraz odczyt podsumowania, żeby zebrać dane z kolejnych etapów. Przed wysłaniem `PATCH /shop/orders/{token}/complete` sprawdza wyniki: wcześniejszy FAIL blokuje zapis. Wtedy nie pobiera potwierdzenia PDF ani nie porównuje zapisu z bazą. Błędy uniemożliwiające dalszy przebieg, np. brak logowania, niepoprawna odpowiedź HTTP lub niedostępna wybrana metoda, nadal przerywają test od razu.
+
+Na początku raportu zamówienia sekcja **Co jest nie tak?** wskazuje błędny etap, produkt lub płatność, pole, wartość oczekiwaną, otrzymaną i różnicę. Tabela etapów odróżnia wykonane kontrole od pominiętych. Starszym raportom nie dopisujemy etapów, których nie zapisały.
+
+Sekcja **Oferta płatności a netto koszyka** porównuje `orderItemTotal` wybranej oferty z sumą `items[].totalNetSalesAfterDiscount` po wybraniu płatności, bez dostawy. Pokazuje również jednostkowe netto przed i po rabacie. Przykład: D090 przy rabacie 0% zwraca 202,86 zł przed rabatem i 202,85 zł po rabacie. Dla 10 sztuk to −0,10 zł. Kolumna **Różnica brutto pozycji** sprawdza osobno `total − discountedUnitPrice × quantity`, więc może wynosić 0,00 zł mimo rozbieżności netto. Raport pokazuje różne wartości pól API; bez ustalonej reguły ich zaokrąglania nie uznaje samej różnicy za błąd ceny. Równość `unitPriceNet` i `discountedUnitPriceNet` przy rabacie 0% nie jest domyślnie wymagana. Takie obserwacje nie blokują zapisu i nie są liczone jako PASS ani FAIL. Błędne brutto, suma do zapłaty lub rabat sprzeczny z niezależnym wzorcem nadal dają FAIL. Starsze wyniki pozostają zachowane, z uwagą o wcześniejszym niepotwierdzonym założeniu.
+
+
+## Biblioteka testów i wybór użytkownika w panelu
+
+Główny widok dzieli testy na kategorie: **Zakupy**, **Regresja i dostawa**, **Produkty** i **Zgłoszenia błędów**. Początkowo pokazuje zakupy. Przycisk **Wszystkie** pokazuje cały katalog, a wyszukiwarka przeszukuje nazwy i opisy we wszystkich kategoriach. Karty wskazują zakres kont i skutek uruchomienia. Opcje porównania z bazą oraz ziarna losowania są w rozwijanej sekcji **Opcje uruchomienia**.
+
+Panel **Aktywny użytkownik** pokazuje konto i e-mail. Przycisk **Zmień użytkownika** rozwija wybór konta oraz pięć rabatów z opisanym źródłem. Konto 1 i Konto 2 pokazują wzorce z konfiguracji; własny użytkownik pokazuje ostatni odczyt z CMS dla zapisanego adresu. Po restarcie panelu nie ma pamięci tego odczytu — zapisz e-mail ponownie, aby odczytać rabaty teraz; uruchomienie testu również odczytuje je na nowo. Wpisanie nowego e-maila wymaga użycia **Zapisz i pobierz rabaty** przed uruchomieniem testu. Wybór rodzaju konta jest pamiętany w danej sesji przeglądarki. Podczas trwającego testu zmiana konta jest zablokowana.
+
+Wybrane konto dotyczy koszyka, pełnego zamówienia i formularza krok po kroku. Pozostałe zestawy, w tym regresja, korzystają z kont określonych w swoich scenariuszach. Dodając nową kartę w `dashboard/public/index.html`, umieść ją w odpowiedniej sekcji `suite-group` i oznacz `data-test-card`; wyszukiwarka i liczniki obejmą ją automatycznie.
+
+
+### Niezależne przypadki regresji i interpretacja błędów
+
+Do ręcznego odtworzenia izolacji w Postmanie służy [kolekcja JSON](postman/HURTOWNIA%20-%20Izolacja%20uzytkownikow.postman_collection.json). Zaimportuj plik, a w jego Variables uzupełnij lokalnie `iso_email_a`, `iso_email_b`, `iso_api_password` i `iso_tests_token_a`. Token B jest opcjonalny — pusty oznacza użycie tokenu testowego A. Zachowaj działającą sesję bramki GitLab w Postmanie lub podaj opcjonalne `iso_gateway_cookie`. Domyślny wariant to `5lp-1`, płatność przy odbiorze i oczekiwany rabat A 50%; wartości można zmienić. Uruchom całą kolekcję w kolejności 01–10, z jedną iteracją. W kroku 10 zobacz Test Results, tabelę Visualize i wynik w `iso_result`. Kolekcja tworzy nowy koszyk, nie wysyła `complete` i blokuje inne hosty niż DEV. Po zakończeniu usuwa robocze tokeny ze zmiennych kolekcji. Dla odwrotnego kierunku zamień e-maile i oczekiwany rabat A. Plik zawiera puste dane dostępowe; wypełnione wartości pozostają lokalnie. Generator: `node postman/build-isolation.mjs`.
+
+Każda próba dostępu obcego konta ma własny nowy koszyk. Właściciel najpierw wybiera płatność i odczytuje stan; następnie drugie konto wykonuje dokładnie jedną badaną operację. Test sprawdza zarówno odmowę HTTP 403/404, jak i brak zmian danych właściciela. Raport zapisuje ID koszyka, status obcej operacji i listę zmienionych pól z wartościami przed i po. Błąd jednej próby nie zanieczyszcza kolejnych. W starszych raportach ostrzeżenie wskazuje możliwość powtarzania skutku wcześniejszej zmiany wspólnego koszyka.
+
+W wariancie z zapisem kontrola pustego koszyka rozdziela odczyt, próbę zatwierdzenia oraz niezmienność stanu. Awaria odczytu GET nie blokuje osobnego żądania PATCH complete. Jeżeli nie ma poprawnego stanu początkowego, porównanie niezmienności jest SKIP. Nie zaliczamy go na podstawie samego statusu odpowiedzi.
+
+Sekcja **Najważniejsze ustalenia regresji** grupuje podobne objawy i wskazuje żądania zwracające HTTP 500. Odpowiedź 500 dla nieprawidłowej ilości lub nieistniejącej metody nie jest poprawną walidacją; oczekiwane statusy 4xx pozostają wymagane. Testy nie poprawiają kodu badanego backendu. Porównanie oferty płatności z netto koszyka jest informacyjne, dopóki nie potwierdzono wspólnej reguły zaokrągleń i nie włączono ścisłego wymagania `enforcePaymentQuoteTotal`.
