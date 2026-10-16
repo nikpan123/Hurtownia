@@ -1,6 +1,18 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+export function redactText(input,secrets) {
+  let value=String(input);
+  for(const secret of secrets.filter(v=>typeof v==='string'&&v.length).sort((a,b)=>b.length-a.length)) {
+    if(secret.length>=4)value=value.split(secret).join('[ukryto]');
+    else {
+      const escaped=secret.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      value=value.replace(new RegExp('(?<![\\p{L}\\p{N}_])'+escaped+'(?![\\p{L}\\p{N}_])','gu'),'[ukryto]');
+    }
+  }
+  return value;
+}
+
 export async function loadEnv(file = '.env') {
   try { process.loadEnvFile(file); }
   catch (e) { if (e.code !== 'ENOENT') throw e; }
@@ -44,12 +56,12 @@ export function validateConfig(config, options = {}) {
   if (t != null && (!Number.isSafeInteger(t) || t < 0)) throw new Error('Tolerancja zaokrągleń musi być nieujemną liczbą groszy.');
   if (config.pdfAttempts != null && (!Number.isInteger(config.pdfAttempts) || config.pdfAttempts < 1 || config.pdfAttempts > 10)) throw new Error('pdfAttempts: zakres 1–10.');
 }
-export async function credentialsFor(config) {
+export async function credentialsFor(config,{requireShop=true}={}) {
   const refs = config.credentials ?? {};
   const result = {};
   for (const [key, envKey] of [['email','emailEnv'],['password','passwordEnv'],['testsToken','testsTokenEnv']]) {
     result[key] = process.env[refs[envKey]];
-    if (!result[key]) throw new Error(`Uzupełnij ${refs[envKey] ?? envKey} w .env.`);
+    if (!result[key]&&(requireShop||key==='testsToken')) throw new Error(`Uzupełnij ${refs[envKey] ?? envKey} w .env.`);
   }
   result.cookie = process.env[refs.cookieEnv] || '';
   if (!result.cookie) {

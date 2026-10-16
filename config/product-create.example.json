@@ -1,0 +1,10 @@
+{
+  "code": "qa-wpisz-unikalny-kod",
+  "variantCode": "qa-wpisz-unikalny-wariant",
+  "name": "Produkt testowy QA",
+  "slug": "qa-wpisz-unikalny-slug",
+  "channel": "WHOLESALE",
+  "price": "50,00",
+  "originalPrice": "50,00",
+  "minimumPrice": "0,00"
+}

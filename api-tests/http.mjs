@@ -1,4 +1,4 @@
-import { cookieHeader, validateEnvironment } from './config.mjs';
+import { cookieHeader, validateEnvironment,redactText } from './config.mjs';
 
 export class ApiClient {
   constructor(config,credentials,{allowLocal=false,allowTest=false,fetchImpl=fetch,signal}={}) {
@@ -8,8 +8,7 @@ export class ApiClient {
   }
   clean(value) {
     if (typeof value==='string') {
-      for(const secret of [...this.secrets,...Object.values(this.tokens)].filter(Boolean).sort((a,b)=>b.length-a.length)) value=value.split(secret).join('[ukryto]');
-      return value;
+      return redactText(value,[...this.secrets,...Object.values(this.tokens)]);
     }
     if (Array.isArray(value))return value.map(v=>this.clean(v));
     if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,this.clean(v)]));

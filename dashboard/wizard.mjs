@@ -1,5 +1,12 @@
 import {randomUUID} from 'node:crypto';
 
+export function availableProducts(catalog,rows) {
+  return catalog.filter(p=>p.enabled!==false).flatMap(p=>{
+    const dto=rows.find(d=>d.code===p.productVariant||d.code===p.merchandiseCode);
+    return dto?.availableForSale===true&&dto.outOfStock===false?[{...p,name:dto.name,price:dto.price,originalPrice:dto.originalPrice}]:[];
+  });
+}
+
 // Jeden wybór na etap; identyfikator zapobiega ponownemu użyciu starego kliknięcia.
 export class ChoiceGate {
   constructor(job,signal){this.job=job;this.signal=signal;}

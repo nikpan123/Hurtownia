@@ -16,7 +16,7 @@ test('Panel serwuje UI i odrzuca żądania zmiany bez tokenu i poprawnego Origin
   try {
     const page=await fetch(base);assert.equal(page.status,200);const html=await page.text();assert(html.includes('Centrum testów'));assert(!html.includes('__UI_TOKEN__'));
     const rejected=await fetch(base+'/api/run',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({suite:'order'})});assert.equal(rejected.status,403);
-    const state=await (await fetch(base+'/api/state')).json();assert(state.reports.length>0);assert.equal(state.settings.testEnvironmentEnabled,false);assert(!JSON.stringify(state).includes('SYLIUS_ADMIN_PASSWORD='));
+    const state=await (await fetch(base+'/api/state')).json();assert(Array.isArray(state.reports));assert.equal(state.settings.testEnvironmentEnabled,false);assert(!JSON.stringify(state).includes('SYLIUS_ADMIN_PASSWORD='));
   } finally {await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}
 });
 

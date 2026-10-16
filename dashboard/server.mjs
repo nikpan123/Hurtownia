@@ -8,7 +8,9 @@ import {fileURLToPath} from 'node:url';
 import {ApiClient} from '../api-tests/http.mjs';
 import {runScenario} from '../api-tests/engine.mjs';
 import {runCatalog} from '../api-tests/catalog.mjs';
-import {ChoiceGate,validateSelection} from './wizard.mjs';
+import {ChoiceGate,validateSelection,availableProducts} from './wizard.mjs';
+import {redactText} from '../api-tests/config.mjs';
+import {runProductCreation,runRounding,runDescriptions,productPayload} from '../api-tests/features.mjs';
 
 const workspace=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const reportRoot=path.join(workspace,'raporty-api');
@@ -18,15 +20,17 @@ const definitions={
   wizard:{name:'Zamówienie krok po kroku',script:'',args:[]},
   order:{name:'Pełne zamówienie',script:'api-tests/run.mjs',args:['--config','config/dev.local.json','--complete']},
   catalog:{name:'Katalog produktów',script:'api-tests/catalog-run.mjs',args:[]},
-  'catalog-create':{name:'Utworzenie produktu przez API i katalog',script:'api-tests/catalog-run.mjs',args:['--create']},
+  'product-create':{name:'Tworzenie produktu przez API',script:'',args:[]},
+  rounding:{name:'Ceny netto / brutto — wzorzec starej hurtowni',script:'',args:[]},
+  descriptions:{name:'Opisy produktów zależne od kanału — API',script:'',args:[]},
   login:{name:'Logowanie GitLab',script:'api-tests/login.mjs',args:[]}
 };
-const jobs=[];let currentChild;let currentController;const gates=new Map();
+const jobs=[];let currentChild;let currentController;let launching=false;const gates=new Map();
 async function env() {
   let local={};try{local=parseEnv(await readFile(path.join(workspace,'.env'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
   return {...process.env,...local};
 }
-function scrub(text,values){for(const value of Object.values(values).filter(v=>typeof v==='string'&&v.length>=4).sort((a,b)=>b.length-a.length))text=text.split(value).join('[ukryto]');return text;}
+function scrub(text,values){return redactText(text,Object.values(values));}
 async function settings() {
   const vars=await env();const config=JSON.parse(await readFile(path.join(workspace,'config/dev.local.json'),'utf8'));
   if(vars.HURT_DEV_BASE_URL)config.baseUrl=vars.HURT_DEV_BASE_URL;
@@ -44,7 +48,7 @@ async function reports() {
     try{
       const data=JSON.parse(await readFile(path.join(reportRoot,entry.name,'raport.json'),'utf8'));
       const files=(await readdir(path.join(reportRoot,entry.name))).filter(f=>/\.(html|json|pdf)$/.test(f));
-      results.push({id:entry.name,date:data.generatedAt,status:data.status??'UNKNOWN',name:data.scenario??'Katalog produktów',kind:data.tests?'catalog':'cart',finalization:data.finalization??null,orderId:data.orderId??data.snapshots?.[0]?.order?.id,error:data.error??null,counts:countResults(data),products:(data.products??[]).map(p=>p.productVariant??p.isbn),payment:data.selectedPayment,shipping:data.selectedShipping,files});
+      results.push({id:entry.name,date:data.generatedAt,status:data.status??'UNKNOWN',name:data.scenario??'Katalog produktów',kind:data.kind??(data.tests?'catalog':'cart'),finalization:data.finalization??null,orderId:data.orderId??data.snapshots?.[0]?.order?.id,error:data.error??null,counts:countResults(data),products:(data.products??[]).map(p=>p.productVariant??p.isbn),payment:data.selectedPayment,shipping:data.selectedShipping,files});
     }catch{/* Pomijamy foldery bez zakończonego raportu. */}
   }
   return results.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
@@ -56,13 +60,16 @@ async function state() {
 }
 async function executeSuite(body,vars,options) {
   const {config:cartConfig,credentials}=await settings();
-  if(!credentials.email||!credentials.password||!credentials.testsToken)throw new Error('Uzupełnij dane hurtownika w .env.');
+  if(!credentials.testsToken||(body.suite!=='product-create'&&(!credentials.email||!credentials.password)))throw new Error('Uzupełnij wymagane dane API w .env.');
+  if(body.suite==='product-create')return runProductCreation(cartConfig,credentials,{...options,input:body.input,adminEmail:vars.SYLIUS_ADMIN_EMAIL,adminPassword:vars.SYLIUS_ADMIN_PASSWORD});
+  if(body.suite==='rounding')return runRounding(cartConfig,credentials,options);
+  if(body.suite==='descriptions')return runDescriptions(cartConfig,credentials,options);
   if(body.suite==='wizard') {
     cartConfig.scenario.products=validateSelection(body.items,await wizardProducts());
     cartConfig.scenario.randomProducts={enabled:false};
-    cartConfig.scenario.productSelection={source:'manual',group:cartConfig.scenario.products[0].group};
+    cartConfig.scenario.productSelection={source:body.automatic?'frontend':'manual',group:cartConfig.scenario.products[0].group};
     cartConfig.scenario.name='Zamówienie krok po kroku';
-    return runScenario(cartConfig,credentials,{...options,complete:true});
+    return runScenario(cartConfig,credentials,{...options,complete:true,interactiveMode:body.automatic?'ui-random':'manual'});
   }
   if(['cart','order'].includes(body.suite)) {
     if(body.seed){
@@ -76,12 +83,15 @@ async function executeSuite(body,vars,options) {
   return runCatalog(config,credentials,{...options,create:body.suite==='catalog-create',adminEmail:vars[config.creation?.adminEmailEnv??'SYLIUS_ADMIN_EMAIL'],adminPassword:vars[config.creation?.adminPasswordEnv??'SYLIUS_ADMIN_PASSWORD']});
 }
 async function launch(body,runner) {
-  if(currentChild||currentController)throw Object.assign(new Error('Poczekaj na zakończenie aktualnego przebiegu.'),{status:409});
+  if(launching||currentChild||currentController)throw Object.assign(new Error('Poczekaj na zakończenie aktualnego przebiegu.'),{status:409});
+  launching=true;
+  try {
   const d=definitions[body.suite];if(!d)throw Object.assign(new Error('Nieznany zestaw testów.'),{status:400});
+  if(body.suite==='product-create')productPayload(body.input);
   const args=[d.script,...d.args];
   if(body.seed){if(!['cart','order'].includes(body.suite))throw new Error('Ziarno dotyczy koszyka i zamówienia.');if(typeof body.seed!=='string'||body.seed.length>128)throw new Error('Niepoprawne ziarno.');args.push('--seed',body.seed);}
   const vars=await env();
-  const job={id:randomUUID(),suite:body.suite,name:d.name,status:'RUNNING',startedAt:new Date().toISOString(),log:'',seed:body.seed??null};
+  const job={id:randomUUID(),suite:body.suite,name:d.name,status:'RUNNING',startedAt:new Date().toISOString(),log:'',seed:body.seed??null,automatic:body.suite==='wizard'&&body.automatic===true};
   const sensitive=Object.fromEntries(Object.entries(vars).filter(([k])=>/PASSWORD|TOKEN|COOKIE|EMAIL|USERNAME/i.test(k)));
   jobs.push(job);
   const append=chunk=>{job.log=(job.log+scrub(chunk.toString(),sensitive)).slice(-64000);};
@@ -96,6 +106,9 @@ async function launch(body,runner) {
     append('Rozpoczęto testy na dev.\n');
     Promise.resolve().then(()=>runner(body,vars,{signal:controller.signal,onProgress:line=>append(line+'\n'),...interactive})).then(result=>{
       job.status=controller.signal.aborted?'CANCELLED':result.report.status;
+      job.error=result.report.error??null;
+      if(body.suite==='product-create'){job.creation=result.report.creation;job.lastResponse=result.report.lastResponse;}
+      if(body.suite==='wizard')job.lastOrder=result.report.snapshots?.at(-1)?.order;
       append('\n'+job.status+' — '+result.directory+'\n');
       if(result.report.error)append(result.report.error+'\n');
     }).catch(error=>{job.status=controller.signal.aborted?'CANCELLED':'FAIL';append(error.message+'\n');}).finally(()=>{job.finishedAt=new Date().toISOString();job.wizard=null;gates.delete(job.id);if(currentController===controller)currentController=null;});
@@ -109,9 +122,12 @@ async function launch(body,runner) {
   child.on('error',error=>{job.log+='\nNie udało się uruchomić procesu: '+error.code;job.status='FAIL';job.finishedAt=new Date().toISOString();if(currentChild===child)currentChild=null;});
   child.on('close',(code,signal)=>{job.exitCode=code;job.status=job.status==='CANCELLED'?'CANCELLED':code===0?'PASS':'FAIL';job.finishedAt=new Date().toISOString();if(signal)job.signal=signal;if(currentChild===child)currentChild=null;});
   return job;
+  } finally {launching=false;}
 }
 async function wizardProducts() {
-  const {config,credentials}=await settings();const api=new ApiClient(config,credentials);await api.loginShop();
+  const {config,credentials}=await settings();
+  if(!credentials.email||!credentials.password||!credentials.testsToken)throw new Error('Uzupełnij HURT_EMAIL, HURT_API_PASSWORD i HURT_TESTS_TOKEN w .env.');
+  const api=new ApiClient(config,credentials);await api.loginShop();
   const catalog=JSON.parse(await readFile(path.join(workspace,'config/products.json'),'utf8')).products.filter(p=>p.enabled!==false);
   const rows=[];let last=1;
   for(let page=1;page<=last;page++) {
@@ -120,10 +136,7 @@ async function wizardProducts() {
     last=r.data.pagination?.last??1;if(!Number.isInteger(last)||last>20)throw new Error('Przekroczono limit stron katalogu.');
     rows.push(...r.data.data);
   }
-  return catalog.flatMap(p=>{
-    const dto=rows.find(d=>d.code===(p.merchandiseCode??p.productVariant));
-    return dto?.availableForSale===true&&dto.outOfStock===false?[{...p,name:dto.name,price:dto.price,originalPrice:dto.originalPrice}]:[];
-  });
+  return availableProducts(catalog,rows);
 }
 async function preview(body) {
   const allowed=new Set(['page','limit','order_by','sort','name','publication_type[]','subjects[]','primary_school[]','high_school[]','taxons[]']);
@@ -166,6 +179,7 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
         const body=await jsonBody(req);
         if(url.pathname==='/api/run')return send(202,await launch(body,runSuite));
         if(url.pathname==='/api/preview')return send(200,await preview(body));
+        if(url.pathname==='/api/product/preview')return send(200,productPayload(body.input));
         if(url.pathname==='/api/wizard/products')return send(200,{products:await wizardProducts()});
         if(url.pathname==='/api/wizard/choice'){
           const gate=gates.get(body.id);if(!gate)throw new Error('Brak aktywnego etapu zamówienia.');
@@ -183,7 +197,7 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
         const file=await safeReportPath(reportRoot,url.pathname.slice('/reports/'.length).split('/').map(decodeURIComponent));
         res.writeHead(200,{'Content-Type':file.endsWith('.pdf')?'application/pdf':file.endsWith('.json')?'application/json; charset=utf-8':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; sandbox allow-popups allow-same-origin"});return res.end(await readFile(file));
       }
-      const assets={'/':'index.html','/app.js':'app.js','/wizard.js':'wizard.js','/style.css':'style.css'};
+      const assets={'/':'index.html','/app.js':'app.js','/wizard.js':'wizard.js','/product-form.js':'product-form.js','/style.css':'style.css'};
       const asset=assets[url.pathname];if(!asset)return send(404,{error:'Nie znaleziono.'});
       let data=await readFile(path.join(workspace,'dashboard/public',asset));
       if(asset==='index.html')data=Buffer.from(data.toString().replace('__UI_TOKEN__',secret));

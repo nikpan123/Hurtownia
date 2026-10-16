@@ -1,13 +1,13 @@
 import http from 'node:http';
 
 // Wyłącznie lokalny model kontraktu, nigdy dane z rzeczywistego API.
-export async function startMock({brokenTotal=false,redirect=false,acceptForbidden=false,badPdf=false,completeTimeout=false,quoteNet=false,directShippingArray=false,rejectBulk=false,itemRebatePercent=25,paymentRebatePercent=25,shippingByPayment=false,emptyPayments=false,emptyShipping=false}={}) {
+export async function startMock({brokenTotal=false,redirect=false,acceptForbidden=false,badPdf=false,completeTimeout=false,quoteNet=false,directShippingArray=false,rejectBulk=false,itemRebatePercent=25,paymentRebatePercent=25,shippingByPayment=false,emptyPayments=false,emptyShipping=false,omitState=false}={}) {
   let quantity=2, payment, shipping, completed=false;
   const requests=[];
   function order() {
     const unit=payment?Math.round(10000*(1-itemRebatePercent/100)):10000;
     const total=unit*quantity;
-    return {id:90001,tokenValue:'mock-order-token-private',currencyCode:'PLN',state:completed?'new':'cart',
+    return {id:90001,tokenValue:'mock-order-token-private',currencyCode:'PLN',...(!omitState?{state:completed?'new':'cart'}:{}),
       itemsTotal:total,shippingTotal:shipping?1000:0,total:total+(shipping?1000:0)+(brokenTotal?1:0),totalNet:Math.round((total+(shipping?1000:0))/1.05),orderPromotionTotal:payment?-2500*quantity:0,
       shipmentPackageQuantity:shipping?1:0,
       items:[{id:1001,product:{code:'testhurtA',isbnNumber:'9780306406157'},productName:'Produkt demonstracyjny WHOLESALE',variantName:'Wersja A',quantity,unitPrice:10000,originalUnitPrice:10000,discountedUnitPrice:unit,unitPriceNet:9524,discountedUnitPriceNet:Math.round(unit/1.05),totalNetSalesAfterDiscount:Math.round(total/1.05),rebatePercent:payment?itemRebatePercent:0,total}],

@@ -231,7 +231,8 @@ uruchomienie, otwórz Zaloguj-dev.cmd. Środowisko gwotest pozostaje zablokowane
 
 TESTY KATALOGU
 Testuj-katalog-dev.cmd lub npm.cmd run catalog
-Nowy-produkt-i-katalog-dev.cmd lub npm.cmd run catalog:create
+Nowy-produkt-dev.cmd — sam formularz tworzenia, bez testów katalogu.
+CLI: npm.cmd run catalog:create -- --input config/product-create.local.json
 Konfiguracja: config/catalog.dev.local.json.
 Niezależne oczekiwania: config/catalog-fixtures.local.json; wzór w pliku example.
 Testy obejmują kontrakt odpowiedzi, paginację, sortowanie, nazwę/ISBN/autora,
@@ -242,3 +243,47 @@ Każdy przebieg tworzy folder raporty-api/katalog-... z HTML i JSON.
 2026-10-16: logowanie admin API działa, ale zapis produktu zwraca 403 Access Denied.
 To pozostaje błędem testu tworzenia do wyjaśnienia uprawnień/konfiguracji backendu.
 Produkty referencyjne QA utworzono w CMS na dev, bez zmian cen istniejących produktów.
+
+ZAMÓWIENIE KROK PO KROKU — PROWIZORYCZNY FRONTEND
+W panelu wybierz „Zamówienie krok po kroku” lub http://127.0.0.1:18767/#wizard.
+Pobierz dostępne produkty: lista to aktywna pula config/products.json przecięta
+z bieżącą dostępnością w WHOLESALE products-dto. Nie jest to pełny katalog sklepu.
+Wybierz maksymalnie 5 produktów, ilości 1–10 sztuk; Adamada i pozostałe osobno.
+Przycisk „Utwórz koszyk...” uruchamia test i czeka na Twój wybór płatności.
+Dostawy są pobierane dopiero po zapisaniu płatności i sprawdzeniu jej wyceny.
+Ostatni ekran pokazuje produkty, rabaty, kwoty, adresy z konfiguracji i wybrane
+metody. Przycisk „Zatwierdź i zapisz...” wykonuje PATCH complete dokładnie raz.
+
+„Losuj i przejdź automatycznie aż do zapisu” losuje grupę, produkty i ilości,
+a następnie wybiera z dostępnych płatności i dostaw. Każdy wybór jest pokazywany
+przez 3 sekundy przed przejściem dalej. Ten przycisk upoważnia także do końcowego
+zapisu zamówienia testowego. Pozostaw kartę otwartą, aby automat mógł przechodzić
+między etapami. Możesz go zatrzymać przyciskiem „Zatrzymaj ten przebieg”.
+Jeżeli zaznaczysz produkty samodzielnie, ten przycisk zmieni nazwę na
+„Przejdź automatycznie z wybranymi produktami aż do zapisu”: zachowa wybrane
+produkty i ilości, a płatność oraz dostawę wybierze losowo i zatwierdzi zamówienie.
+
+Tryb używa tego samego silnika kontroli co pozostałe testy: rozbieżność wyceny
+lub rabatu zatrzymuje test przed finalizacją. Nie omija błędów API.
+Wynik, rzeczywiste wybory i historia cen są w raporcie HTML/JSON; wygenerowane
+przez API pliki PDF można otworzyć z formularza po zakończeniu.
+Adresy zmień w config/dev.local.json przed rozpoczęciem przebiegu.
+Tryb działa wyłącznie na dev. Zatrzymanie lub zamknięcie programu nie cofa
+koszyka ani zamówienia, które zostały już zapisane przez serwer.
+Jeśli GET zamówienia nie udostępnia pola state, kontrola zmiany stanu ma SKIP.
+Odpowiedź complete, niezmienione kwoty i dostępność dokumentów są sprawdzane
+osobno; dostarczenie e-maila i baza transferowa nadal wymagają osobnej integracji.
+
+NOWE OSOBNE ZESTAWY
+Nowy produkt API: http://127.0.0.1:18767/#create-product — kod, wariant, nazwa, slug,
+cennik. Podgląd JSON wymaga zatwierdzenia przed wysłaniem dwóch POST-ów.
+Test katalogu nie jest wykonywany po tworzeniu produktu. 403 oznacza odmowę zapisu
+admin API; poprawne logowanie do CMS nie gwarantuje prawa zapisu przez API.
+Testuj-ceny-dev.cmd lub npm.cmd run prices — cena 18,40 zł, rabat 23%, ilości 1–10.
+Niezależne wzorce: 13,49 zł netto / szt. dla ilości 1 i 84,99 zł brutto dla 6 szt.
+Brak dostępnej płatności z rabatem 23% daje INCOMPLETE, bez zmiany ustawień konta.
+Testuj-opisy-dev.cmd lub npm.cmd run descriptions — szczegóły, lista i nazwa w
+koszyku dla WHOLESALE/RETAIL/ACADEMY. Fixture muszą zawierać niezależne pola main.
+INCOMPLETE oznacza brak wykonania części zakresu (np. walidacje CMS, e-maile, PDF).
+Przygotuj.cmd lub npm.cmd run setup tworzy brakujące pliki lokalne z przykładów,
+bez nadpisywania już istniejących danych. Pełna dokumentacja i endpointy: README.md.

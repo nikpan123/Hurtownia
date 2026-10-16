@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { cookieHeader, validateConfig } from './config.mjs';
+import { cookieHeader, validateConfig,redactText } from './config.mjs';
 import { saveReport } from './report.mjs';
 import { prepareProducts } from './products.mjs';
 import { pickAvailableMethod } from './checkout.mjs';
@@ -24,7 +24,7 @@ export function normalizeOrder(o) {
   };
 }
 
-export async function runScenario(config, credentials, {complete=false, allowLocal=false, allowTest=false, fetchImpl=fetch, directory,signal,onProgress=()=>{},choosePayment,chooseShipping,beforeComplete} = {}) {
+export async function runScenario(config, credentials, {complete=false, allowLocal=false, allowTest=false, fetchImpl=fetch, directory,signal,onProgress=()=>{},choosePayment,chooseShipping,beforeComplete,interactiveMode='manual'} = {}) {
   config=await prepareProducts(config);
   validateConfig(config, {allowLocal,allowTest});
   const s = config.scenario;
@@ -36,15 +36,13 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
   const report = {
     generatedAt:new Date().toISOString(), environment:config.environment, baseUrl:config.baseUrl, scenario:s.name,
     status:'RUNNING', finalization:'nie wykonano', products:s.products, productSelection:s.productSelection, expectedGroupRebates:s.expectations?.groupRebatePercent, snapshots:[], changes:[],
-    checkoutSelection:{seed:checkoutSeed,algorithm:'sha256-method-v1',paymentMode:choosePayment?'manual':s.randomCheckout?.payment?'random':'fixed',shippingMode:chooseShipping?'manual':s.randomCheckout?.shipping?'random':'fixed'},
+    checkoutSelection:{seed:checkoutSeed,algorithm:choosePayment||chooseShipping?'frontend-choice':'sha256-method-v1',paymentMode:choosePayment?interactiveMode:s.randomCheckout?.payment?'random':'fixed',shippingMode:chooseShipping?interactiveMode:s.randomCheckout?.shipping?'random':'fixed'},
     payments:[], shippingMethods:[], checks:[], requests:[], documents:[]
   };
   let bearer, token;
   const secretValues = [credentials.email,credentials.password,credentials.testsToken,credentials.cookie,...(credentials.cookies??[]).map(c=>c.value)].filter(Boolean);
   const redact = input => {
-    let result = String(input);
-    for (const secret of [...secretValues,bearer,token].filter(Boolean).sort((a,b)=>b.length-a.length)) result = result.split(secret).join('[ukryto]');
-    return result;
+    return redactText(input,[...secretValues,bearer,token]);
   };
   function check(name, condition, detail='') {
     report.checks.push({name,status:condition?'PASS':'FAIL',detail:condition?'':redact(detail)});
@@ -253,7 +251,8 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
       const {data:final}=await request('PATCH',orderPath()+'/complete',{});
       report.finalization='serwer przyjął zatwierdzenie';
       const after=await snapshot('Po finalizacji',{edited:true,selected:true});
-      check('Zamówienie opuściło stan koszyka',typeof after.state==='string'&&after.state!=='cart');
+      if(typeof after.state==='string')check('Zamówienie opuściło stan koszyka',after.state!=='cart');
+      else skip('Zamówienie opuściło stan koszyka','API przyjęło complete, ale GET zamówienia nie zwraca pola state. Zmiana stanu nie została osobno potwierdzona.');
       check('Kwoty nie zmieniły się przy finalizacji',after.total===order.total && after.totalNet===order.totalNet && after.itemsTotal===order.itemsTotal && after.shippingTotal===order.shippingTotal);
       const documents={...final,...after,pdfSummary:after.pdfSummary??final?.pdfSummary,paymentForm:after.paymentForm??final?.paymentForm,checkoutInformation:after.checkoutInformation??final?.checkoutInformation};
       for (const info of s.expectations?.checkoutInformationIncludes??[]) check('checkoutInformation zawiera '+info,Array.isArray(documents.checkoutInformation)?documents.checkoutInformation.includes(info):typeof documents.checkoutInformation==='object'&&documents.checkoutInformation!==null ? Object.hasOwn(documents.checkoutInformation,info):String(documents.checkoutInformation??'').includes(info));

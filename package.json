@@ -9,8 +9,11 @@
     "login:dev": "node api-tests/login.mjs",
     "dev": "node api-tests/run.mjs --config config/dev.local.json",
     "catalog": "node api-tests/catalog-run.mjs",
-    "catalog:create": "node api-tests/catalog-run.mjs --create",
-    "ui": "node dashboard/server.mjs"
+    "catalog:create": "node api-tests/features-run.mjs --suite product-create",
+    "ui": "node dashboard/server.mjs",
+    "prices": "node api-tests/features-run.mjs --suite rounding",
+    "descriptions": "node api-tests/features-run.mjs --suite descriptions",
+    "setup": "node api-tests/setup.mjs"
   },
   "engines": {
     "node": ">=22"

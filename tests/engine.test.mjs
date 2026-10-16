@@ -4,10 +4,16 @@ import { readFile, writeFile, mkdtemp, readdir } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { runScenario } from '../api-tests/engine.mjs';
-import { validateConfig, cookieHeader } from '../api-tests/config.mjs';
+import { validateConfig, cookieHeader,redactText } from '../api-tests/config.mjs';
 import { startMock } from './mock-server.mjs';
 
 const credentials={email:'qa-test@example.invalid',password:'mock-password-private',testsToken:'mock-tests-token-private',cookie:'session=mock-cookie-private'};
+
+test('Maskowanie krótkich sekretów nie uszkadza nazw dokumentów ani kodów płatności',()=>{
+  assert.equal(redactText('paymentForm.pdf payment_timely Zamówienie en "en"',['en']),'paymentForm.pdf payment_timely Zamówienie [ukryto] "[ukryto]"');
+  assert.equal(redactText('token=a.b a.b',['a.b']),'token=[ukryto] [ukryto]');
+  assert.equal(redactText('prefix-private-token-suffix',['private-token']),'prefix-[ukryto]-suffix');
+});
 export async function fixtureConfig(baseUrl) {
   const c=JSON.parse(await readFile('config/dev.example.json','utf8'));
   c.baseUrl=baseUrl;
@@ -44,6 +50,12 @@ test('Pełny checkout, historia cen, dokumenty i brak sekretów w raporcie',asyn
 test('Bez --complete nie finalizuje i nie pobiera PDF',async()=>{
   const r=await exercise({},false);assert.equal(r.report.status,'PASS',r.report.error);
   assert(!r.requests.some(r=>r.url.endsWith('/complete')));assert.equal(r.report.documents.length,0);
+});
+
+test('Brak pola state jest jawnie pominiętą kontrolą i nie blokuje pobrania dokumentów po complete',async()=>{
+  const r=await exercise({omitState:true});assert.equal(r.report.status,'PASS',r.report.error);
+  assert(r.report.checks.some(c=>c.name==='Zamówienie opuściło stan koszyka'&&c.status==='SKIP'));
+  assert.equal(r.report.documents.length,2);assert.equal(r.requests.filter(r=>r.url.endsWith('/complete')).length,1);
 });
 test('Lista dostaw jako tablica jest odczytywana obok formatu Hydra',async()=>{
   const r=await exercise({directShippingArray:true},false);
