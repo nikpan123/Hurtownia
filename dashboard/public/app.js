@@ -1,3 +1,35 @@
+// Wspólny wybór motywu dla lokalnych paneli na 127.0.0.1 (cookie współdzielone między portami).
+(() => {
+  const key = 'qa_ui_theme';
+  const allowed = ['auto', 'light', 'dark'];
+  const system = window.matchMedia('(prefers-color-scheme: dark)');
+  const select = document.querySelector('#qa-theme-mode');
+  function read() {
+    try {
+      const cookie = document.cookie.split(';').map(part => part.trim()).find(part => part.startsWith(key + '='));
+      const value = cookie ? decodeURIComponent(cookie.slice(key.length + 1)) : localStorage.getItem(key);
+      return allowed.includes(value) ? value : 'auto';
+    } catch { return 'auto'; }
+  }
+  function apply(value) {
+    document.documentElement.dataset.theme = value === 'auto' ? (system.matches ? 'dark' : 'light') : value;
+    document.documentElement.dataset.themePreference = value;
+    if (select) select.value = value;
+  }
+  function refresh() { apply(read()); }
+  select?.addEventListener('change', () => {
+    const value = allowed.includes(select.value) ? select.value : 'auto';
+    try { localStorage.setItem(key, value); } catch {}
+    try { document.cookie = key + '=' + value + '; Path=/; Max-Age=31536000; SameSite=Strict'; } catch {}
+    apply(value);
+  });
+  system.addEventListener('change', refresh);
+  window.addEventListener('focus', refresh);
+  window.addEventListener('storage', event => { if (event.key === key) refresh(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  refresh();
+})();
+
 const $=id=>document.getElementById(id);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const token=document.querySelector('meta[name=ui-token]').content;

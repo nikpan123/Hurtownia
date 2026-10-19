@@ -170,3 +170,79 @@
 
 .qa-app .toolbar>:is(button,a,input,select),.qa-app .toolbar>.field select,.qa-app .filter-bar>:is(button,a,input,select),.qa-app .actions>:is(button,a){height:42px;box-sizing:border-box}
 .qa-app .table-wrap td button.link{padding:10px 14px;font-size:13px}
+
+/* Jasny / ciemny / systemowy motyw wspólnych paneli QA. */
+.qa-app .qa-theme-control{display:flex;align-items:center;gap:10px;margin:20px 10px 0;padding-top:16px;border-top:1px solid var(--qa-line)}
+.qa-theme-control label{font-size:11px;font-weight:600;color:var(--qa-muted);flex-shrink:0}
+.qa-app .qa-theme-control select{width:100%;min-width:0;min-height:38px;padding:7px 9px;font-size:12px}
+html[data-theme=light]{color-scheme:light}
+html[data-theme=dark]{color-scheme:dark;background:#0e1522}
+html[data-theme=dark] .qa-app{--qa-bg:#0e1522;--qa-surface:#172131;--qa-elevated:#1d2b3e;--qa-ink:#e4ebf5;--qa-muted:#a6b5c9;--qa-line:#34465e;--ink:var(--qa-ink);--bg:var(--qa-bg);--line:var(--qa-line);--border:var(--qa-line);--muted:var(--qa-muted);--accent:var(--qa-accent);--primary:var(--qa-accent);--primary-strong:var(--qa-hover);--blue:var(--qa-accent);background:var(--qa-bg);color:var(--qa-ink)}
+html[data-theme=dark] :is(.qa-center,.qa-center .qa-sidebar){--qa-accent:#baa7ff;--qa-hover:#a791f1;--qa-soft:#2b2544;--qa-button:#7453ce;--qa-button-hover:#6543bd}
+html[data-theme=dark] :is(.qa-octopus,.qa-octopus .qa-sidebar){--qa-accent:#89baff;--qa-hover:#a3caff;--qa-soft:#1b3050;--qa-button:#2862b7;--qa-button-hover:#20549f}
+html[data-theme=dark] :is(.qa-warehouse,.qa-warehouse .qa-sidebar){--qa-accent:#73d9b5;--qa-hover:#91e7c9;--qa-soft:#173a34;--qa-button:#167b60;--qa-button-hover:#10694f}
+html[data-theme=dark] :is(.qa-cms,.qa-cms .qa-sidebar){--qa-accent:#f5bb72;--qa-hover:#ffd29b;--qa-soft:#3b2c21;--qa-button:#a35813;--qa-button-hover:#8c490b}
+html[data-theme=dark] .qa-app :is(.qa-sidebar,.card,.panel,.stat,.suite-card,.table-wrap,.empty,dialog,.product-mini,.launch-options,.account-panel,.issue-verification,.issue-status-history,.intro,.documentation-nav){background:var(--qa-surface);color:var(--qa-ink);border-color:var(--qa-line);box-shadow:none}
+html[data-theme=dark] .qa-app :is(header,.topbar){background:var(--qa-bg);color:var(--qa-ink);border-color:var(--qa-line)}
+html[data-theme=dark] .qa-app :is(h1,h2,h3,h4){color:var(--qa-ink)}
+html[data-theme=dark] .qa-app :is(.qa-sidebar .brand,.qa-sidebar nav .active){background:var(--qa-soft);color:var(--qa-accent);border-color:var(--qa-line)}
+html[data-theme=dark] .qa-app .qa-sidebar nav :is(a,button){color:#c1cde0}
+html[data-theme=dark] .qa-app .qa-sidebar nav :is(a,button):hover{background:var(--qa-elevated);color:var(--qa-accent)}
+html[data-theme=dark] .qa-app .qa-sidebar nav .active{color:var(--qa-accent)}
+html[data-theme=dark] .qa-app .qa-sidebar :is(.local,.sidebar-foot){background:#121c2b;border-color:var(--qa-line);color:var(--qa-muted)}
+html[data-theme=dark] .qa-app .qa-sidebar :is(.nav-label,.brand small,.qa-menu-icon,.qa-switcher small){color:var(--qa-muted)}
+html[data-theme=dark] .qa-app .qa-sidebar .brand .qa-menu-icon,html[data-theme=dark] .qa-app .qa-sidebar nav .active .qa-menu-icon{color:var(--qa-accent)}
+html[data-theme=dark] .qa-app :is(input,textarea,select){background:#111b2a;color:var(--qa-ink);border-color:#425671}
+html[data-theme=dark] .qa-app :is(input,textarea)::placeholder{color:#8c9eb5}
+html[data-theme=dark] .qa-app :is(input,textarea,select):disabled{color:#a6b5c9;background:#1b2636}
+html[data-theme=dark] .qa-app :is(label,.field,.detail-label,.eyebrow,.toolbar .count,.breadcrumbs,.local-time,.test-summary,.stat-label,.stat-note,.report-sub,.group-heading p,.account-context,.account-help,.notice,.issue-list-help,.issue-counts,.issue-state-note,.issue-verification small){color:var(--qa-muted)}
+html[data-theme=dark] .qa-app :is(.card p,.panel p,.suite-card p,.guide p,.detail-block,.project-card p,.activity p,.account-identity>span,.test-file,td small,footer,.section-head p,.metric-note){color:var(--qa-muted)}
+html[data-theme=dark] .qa-app :is(.stat strong,.stat-number,.project-meta strong,.timer,.account-identity strong,.account-header-button strong,.breadcrumbs strong){color:var(--qa-ink)}
+html[data-theme=dark] .qa-app :is(.secondary,.ghost,.suite,.test-data-tab,.suite-categories button){background:var(--qa-surface);color:var(--qa-ink);border-color:var(--qa-line)}
+html[data-theme=dark] .qa-app :is(.secondary,.ghost,.suite,.test-data-tab,.suite-categories button):hover:not(:disabled){background:var(--qa-soft);color:var(--qa-accent);border-color:var(--qa-accent)}
+html[data-theme=dark] .qa-app :is(.suite.active,.test-data-tab.active,.suite-categories button[aria-pressed=true]){background:var(--qa-soft);color:var(--qa-accent);border-color:var(--qa-accent)}
+html[data-theme=dark] .qa-app :is(.primary,a.primary){background:var(--qa-button);border-color:var(--qa-button);color:#fff}
+html[data-theme=dark] .qa-app :is(.primary,a.primary):hover:not(:disabled){background:var(--qa-button-hover);border-color:var(--qa-button-hover);color:#fff}
+html[data-theme=dark] .qa-app a:not(.brand):not(.qa-sidebar nav a):not(.dashboard-stat):not(.primary),html[data-theme=dark] .qa-app button.link{background:var(--qa-surface);border-color:var(--qa-line);color:var(--qa-ink)}
+html[data-theme=dark] .qa-app a:not(.brand):not(.qa-sidebar nav a):not(.dashboard-stat):not(.primary):hover,html[data-theme=dark] .qa-app button.link:hover{background:var(--qa-soft);border-color:var(--qa-accent);color:var(--qa-accent)}
+html[data-theme=dark] .qa-app :is(.plain,.icon){background:transparent;color:var(--qa-muted)}
+html[data-theme=dark] .qa-app :is(.metric,.dashboard-stat,.dashboard-panel,.test-data-row,.history-row,.account-avatar,.rebate-grid,.wizard-addresses,.wizard-totals,.wizard-product){background:var(--qa-elevated);border-color:var(--qa-line);color:var(--qa-ink)}
+html[data-theme=dark] .qa-app :is(th,thead){background:#1c2a3c;color:#b9c7dc;border-color:var(--qa-line)}
+html[data-theme=dark] .qa-app :is(td,.report-table td,.test-row,.data-row,.test-data-row,.activity,.project-meta,.rebate-grid>div,footer,.dialog-footer,.dialog-head){border-color:var(--qa-line)}
+html[data-theme=dark] .qa-app :is(.test-row,.data-table,.history-table){color:var(--qa-ink)}
+html[data-theme=dark] .qa-app :is(pre,code){background:#101a29;color:#d4e2f6;border-color:var(--qa-line)}
+html[data-theme=dark] .qa-app .callout{background:#27243c;border-color:#4b426a;color:#c9bdf3}
+html[data-theme=dark] .qa-app :is(.warning,.annual-card){background:#342b1c;border-color:#675134;color:#f2ce8d}
+html[data-theme=dark] .qa-app .danger{background:#4b2630;color:#ffabb4;border-color:#78414d}
+html[data-theme=dark] .qa-app :is(.badge.PASS,.badge.PASSED,.badge.COMPLETED,.badge.pass,.badge.passed,.issue-state[data-state=verified]){background:#173c31;color:#8ce0b7;border-color:#315e4b}
+html[data-theme=dark] .qa-app :is(.badge.FAIL,.badge.FAILED,.badge.fail,.badge.failed,.issue-kind[data-kind=bug],.issue-state[data-state=to_fix],.account-error){background:#412631;color:#ffabb9;border-color:#734251}
+html[data-theme=dark] .qa-app :is(.badge.RUNNING,.badge.IN_PROGRESS,.badge.BLOCKED,.badge.INCOMPLETE,.issue-state[data-state=unverified],.issue-state[data-state=to_verify]){background:#3d321f;color:#f1ce87;border-color:#6b5631}
+html[data-theme=dark] .qa-app :is(.badge.SKIP,.badge.SKIPPED,.badge.UNKNOWN,.badge.CANCELLED,.badge.INTERRUPTED){background:#2a3546;color:#bdcadc}
+html[data-theme=dark] .qa-app :is(.badge.auto,.issue-state[data-state=blocked]){background:#302741;color:#cfb9f3;border-color:#59456e}
+html[data-theme=dark] .qa-app :is(.badge.manual,.issue-kind[data-kind=feature],.environment){background:#1c344c;color:#a7cdf5}
+html[data-theme=dark] .qa-app :is(.project-icon,.suite-icon,.tag,.tab-count,.wizard-steps span){background:var(--qa-soft);color:var(--qa-accent)}
+html[data-theme=dark] .qa-app .issue-project-badge[data-project=octopus]{background:#1b3050;border-color:#36537a;color:#9ec9ff}
+html[data-theme=dark] .qa-app .issue-project-badge[data-project=hurtownia]{background:#173a34;border-color:#315e51;color:#88ddbe}
+html[data-theme=dark] .qa-app .issue-project-badge[data-project=cms]{background:#3b2c21;border-color:#685037;color:#f2c18b}
+html[data-theme=dark] .qa-app .issue-summary-item{background:var(--qa-surface);border-color:var(--qa-line);color:var(--qa-muted)}
+html[data-theme=dark] .qa-app .issue-summary-item strong{color:var(--qa-ink)}
+html[data-theme=dark] .qa-app .issue-summary-item[aria-pressed=true]{background:var(--qa-soft);border-color:var(--qa-accent)}
+html[data-theme=dark] .qa-app .metric.pass strong{color:#83dab0}
+html[data-theme=dark] .qa-app .metric.fail strong{color:#ffabb9}
+html[data-theme=dark] .qa-app .metric.skip strong{color:#ebc981}
+html[data-theme=dark] .qa-app .metric.xfail strong{color:#c3a5f2}
+html[data-theme=dark] .qa-app .test-data-message.info{background:#1d3448;color:#b4d5ee}
+html[data-theme=dark] .qa-app .test-data-message.success{background:#173c31;color:#8ce0b7}
+html[data-theme=dark] .qa-app .test-data-message.error{background:#412631;color:#ffabb9}
+html[data-theme=dark] .qa-app .account-feedback{background:#173c31;color:#8ce0b7}
+html[data-theme=dark] .qa-app .account-error{background:#412631;color:#ffabb9}
+html[data-theme=dark] .qa-app .rebate-grid strong{color:#8cdec2}
+html[data-theme=dark] .qa-app .rebate-grid span{color:var(--qa-muted)}
+html[data-theme=dark] .qa-app .documentation-content a{color:var(--qa-accent)}
+html[data-theme=dark] .qa-app dialog::backdrop{background:#020611c9}
+html[data-theme=dark] .qa-app #form-error{color:#ffabb9}
+html[data-theme=dark] .qa-app #toast{background:#293b55;color:#edf4ff;border-color:#435b7b}
+@media(max-width:800px){.qa-app .qa-theme-control{margin:12px 0 0;padding:10px 0 0;max-width:280px}.qa-app .qa-theme-control select{min-height:36px}}
+
+html[data-theme=dark] .qa-app :is(.field>span,header p,.test-scope,.suite-card ul,.launch-options summary){color:var(--qa-muted)}
+html[data-theme=dark] .qa-app .suite-categories button span{background:#2b3c50;color:#c9d6e8}
