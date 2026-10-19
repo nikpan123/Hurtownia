@@ -1,0 +1,6 @@
+{
+  "productId": null,
+  "code": "qa-dedykowany-produkt",
+  "peerWholesaleSlug": "slug-innego-produktu-qa-w-wholesale",
+  "note": "Dedykowany produkt QA dostępny w WHOLESALE, RETAIL i ACADEMY, z wyłączoną sprzedażą w EMPIK. Musi mieć główne name/slug/opisy i pola WHOLESALE/EMPIK. peerWholesaleSlug pochodzi z innego produktu QA. Automat zmienia tylko opisy kanałowe; nie uruchamia OfferUpdater. Nie uruchamiaj równolegle innych edytorów tego produktu. Dziennik .auth/description-cms-restore.json blokuje kolejne uruchomienie po przerwaniu; npm run descriptions:restore przywraca dane po sprawdzeniu konfliktu. Formularz wysyłany przez HTTP z rzeczywistym CSRF; nie testuje JavaScript edytora."
+}

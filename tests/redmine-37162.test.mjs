@@ -38,3 +38,10 @@ test('Pojedynczy nieregularny błąd 500 nie znika po kolejnych udanych próbach
 test('HTTP 200 z błędem 500 w JSON nie jest zaliczeniem',async()=>run({failureAt:1,hidden500:true},async({report})=>assert.equal(report.status,'FAIL')));
 test('2xx bez zapisania produktu zostaje wykryte niezależnym GET',async()=>run({dropItem:true},async({report})=>assert.equal(report.status,'FAIL')));
 test('Odmowa logowania daje raport FAIL bez tworzenia koszyków',async()=>run({loginDenied:true},async({report},m)=>{assert.equal(report.status,'FAIL');assert.equal(m.calls.length,1);}));
+
+test('Wybór pojedynczego przypadku nie wykonuje pozostałych prób',async()=>{
+ const directory=await mkdtemp(path.join(tmpdir(),'shipment-selection-'));
+ try{const m=mock();const {report}=await runShipmentRegression(config,credentials,{allowLocal:true,directory,...m,caseIds:['HURT-BUG-37162-02']});
+ assert.equal(report.status,'PASS');assert.deepEqual(report.tests.map(t=>t.id),['HURT-BUG-37162-02']);assert.equal(m.calls.filter(x=>x.endpoint==='shop/orders').length,1);
+ }finally{await rm(directory,{recursive:true,force:true});}
+});

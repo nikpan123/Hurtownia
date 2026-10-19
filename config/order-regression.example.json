@@ -56,6 +56,22 @@
     "complete": [
       400,
       422
+    ],
+    "forbiddenPayment": [
+      400,
+      403,
+      422
+    ],
+    "repeatComplete": [
+      200,
+      204,
+      400,
+      409,
+      422
+    ],
+    "stock": [
+      400,
+      422
     ]
   },
   "packages": {
@@ -68,5 +84,7 @@
     },
     "calculator": null,
     "note": "Uzupełnij niezależny wzorzec z CMS. calculator: singlePackageWeight, priceIsNet, taxPercent, weightRanges:[{from,to,priceMinor}]. Granice w gramach włącznie. Ceny w groszach."
-  }
+  },
+  "forbiddenPayments": [],
+  "stockFixture": null
 }

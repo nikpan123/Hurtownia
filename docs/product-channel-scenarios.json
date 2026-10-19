@@ -1,0 +1,1109 @@
+{
+  "version": 1,
+  "title": "Scenariusze opisów produktów w kanałach sprzedaży",
+  "updatedAt": "2026-10-19",
+  "scope": "Pełna lista obszarów z przekazanej ściągawki: CMS, API, frontend, dokumenty, URL i integracje. Kodem pokryto część API; katalog nie oznacza wykonania wszystkich przypadków.",
+  "baseUrl": "https://ksiegarnia.gwodev.pl/api/v2",
+  "categories": [
+    {
+      "id": "channel-cms",
+      "label": "Opisy kanałowe — CMS"
+    },
+    {
+      "id": "channel-api",
+      "label": "Opisy kanałowe — API"
+    },
+    {
+      "id": "channel-other",
+      "label": "Opisy kanałowe — sklep i integracje"
+    }
+  ],
+  "effectLabels": {
+    "cms": "Zmiana danych CMS"
+  },
+  "actions": {
+    "descriptions": {
+      "suite": "descriptions",
+      "label": "Uruchom test opisów per kanał",
+      "note": "Cały zestaw API dla WHOLESALE, RETAIL i ACADEMY. Tworzy koszyki na koncie skonfigurowanym w scenariuszu; bez complete, zmian CMS i wysyłek. Nie testuje frontendów ani Empika."
+    },
+    "descriptions-cms": {
+      "suite": "descriptions-cms",
+      "label": "Sprawdź zapis i walidacje CMS",
+      "note": "Oddzielny zestaw: tymczasowo zmienia pola WHOLESALE i EMPIK dedykowanego produktu QA; sprawdza formularz przez HTTP, odczyt CMS i API, a na końcu przywraca pola. Bez complete i bez OfferUpdater. JavaScript edytora pozostaje poza zakresem."
+    }
+  },
+  "prerequisites": [
+    "Źródło: przekazany opis „Zarządzanie opisami produktów per kanał (EMPIK, WHOLESALE)”, 19.10.2026.",
+    "EMPIK nie jest kanałem do testowania przez shop API. Brak jego serwera testowego nie daje podstawy do aktualizacji produkcyjnej oferty."
+  ],
+  "rules": [
+    "RETAIL i ACADEMY zawsze korzystają z ProductTranslation. ProductChannelTranslation dotyczy WHOLESALE i EMPIK.",
+    "PASS odpowiedzi API nie potwierdza formularza CMS, frontendu, treści PDF, e-maila ani OfferUpdater."
+  ],
+  "setupNotes": [
+    "Wzorce w config/catalog-fixtures.local.json muszą pochodzić z CMS: produkt fallback oraz produkt z odmiennym WHOLESALE.",
+    "variantName wymaga niezależnej wartości w fixture; jej brak powoduje SKIP.",
+    "Historyczny przebieg DEV z 16.10.2026: 18 PASS, 11 SKIP. To historyczny dowód zakresu API, nie aktualny wynik wszystkich 29 scenariuszy.",
+    "Kursy ACADEMY: courses.closed i courses.paid. Puste expected daje SKIP; itemsPath/identityPath/titlePath/slugPath i query należy potwierdzić na rzeczywistej odpowiedzi. Przykład konfiguracji: config/catalog-fixtures.example.json.",
+    "Zestaw descriptions-cms ma osobną konfigurację description-cms.local.json i plik awaryjnego przywracania .auth/description-cms-restore.json. Nie edytuj równocześnie produktu QA.",
+    "19.10.2026: zestaw formularza CMS wykonał 15 kontroli PASS, łącznie z potwierdzeniem przywrócenia pól QA. Nazwy obu wariantów QA są zdefiniowane; brak variantName w odpowiedzi API koszyka daje FAIL, a nie SKIP."
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/shop/products-dto",
+      "purpose": "Nazwy i slugi w listach poszczególnych kanałów"
+    },
+    {
+      "method": "GET",
+      "path": "/shop/products-dto-by-slug/{slug}",
+      "purpose": "Nazwa, slug, pełny i krótki opis"
+    },
+    {
+      "method": "GET",
+      "path": "/academy/closed-courses",
+      "purpose": "Automat DESC-018 — główny tytuł i slug, wymaga wzorców kursów i potwierdzonej struktury odpowiedzi"
+    },
+    {
+      "method": "GET",
+      "path": "/academy/paid-courses",
+      "purpose": "Automat DESC-019 — główny tytuł i slug, wymaga wzorców kursów i potwierdzonej struktury odpowiedzi"
+    },
+    {
+      "method": "GET",
+      "path": "https://cms-ksiegarnia.gwodev.pl/products/{id}/edit",
+      "purpose": "Odczyt formularza, pól kanałów i potwierdzenie zapisu"
+    },
+    {
+      "method": "POST",
+      "path": "https://cms-ksiegarnia.gwodev.pl/products/{id}/edit",
+      "purpose": "Zapis, walidacja i przywracanie czterech pól opisów QA z aktualnym CSRF i Referer"
+    }
+  ],
+  "headers": [
+    "X-Api-Channel: WHOLESALE / RETAIL / ACADEMY dla odczytów API.",
+    "Authorization: Bearer JWT oraz X-Tests-Token, zgodnie z konfiguracją testów."
+  ],
+  "executionFields": [
+    "ID DESC, produkt QA, kanał, źródło wzorca, faktyczne kontrole PASS/FAIL/SKIP i przyczyny pominięcia."
+  ],
+  "cases": [
+    {
+      "id": "DESC-001",
+      "category": "channel-cms",
+      "title": "Zakładka kanałowa i dostępne EMPIK/WHOLESALE",
+      "requirement": "1.1 — widoczność zakładki i kanałów",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS na DEV.",
+        "Osobny produkt QA; zapisz stan przed zmianą i przywróć go po próbie."
+      ],
+      "data": "Zwykły produkt i kanały faktycznie istniejące w systemie.",
+      "steps": [
+        "Otwórz edycję produktu.",
+        "Sprawdź zakładkę „Opisy produktu dla kanałów sprzedaży”.",
+        "Porównaj jej kanały z konfiguracją systemu."
+      ],
+      "expected": [
+        "Zakładka jest widoczna dla zwykłego produktu.",
+        "Edytowane są EMPIK i WHOLESALE, jeśli istnieją; RETAIL i ACADEMY nie używają ProductChannelTranslation."
+      ],
+      "automation": {
+        "runner": "Opisy kanałowe — zapis i walidacje formularza CMS",
+        "sources": [
+          "api-tests/description-cms.mjs",
+          "tests/description-cms.test.mjs"
+        ],
+        "actions": [
+          "descriptions-cms"
+        ],
+        "limits": "Automat formularza CMS z aktualnym CSRF i ponownym odczytem. Wymaga config/description-cms.local.json, sesji GitLab i administratora CMS. Zapis wyłącznie pól kanałowych QA; dziennik przywracania i odmowa nadpisania zmiany zewnętrznej. Nie testuje interakcji JavaScript edytora. Dla DESC-001 sprawdza strukturę pól formularza; widoczność zakładki w interfejsie wymaga osobnego testu UI."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 1 PASS, 0 FAIL w kontrolach przypisanych do DESC-001. Cztery pola WHOLESALE i EMPIK sprawdzono po zapisie. Pierwotne pola kanałowe QA przywrócono i potwierdzono odczytem CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-002",
+      "category": "channel-cms",
+      "title": "Ukrycie zakładki dla ofert i szkoleń",
+      "requirement": "1.1 — SpecialOffer, szkolenia rad i nauczycieli",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS na DEV.",
+        "Osobny produkt QA; zapisz stan przed zmianą i przywróć go po próbie."
+      ],
+      "data": "Po jednym produkcie każdego wymienionego typu.",
+      "steps": [
+        "Otwórz formularze trzech typów produktów.",
+        "Sprawdź dostępność zakładki kanałowej."
+      ],
+      "expected": [
+        "Zakładka nie jest dostępna dla SpecialOffer i obu typów szkoleń."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Obecny zestaw „Opisy per kanał” wykonuje wyłącznie API sklepu. Ten warunek nie jest przez niego automatycznie potwierdzany. Wymagane fixture specjalnych typów.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-003",
+      "category": "channel-cms",
+      "title": "Edycja i trwały zapis czterech pól kanałowych",
+      "requirement": "1.1 — name, slug, description, shortDescription",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS na DEV.",
+        "Osobny produkt QA; zapisz stan przed zmianą i przywróć go po próbie."
+      ],
+      "data": "Różne treści główne, WHOLESALE i EMPIK.",
+      "steps": [
+        "Wpisz odmienne wartości czterech pól w obu kanałach.",
+        "Zapisz formularz i odśwież stronę.",
+        "Porównaj z wpisanymi wartościami oraz głównymi danymi produktu."
+      ],
+      "expected": [
+        "Zmiany są zachowane oddzielnie w każdym kanale.",
+        "Dane główne i drugi kanał nie są nadpisane."
+      ],
+      "automation": {
+        "runner": "Opisy kanałowe — zapis i walidacje formularza CMS",
+        "sources": [
+          "api-tests/description-cms.mjs",
+          "tests/description-cms.test.mjs"
+        ],
+        "actions": [
+          "descriptions-cms"
+        ],
+        "limits": "Automat formularza CMS z aktualnym CSRF i ponownym odczytem. Wymaga config/description-cms.local.json, sesji GitLab i administratora CMS. Zapis wyłącznie pól kanałowych QA; dziennik przywracania i odmowa nadpisania zmiany zewnętrznej. Nie testuje interakcji JavaScript edytora."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 1 PASS, 0 FAIL w kontrolach przypisanych do DESC-003. Cztery pola WHOLESALE i EMPIK sprawdzono po zapisie. Pierwotne pola kanałowe QA przywrócono i potwierdzono odczytem CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-004",
+      "category": "channel-cms",
+      "title": "Puste pola i fallback każdego pola osobno",
+      "requirement": "1.1 — puste pola oraz fallback",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS na DEV.",
+        "Osobny produkt QA; zapisz stan przed zmianą i przywróć go po próbie."
+      ],
+      "data": "Dane główne i komplet kanałowy; wyczyszczenie każdego pola osobno oraz wszystkich.",
+      "steps": [
+        "Usuń jedną wartość kanałową i zapisz.",
+        "Sprawdź formularz po odświeżeniu i odczyt WHOLESALE.",
+        "Powtórz dla każdego pola, następnie usuń komplet tłumaczenia."
+      ],
+      "expected": [
+        "Puste wartości są dopuszczalne.",
+        "Brakujące dane są zastępowane właściwymi danymi głównymi, bez utraty pozostałych nadpisań."
+      ],
+      "automation": {
+        "runner": "Opisy kanałowe — zapis i walidacje formularza CMS",
+        "sources": [
+          "api-tests/description-cms.mjs",
+          "tests/description-cms.test.mjs"
+        ],
+        "actions": [
+          "descriptions-cms"
+        ],
+        "limits": "Automat formularza CMS z aktualnym CSRF i ponownym odczytem. Wymaga config/description-cms.local.json, sesji GitLab i administratora CMS. Zapis wyłącznie pól kanałowych QA; dziennik przywracania i odmowa nadpisania zmiany zewnętrznej. Nie testuje interakcji JavaScript edytora."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 5 PASS, 0 FAIL w kontrolach przypisanych do DESC-004. Cztery pola WHOLESALE i EMPIK sprawdzono po zapisie. Pierwotne pola kanałowe QA przywrócono i potwierdzono odczytem CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-005",
+      "category": "channel-cms",
+      "title": "Kolizja slugu w tym samym kanale",
+      "requirement": "1.1 — unikalność slugu w obrębie kanału",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS na DEV.",
+        "Osobny produkt QA; zapisz stan przed zmianą i przywróć go po próbie."
+      ],
+      "data": "Dwa produkty QA, istniejący slug WHOLESALE lub EMPIK.",
+      "steps": [
+        "Ustaw slug drugiego produktu równy slugowi pierwszego w tym samym kanale.",
+        "Spróbuj zapisać i odczytaj stan obu produktów."
+      ],
+      "expected": [
+        "Kontrolowany błąd walidacji.",
+        "Pierwszy produkt i poprzednia poprawna konfiguracja drugiego pozostają zachowane."
+      ],
+      "automation": {
+        "runner": "Opisy kanałowe — zapis i walidacje formularza CMS",
+        "sources": [
+          "api-tests/description-cms.mjs",
+          "tests/description-cms.test.mjs"
+        ],
+        "actions": [
+          "descriptions-cms"
+        ],
+        "limits": "Automat formularza CMS z aktualnym CSRF i ponownym odczytem. Wymaga config/description-cms.local.json, sesji GitLab i administratora CMS. Zapis wyłącznie pól kanałowych QA; dziennik przywracania i odmowa nadpisania zmiany zewnętrznej. Nie testuje interakcji JavaScript edytora."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 1 PASS, 0 FAIL w kontrolach przypisanych do DESC-005. Cztery pola WHOLESALE i EMPIK sprawdzono po zapisie. Pierwotne pola kanałowe QA przywrócono i potwierdzono odczytem CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-006",
+      "category": "channel-cms",
+      "title": "Slug kanałowy równy głównemu slugowi",
+      "requirement": "1.1 — zakaz slugu identycznego z głównym",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS na DEV.",
+        "Osobny produkt QA; zapisz stan przed zmianą i przywróć go po próbie."
+      ],
+      "data": "Produkt z głównym slugiem i pustym kanałowym.",
+      "steps": [
+        "Wpisz główny slug jako slug kanałowy.",
+        "Spróbuj zapisać."
+      ],
+      "expected": [
+        "Zapis jest odrzucony czytelną walidacją zgodnie z wymaganiem."
+      ],
+      "automation": {
+        "runner": "Opisy kanałowe — zapis i walidacje formularza CMS",
+        "sources": [
+          "api-tests/description-cms.mjs",
+          "tests/description-cms.test.mjs"
+        ],
+        "actions": [
+          "descriptions-cms"
+        ],
+        "limits": "Automat formularza CMS z aktualnym CSRF i ponownym odczytem. Wymaga config/description-cms.local.json, sesji GitLab i administratora CMS. Zapis wyłącznie pól kanałowych QA; dziennik przywracania i odmowa nadpisania zmiany zewnętrznej. Nie testuje interakcji JavaScript edytora."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 1 PASS, 0 FAIL w kontrolach przypisanych do DESC-006. Cztery pola WHOLESALE i EMPIK sprawdzono po zapisie. Pierwotne pola kanałowe QA przywrócono i potwierdzono odczytem CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-007",
+      "category": "channel-cms",
+      "title": "Ten sam slug w EMPIK i WHOLESALE",
+      "requirement": "1.1 — powtarzalność pomiędzy kanałami",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS na DEV.",
+        "Osobny produkt QA; zapisz stan przed zmianą i przywróć go po próbie."
+      ],
+      "data": "Niepowtarzalny slug w obrębie każdego kanału.",
+      "steps": [
+        "Wpisz tę samą nową wartość w EMPIK i WHOLESALE.",
+        "Zapisz i odśwież formularz."
+      ],
+      "expected": [
+        "Taka sama wartość między różnymi kanałami jest dozwolona.",
+        "Wartość różni się od głównego slugu."
+      ],
+      "automation": {
+        "runner": "Opisy kanałowe — zapis i walidacje formularza CMS",
+        "sources": [
+          "api-tests/description-cms.mjs",
+          "tests/description-cms.test.mjs"
+        ],
+        "actions": [
+          "descriptions-cms"
+        ],
+        "limits": "Automat formularza CMS z aktualnym CSRF i ponownym odczytem. Wymaga config/description-cms.local.json, sesji GitLab i administratora CMS. Zapis wyłącznie pól kanałowych QA; dziennik przywracania i odmowa nadpisania zmiany zewnętrznej. Nie testuje interakcji JavaScript edytora."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 1 PASS, 0 FAIL w kontrolach przypisanych do DESC-007. Cztery pola WHOLESALE i EMPIK sprawdzono po zapisie. Pierwotne pola kanałowe QA przywrócono i potwierdzono odczytem CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-008",
+      "category": "channel-cms",
+      "title": "Minimalna długość nazwy kanałowej",
+      "requirement": "1.1 — nazwa minimum 2 znaki",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS na DEV.",
+        "Osobny produkt QA; zapisz stan przed zmianą i przywróć go po próbie."
+      ],
+      "data": "Nazwa jednoliterowa, dwuznakowa i pusta.",
+      "steps": [
+        "Spróbuj zapisać nazwę o długości 1.",
+        "Powtórz dla 2 znaków i pustego pola."
+      ],
+      "expected": [
+        "Nazwa jednoliterowa jest odrzucona.",
+        "Dwa znaki są dopuszczalne; pusta nazwa uruchamia fallback."
+      ],
+      "automation": {
+        "runner": "Opisy kanałowe — zapis i walidacje formularza CMS",
+        "sources": [
+          "api-tests/description-cms.mjs",
+          "tests/description-cms.test.mjs"
+        ],
+        "actions": [
+          "descriptions-cms"
+        ],
+        "limits": "Automat formularza CMS z aktualnym CSRF i ponownym odczytem. Wymaga config/description-cms.local.json, sesji GitLab i administratora CMS. Zapis wyłącznie pól kanałowych QA; dziennik przywracania i odmowa nadpisania zmiany zewnętrznej. Nie testuje interakcji JavaScript edytora."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 2 PASS, 0 FAIL w kontrolach przypisanych do DESC-008. Cztery pola WHOLESALE i EMPIK sprawdzono po zapisie. Pierwotne pola kanałowe QA przywrócono i potwierdzono odczytem CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-009",
+      "category": "channel-cms",
+      "title": "Maksymalna długość slugu kanałowego",
+      "requirement": "1.1 — slug maksimum 255 znaków",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS na DEV.",
+        "Osobny produkt QA; zapisz stan przed zmianą i przywróć go po próbie."
+      ],
+      "data": "Poprawne, unikalne slugi o długości 255 i 256 znaków.",
+      "steps": [
+        "Zapisz slug 255-znakowy.",
+        "Spróbuj zastąpić go 256-znakowym.",
+        "Sprawdź stan po odmowie."
+      ],
+      "expected": [
+        "255 znaków jest dopuszczalne, 256 odrzucone.",
+        "Nie zapisano częściowej ani uciętej wartości bez walidacji."
+      ],
+      "automation": {
+        "runner": "Opisy kanałowe — zapis i walidacje formularza CMS",
+        "sources": [
+          "api-tests/description-cms.mjs",
+          "tests/description-cms.test.mjs"
+        ],
+        "actions": [
+          "descriptions-cms"
+        ],
+        "limits": "Automat formularza CMS z aktualnym CSRF i ponownym odczytem. Wymaga config/description-cms.local.json, sesji GitLab i administratora CMS. Zapis wyłącznie pól kanałowych QA; dziennik przywracania i odmowa nadpisania zmiany zewnętrznej. Nie testuje interakcji JavaScript edytora."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 2 PASS, 0 FAIL w kontrolach przypisanych do DESC-009. Cztery pola WHOLESALE i EMPIK sprawdzono po zapisie. Pierwotne pola kanałowe QA przywrócono i potwierdzono odczytem CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-010",
+      "category": "channel-cms",
+      "title": "Nowy produkt bez tłumaczeń i ich późniejsze dodanie",
+      "requirement": "1.2 — nowy produkt i ProductChannelTranslation",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "cms",
+      "conditions": [
+        "Administrator CMS; unikalny nowy produkt QA."
+      ],
+      "data": "Nowy produkt z głównymi danymi, bez wypełniania pól kanałowych.",
+      "steps": [
+        "Utwórz produkt i ponownie otwórz edycję.",
+        "Potwierdź puste pola kanałowe; istnienie rekordów sprawdź w bazie/admin odczycie, jeśli dostępny.",
+        "Dodaj tłumaczenia WHOLESALE i EMPIK i zapisz."
+      ],
+      "expected": [
+        "Nowy produkt domyślnie nie ma ProductChannelTranslation.",
+        "Późniejsze dodanie obu dostępnych kanałów jest możliwe."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Sam formularz „Nowy produkt API” tworzy produkt i wariant; nie potwierdza tego kryterium CMS ani braku rekordów kanałowych w bazie.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-011",
+      "category": "channel-api",
+      "title": "WHOLESALE — nazwa i slug na liście, nadpisanie i fallback",
+      "requirement": "3.1 — GET products-dto WHOLESALE",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "read",
+      "conditions": [
+        "Dwa niezależne wzorce QA: bez tłumaczenia kanałowego i z odmiennym WHOLESALE.",
+        "Potwierdzone w CMS name, slug, description/descriptionContains i shortDescription; aktywne kanały."
+      ],
+      "data": "config/catalog-fixtures.local.json, main i channels.WHOLESALE.",
+      "steps": [
+        "Wyślij GET /shop/products-dto z X-Api-Channel: WHOLESALE i wyszukiwaniem nazwy referencyjnej.",
+        "Znajdź kod każdego produktu QA.",
+        "Porównaj name i slug ze wzorcem kanałowym lub głównym."
+      ],
+      "expected": [
+        "Produkt z nadpisaniem zwraca wartości WHOLESALE.",
+        "Produkt fallback zwraca dane główne."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — zestaw API",
+        "sources": [
+          "api-tests/features.mjs",
+          "api-tests/description-scenarios.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "Wymagane niezależnie przygotowane fixture; nie sprawdza całej paginacji ani UI.",
+        "actions": [
+          "descriptions"
+        ]
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 2 PASS, 0 FAIL w kontrolach przypisanych do DESC-011. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-012",
+      "category": "channel-api",
+      "title": "WHOLESALE — cztery pola szczegółów, nadpisanie i fallback",
+      "requirement": "3.2 — GET products-dto-by-slug WHOLESALE",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "read",
+      "conditions": [
+        "Dwa niezależne wzorce QA: bez tłumaczenia kanałowego i z odmiennym WHOLESALE.",
+        "Potwierdzone w CMS name, slug, description/descriptionContains i shortDescription; aktywne kanały."
+      ],
+      "data": "Nazwa, slug, pełny i krótki opis dla dwóch wzorców QA.",
+      "steps": [
+        "Pobierz produkt przez jego oczekiwany slug WHOLESALE.",
+        "Porównaj code, name, slug, description i shortDescription z fixture.",
+        "Powtórz dla produktu bez tłumaczenia kanałowego."
+      ],
+      "expected": [
+        "WHOLESALE używa nadpisania, a przy jego braku danych głównych.",
+        "Kod produktu pozostaje właściwy."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — zestaw API",
+        "sources": [
+          "api-tests/features.mjs",
+          "api-tests/description-scenarios.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "Pełny opis jest porównywany dokładnie lub jako niezależny fragment descriptionContains, zależnie od fixture. Per-field czyszczenie CMS jest osobnym DESC-004.",
+        "actions": [
+          "descriptions"
+        ]
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 2 PASS, 0 FAIL w kontrolach przypisanych do DESC-012. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-013",
+      "category": "channel-api",
+      "title": "RETAIL — główne tłumaczenia w API",
+      "requirement": "2.1/2.2 — część API, bez potwierdzenia frontendu",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "read",
+      "conditions": [
+        "Dwa niezależne wzorce QA: bez tłumaczenia kanałowego i z odmiennym WHOLESALE.",
+        "Potwierdzone w CMS name, slug, description/descriptionContains i shortDescription; aktywne kanały."
+      ],
+      "data": "Produkt z odmiennym WHOLESALE, aktywny również w RETAIL.",
+      "steps": [
+        "Pobierz listę i szczegóły z X-Api-Channel: RETAIL.",
+        "Porównaj pola z main oraz oczekiwanym kanałem RETAIL."
+      ],
+      "expected": [
+        "RETAIL korzysta z ProductTranslation, a nie nadpisań WHOLESALE."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — zestaw API",
+        "sources": [
+          "api-tests/features.mjs",
+          "api-tests/description-scenarios.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "To kontrola odpowiedzi API; nie potwierdza widoków i linków sklepu z punktu 2.",
+        "actions": [
+          "descriptions"
+        ]
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 4 PASS, 0 FAIL w kontrolach przypisanych do DESC-013. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-014",
+      "category": "channel-api",
+      "title": "ACADEMY — główne tłumaczenia na liście i w szczegółach",
+      "requirement": "3 — ACADEMY używa ProductTranslation",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "read",
+      "conditions": [
+        "Dwa niezależne wzorce QA: bez tłumaczenia kanałowego i z odmiennym WHOLESALE.",
+        "Potwierdzone w CMS name, slug, description/descriptionContains i shortDescription; aktywne kanały."
+      ],
+      "data": "Aktywny produkt z odmiennym WHOLESALE i głównymi danymi ACADEMY.",
+      "steps": [
+        "Pobierz listę i szczegóły z X-Api-Channel: ACADEMY.",
+        "Porównaj nazwę, slug i opisy z main."
+      ],
+      "expected": [
+        "ACADEMY korzysta z ProductTranslation niezależnie od WHOLESALE."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — zestaw API",
+        "sources": [
+          "api-tests/features.mjs",
+          "api-tests/description-scenarios.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "Nie obejmuje list kursów closed-courses i paid-courses.",
+        "actions": [
+          "descriptions"
+        ]
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 4 PASS, 0 FAIL w kontrolach przypisanych do DESC-014. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-015",
+      "category": "channel-api",
+      "title": "WHOLESALE — productName w koszyku",
+      "requirement": "3.3 — GET orders, WHOLESALE",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Dwa niezależne wzorce QA: bez tłumaczenia kanałowego i z odmiennym WHOLESALE.",
+        "Potwierdzone w CMS name, slug, description/descriptionContains i shortDescription; aktywne kanały."
+      ],
+      "data": "Warianty obu produktów QA: fallback i override.",
+      "steps": [
+        "Utwórz osobny koszyk WHOLESALE dla produktu.",
+        "Dodaj wariant i odczytaj GET /shop/orders/{token}.",
+        "Porównaj productName z niezależną nazwą dla kanału."
+      ],
+      "expected": [
+        "productName odpowiada WHOLESALE lub głównemu fallbackowi."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — zestaw API",
+        "sources": [
+          "api-tests/features.mjs",
+          "api-tests/description-scenarios.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "Bez complete; nie potwierdza nazwy w zatwierdzonym zamówieniu, CMS, PDF ani e-mailu.",
+        "actions": [
+          "descriptions"
+        ]
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 2 PASS, 0 FAIL w kontrolach przypisanych do DESC-015. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-016",
+      "category": "channel-api",
+      "title": "ACADEMY — productName w koszyku",
+      "requirement": "3.3 — GET orders, ACADEMY",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Dwa niezależne wzorce QA: bez tłumaczenia kanałowego i z odmiennym WHOLESALE.",
+        "Potwierdzone w CMS name, slug, description/descriptionContains i shortDescription; aktywne kanały."
+      ],
+      "data": "Aktywny wariant i główna nazwa referencyjna.",
+      "steps": [
+        "Utwórz koszyk ACADEMY i dodaj produkt.",
+        "Odczytaj GET zamówienia w tym kanale.",
+        "Porównaj productName z main."
+      ],
+      "expected": [
+        "Nazwa w koszyku korzysta z ProductTranslation."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — zestaw API",
+        "sources": [
+          "api-tests/features.mjs",
+          "api-tests/description-scenarios.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "Bez finalizacji; kursy i dokumenty są osobnymi scenariuszami.",
+        "actions": [
+          "descriptions"
+        ]
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 2 PASS, 0 FAIL w kontrolach przypisanych do DESC-016. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-017",
+      "category": "channel-api",
+      "title": "Nazwa wariantu w pozycjach API",
+      "requirement": "2.3/2.4/3.3 — variantName",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cart",
+      "conditions": [
+        "Dwa niezależne wzorce QA: bez tłumaczenia kanałowego i z odmiennym WHOLESALE.",
+        "Potwierdzone w CMS name, slug, description/descriptionContains i shortDescription; aktywne kanały.",
+        "Fixture zawiera niezależnie potwierdzone variantName."
+      ],
+      "data": "Wariant z ustawioną nazwą; WHOLESALE, RETAIL i ACADEMY.",
+      "steps": [
+        "Dodaj referencyjny wariant w każdym aktywnym kanale.",
+        "Odczytaj variantName i porównaj z fixture."
+      ],
+      "expected": [
+        "variantName odpowiada rzeczywistej nazwie wariantu."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — zestaw API",
+        "sources": [
+          "api-tests/features.mjs",
+          "api-tests/description-scenarios.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "Automat porównuje variantName z niezależną nazwą zapisaną w CMS. Oba warianty QA mają już nazwy; przebieg DEV z 19.10.2026 wykrył brak pola w API (6 FAIL). Dla innych produktów brak wzorca daje SKIP. Interfejs sklepu pozostaje poza zakresem.",
+        "actions": [
+          "descriptions"
+        ]
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "FAIL",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 0 PASS, 6 FAIL w kontrolach przypisanych do DESC-017. API nie zwróciło variantName mimo nazw wariantów zapisanych w CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-018",
+      "category": "channel-api",
+      "title": "ACADEMY — closed-courses",
+      "requirement": "3.4 — tytuł i slug kursów",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "read",
+      "conditions": [
+        "Konto ACADEMY z referencyjnym kursem widocznym w tej kolekcji.",
+        "Niezależny tytuł i slug ProductTranslation."
+      ],
+      "data": "GET /api/v2/academy/closed-courses; wzorce: courses.closed w config/catalog-fixtures.local.json.",
+      "steps": [
+        "Zaloguj konto z dostępem do kursu.",
+        "Pobierz listę closed-courses.",
+        "Znajdź kurs i porównaj title oraz slug z głównym tłumaczeniem."
+      ],
+      "expected": [
+        "ACADEMY nie używa tłumaczeń WHOLESALE ani EMPIK."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — kontrola kursów ACADEMY",
+        "actions": [
+          "descriptions"
+        ],
+        "sources": [
+          "api-tests/description-courses.mjs",
+          "api-tests/features.mjs",
+          "tests/description-courses.test.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "Obsługuje pojedynczą stronę (query/expected) oraz wiele jawnych pages, po kilka niezależnych wzorców kursów na stronę. Kontroluje powtórzone identyfikatory między stronami. Brak wzorców daje SKIP. Nie dowodzi pokrycia wszystkich kursów ani dostępu innych kont."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 3 PASS, 0 FAIL w kontrolach przypisanych do DESC-018. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-019",
+      "category": "channel-api",
+      "title": "ACADEMY — paid-courses",
+      "requirement": "3.5 — tytuł i slug kursów",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "read",
+      "conditions": [
+        "Konto ACADEMY z referencyjnym kursem widocznym w tej kolekcji.",
+        "Niezależny tytuł i slug ProductTranslation."
+      ],
+      "data": "GET /api/v2/academy/paid-courses; wzorce: courses.paid w config/catalog-fixtures.local.json.",
+      "steps": [
+        "Zaloguj konto z dostępem do kursu.",
+        "Pobierz listę paid-courses.",
+        "Znajdź kurs i porównaj title oraz slug z głównym tłumaczeniem."
+      ],
+      "expected": [
+        "ACADEMY nie używa tłumaczeń WHOLESALE ani EMPIK."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — kontrola kursów ACADEMY",
+        "actions": [
+          "descriptions"
+        ],
+        "sources": [
+          "api-tests/description-courses.mjs",
+          "api-tests/features.mjs",
+          "tests/description-courses.test.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "Obsługuje pojedynczą stronę (query/expected) oraz wiele jawnych pages, po kilka niezależnych wzorców kursów na stronę. Kontroluje powtórzone identyfikatory między stronami. Brak wzorców daje SKIP. Nie dowodzi pokrycia wszystkich kursów ani dostępu innych kont."
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 2 PASS, 0 FAIL w kontrolach przypisanych do DESC-019. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-020",
+      "category": "channel-other",
+      "title": "RETAIL — strona, listy, wyszukiwanie i paginacja",
+      "requirement": "2.1/2.2 — rzeczywisty frontend RETAIL",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "read",
+      "conditions": [
+        "Aktywny produkt QA z odmiennym WHOLESALE.",
+        "Działający frontend RETAIL i kategorie/search."
+      ],
+      "data": "ProductTranslation i adres strony produktu.",
+      "steps": [
+        "Otwórz stronę produktu, kategorię i wyszukiwanie.",
+        "Sprawdź name, description, shortDescription i slug w miejscach, które je prezentują.",
+        "Przejdź między stronami listy i otwórz link produktu."
+      ],
+      "expected": [
+        "Frontend używa głównych tłumaczeń.",
+        "Link działa, a paginacja nie zamienia ani nie gubi nazw."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Odczyt RETAIL przez API nie potwierdza renderowania szablonów.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-021",
+      "category": "channel-other",
+      "title": "RETAIL — koszyk, podsumowanie i zapis nazwy",
+      "requirement": "2.3 — koszyk i zatwierdzone zamówienie RETAIL",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "read",
+      "conditions": [
+        "Dwa niezależne wzorce QA: bez tłumaczenia kanałowego i z odmiennym WHOLESALE.",
+        "Potwierdzone w CMS name, slug, description/descriptionContains i shortDescription; aktywne kanały."
+      ],
+      "data": "Nazwa główna i wariant QA w RETAIL.",
+      "steps": [
+        "Sprawdź productName w koszyku API.",
+        "Osobno przejdź koszyk i podsumowanie w sklepie.",
+        "Zapisz dedykowane zamówienie i sprawdź utrwaloną nazwę oraz wariant."
+      ],
+      "expected": [
+        "RETAIL korzysta z ProductTranslation w koszyku, widoku i zapisie."
+      ],
+      "automation": {
+        "runner": "Opisy per kanał — zestaw API",
+        "sources": [
+          "api-tests/features.mjs",
+          "api-tests/description-scenarios.mjs",
+          "tests/features.test.mjs"
+        ],
+        "limits": "Automat sprawdza tylko productName w koszyku API, bez complete. Frontend i utrwalony Order nie są potwierdzone.",
+        "actions": [
+          "descriptions"
+        ]
+      },
+      "historicalEvidence": {
+        "reportId": "descriptions-2026-10-19T07-41-22-238Z-05d08f9e",
+        "status": "PASS",
+        "note": "Zapisany przebieg DEV z 19.10.2026: 2 PASS, 0 FAIL w kontrolach przypisanych do DESC-021. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania."
+      }
+    },
+    {
+      "id": "DESC-022",
+      "category": "channel-other",
+      "title": "RETAIL — opis SpecialOffer",
+      "requirement": "2.4 — shortDescription oferty specjalnej",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "read",
+      "conditions": [
+        "Referencyjna oferta z dołączonymi produktami i odmiennymi tłumaczeniami kanałowymi."
+      ],
+      "data": "SpecialOffer i oczekiwany wygenerowany krótki opis.",
+      "steps": [
+        "Otwórz ofertę w RETAIL.",
+        "Porównaj shortDescription oraz dane dołączonych produktów z oczekiwaniem."
+      ],
+      "expected": [
+        "Opis jest prawidłowo wygenerowany, z głównymi danymi produktów RETAIL."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Wymagana fixture oferty; zwykły produkt BOOK nie zastępuje tej kontroli.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-023",
+      "category": "channel-other",
+      "title": "RETAIL — opis Application i liczby dostępów",
+      "requirement": "2.4 — aplikacje",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "read",
+      "conditions": [
+        "Produkt Application z ustaloną liczbą dostępów nauczycieli i uczniów."
+      ],
+      "data": "Niezależne liczby X/Y oraz oczekiwany opis zamówienia.",
+      "steps": [
+        "Dodaj aplikację w RETAIL i sprawdź opis pozycji.",
+        "Porównaj wartości dostępu w podsumowaniu i zamówieniu."
+      ],
+      "expected": [
+        "Opis zawiera właściwe liczby dostępów i dane produktu."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Brak fixture aplikacji i automatu tego mechanizmu.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-024",
+      "category": "channel-other",
+      "title": "Nazwy produktów w treści PDF",
+      "requirement": "5.1 — dokumenty RETAIL/WHOLESALE/ACADEMY",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "read",
+      "conditions": [
+        "Dedykowane zapisane zamówienia i ekstraktor tekstu PDF."
+      ],
+      "data": "Główne nazwy dla RETAIL/ACADEMY; nadpisanie i fallback WHOLESALE.",
+      "steps": [
+        "Wygeneruj dokumenty dla wszystkich trzech kanałów.",
+        "Odczytaj ich treść, nie tylko nagłówek pliku.",
+        "Porównaj nazwy produktów i wariantów ze wzorcem."
+      ],
+      "expected": [
+        "Każdy dokument używa właściwego źródła nazwy dla kanału."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Obecny silnik pobiera plik i sprawdza sygnaturę PDF; nie sprawdza jego treści.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-025",
+      "category": "channel-other",
+      "title": "Nazwy w e-mailach i powiadomieniach",
+      "requirement": "5 — RETAIL, WHOLESALE, ACADEMY",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "read",
+      "conditions": [
+        "Kontrolowana skrzynka testowa i powiązanie wiadomości z konkretnym zamówieniem."
+      ],
+      "data": "Wzorce nazw dla trzech kanałów, z nadpisaniem i fallbackiem WHOLESALE.",
+      "steps": [
+        "Wywołaj zdarzenie w dedykowanym przebiegu.",
+        "Odbierz właściwą wiadomość i porównaj treść z danymi kanału."
+      ],
+      "expected": [
+        "Wiadomość używa właściwych nazw i dotyczy badanego zamówienia."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Brak integracji ze skrzynką/transportem; samo complete nie potwierdza treści ani doręczenia.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-026",
+      "category": "channel-other",
+      "title": "Generowanie URL dla wszystkich kanałów",
+      "requirement": "6.1 — GenerateProductUrlByChannel",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "read",
+      "conditions": [
+        "Dostęp do rzeczywistego wygenerowanego linku dla każdego kanału."
+      ],
+      "data": "RETAIL/ACADEMY: slug główny; WHOLESALE/EMPIK: kanałowy lub fallback.",
+      "steps": [
+        "Wywołaj „Pokaż produkt na stronie sklepu” lub właściwy mechanizm generowania URL.",
+        "Porównaj host, kanał i slug z wzorcem.",
+        "Dla dostępnego frontendu RETAIL sprawdź otwarcie linku."
+      ],
+      "expected": [
+        "URL korzysta ze źródła slugu właściwego dla kanału."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Poprawny GET API po podanym slugu nie dowodzi poprawności generatora URL.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-027",
+      "category": "channel-other",
+      "title": "Tłumaczenia produktów dołączonych do oferty",
+      "requirement": "7.1 — SpecialOffer i produkty składowe",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "read",
+      "conditions": [
+        "Oferta specjalna z referencyjnymi produktami składowymi."
+      ],
+      "data": "Różne nazwy i slugi główne i WHOLESALE dołączonych produktów.",
+      "steps": [
+        "Odczytaj lub wyświetl ofertę dla RETAIL, ACADEMY i WHOLESALE.",
+        "Porównaj nazwy i slugi produktów składowych, nie samej oferty."
+      ],
+      "expected": [
+        "RETAIL i ACADEMY używają ProductTranslation składowych.",
+        "WHOLESALE używa ich nadpisań kanałowych lub fallbacku."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Brak fixture SpecialOffer; zwykłe DTO pojedynczego produktu nie pokrywa mechanizmu oferty.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-028",
+      "category": "channel-other",
+      "title": "EMPIK — dane oferty przekazane przez OfferUpdater",
+      "requirement": "Dostępność kanałów — tylko OfferUpdater",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "read",
+      "conditions": [
+        "Dostępny izolowany adapter/środowisko testowe OfferUpdater."
+      ],
+      "data": "Nazwy, slugi i opisy EMPIK oraz wariant fallback.",
+      "steps": [
+        "Przygotuj kontrolowany odbiornik aktualizacji oferty.",
+        "Sprawdź wysyłane dane bez aktualizacji produkcyjnej oferty."
+      ],
+      "expected": [
+        "OfferUpdater używa ProductChannelTranslation EMPIK lub fallbacku."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Według przekazanego wymagania brak serwera testowego Empik. Nie uruchamiamy aktualizacji produkcyjnej; przypadek jest zablokowany warunkiem środowiska.",
+        "actions": []
+      }
+    },
+    {
+      "id": "DESC-029",
+      "category": "channel-other",
+      "title": "OutOfStockSubscriber — nazwa w RETAIL",
+      "requirement": "8.1 — powiadomienie o dostępności",
+      "priority": "P1",
+      "coverage": "planned",
+      "effect": "read",
+      "conditions": [
+        "Dedykowany produkt i kontrolowany odbiornik powiadomienia."
+      ],
+      "data": "Główna nazwa RETAIL przy odmiennym WHOLESALE.",
+      "steps": [
+        "Zarejestruj testowe powiadomienie i wywołaj odpowiednie zdarzenie dostępności.",
+        "Porównaj nazwę w wygenerowanej wiadomości."
+      ],
+      "expected": [
+        "Powiadomienie RETAIL korzysta z ProductTranslation."
+      ],
+      "automation": {
+        "runner": "Test ręczny / do automatyzacji",
+        "sources": [
+          "docs/product-channel-scenarios.json"
+        ],
+        "limits": "Brak izolowanego testu subscriber i odbiornika wiadomości; nie zmieniamy zapasów współdzielonych produktów.",
+        "actions": []
+      }
+    }
+  ]
+}

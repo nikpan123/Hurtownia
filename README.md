@@ -1,5 +1,15 @@
 # Hurtownia — testy API i lokalny panel testowy
 
+[Scenariusze API koszyka hurtowego](SCENARIUSZE-KOSZYKA-HURTOWEGO.md) — 44 przypadki z danymi, krokami, oczekiwaniami i zakresem automatyzacji. W panelu wybierz **Scenariusze testowe** lub otwórz [katalog scenariuszy](http://127.0.0.1:18767/#scenarios). Dostępne są wyszukiwanie, filtry obszaru, priorytetu i automatyzacji oraz pobranie całego dokumentu.
+
+[Scenariusze opisów kanałowych](SCENARIUSZE-OPISOW-KANALOWYCH.md) — 29 przypadków `DESC-001`–`DESC-029`: konfiguracja CMS, walidacja, API, sklep i integracje. [Pełny katalog](SCENARIUSZE-TESTOWE.md) oraz widok scenariuszy w panelu obejmują łącznie 73 przypadki. Każdy przypadek opisów wskazuje punkt wymagań, kroki, oczekiwania, powiązany kod i ograniczenia; dostępny dowód historyczny ma osobny link do raportu.
+
+Katalog opisuje zakres, nie wyniki wykonania. „Obsługiwane przez automat” nie oznacza PASS; ograniczenia są opisane przy każdym przypadku. Wyniki należy odczytywać z raportów konkretnych uruchomień. Dane katalogu znajdują się w `docs/cart-api-scenarios.json`; po zmianie uruchom `node dashboard/scenario-catalog.mjs`, aby odświeżyć dokument Markdown. Panel i pobieranie dokumentu korzystają bezpośrednio z aktualnego katalogu.
+
+W szczegółach scenariusza znajdują się przyciski powiązanych testów. Każdy opisuje zakres, używane konta i skutki zapisu. Przycisk uruchamia cały zestaw, nie wyłącznie wybrany przypadek. Przypadki ręczne i niezaimplementowane nie mają przycisku startu. Scenariusze baz kierują do wyboru zapisanego zamówienia w raportach, a tymczasowa konfiguracja GLS do formularza ustawień.
+
+[Pełna kolekcja koszyka do Postmana](postman/HURTOWNIA%20-%20Koszyk%20-%20komplet%20endpointow.postman_collection.json) obejmuje 81 żądań w siedmiu folderach oraz wszystkie endpointy koszyka, książki adresowej i dokumentów używane przez testy. Domyślnie nie finalizuje zamówienia; dodatkowe próby wymagają jawnego włączenia flag. Zawiera też pomocniczy odczyt katalogu. [Instrukcja i spis endpointów](postman/KOSZYK-INSTRUKCJA.md) opisują konfigurację, zakres i ograniczenia. Dane dostępowe w dostarczonym JSON są puste.
+
 [Redmine #36926 — adresy w drugim kroku koszyka](REDMINE-36926.md): 38 przypadków API obejmujących zapis i walidację. Domyślne adresy są jawnie pomijane do zapewnienia pełnego przywrócenia stanu; pozostałe luki są opisane w raporcie. Uruchomienie: `Testuj-Redmine-36926-dev.cmd`.
 
 Regresja [Redmine #37162 — ShipmentInterface: Got NULL](REDMINE-37162.md) jest dostępna w panelu jako **Sprawdź #37162** lub przez `Testuj-Redmine-37162-dev.cmd`. Obejmuje sześć scenariuszy, osiem nowych koszyków i raport HTML/JSON. Kod został sprawdzony na atrapach API; nie wykonano jeszcze tych testów na DEV/TEST.
@@ -116,6 +126,7 @@ Panel nasłuchuje tylko na `127.0.0.1`. Odczytuje lokalne ustawienia i nie pokaz
 | Nowy produkt API | Osobny formularz: podgląd dwóch JSON-ów, produkt i wariant z cenami | Próba utworzenia nowego produktu i wariantu; bez testów katalogu |
 | Zaokrąglenia cen | Cena 18,40 zł, rabat 23%, ilości 1–10 i wzorce starej hurtowni | Tworzy koszyk i zmienia ilości/płatność; bez finalizacji |
 | Opisy per kanał | Nazwa, slug, opisy, lista i `productName` koszyka dla trzech kanałów | Odczyt oraz koszyki QA; bez finalizacji |
+| Opisy kanałowe — CMS | Zapis i odczyt czterech pól, fallback, granice długości i kolizje slugów | Tymczasowa zmiana opisów QA i przywrócenie pól; bez finalizacji |
 
 Dodatkowe widoki:
 
@@ -278,6 +289,65 @@ Produkt pozostaje na dev. Dostęp do CMS w przeglądarce nie zastępuje uprawnie
 
 Tworzy koszyki, ale nie finalizuje ich ani nie zmienia opisów produktów w CMS.
 
+**Pokrycie wymagań opisów kanałowych:** istniejący zestaw sprawdza część API: listę i szczegóły produktów oraz `productName` koszyka w WHOLESALE, RETAIL i ACADEMY. Dla WHOLESALE korzysta z niezależnych wzorców nadpisania i fallbacku; dla RETAIL i ACADEMY porównuje również dane główne. Wzorce są w lokalnym `config/catalog-fixtures.local.json`, w `products` z polem `main`. Wymagane są nazwa, slug, krótki opis oraz pełny opis lub `descriptionContains`. `variantName` wymaga osobnego wzorca — jego brak oznacza SKIP.
+
+Raport DEV z 16.10.2026, 07:52 UTC (`descriptions-2026-10-16T07-52-56-681Z-8f4e2b26`) zawiera **18 PASS i 11 SKIP**: 6 kontroli szczegółów, 6 list i 6 nazw w koszyku przeszło. Pominięto 6 nazw wariantów i 5 zbiorczych obszarów poza zestawem. To dowód częściowego pokrycia, bez potwierdzenia walidacji CMS, rzeczywistego frontendu, kursów, treści PDF, e-maili, generatora URL ani Empiku. Powiązanie tego raportu ze scenariuszami w katalogu jest opisem historycznych kontroli, nie ponownym wykonaniem testu.
+
+W nowych raportach każda kontrola ma identyfikator `DESC-…` i link do scenariusza w panelu. Tabela pokrycia pokazuje wszystkie 29 scenariuszy oraz liczbę powiązanych kontroli PASS/FAIL/SKIP; liczba PASS nie oznacza sprawdzenia całego wymagania. Niesprawdzone w tym zestawie scenariusze mają osobne SKIP zamiast dawnych zbiorczych wpisów; dodatkowe SKIP dotyczą brakujących wzorców wariantów i kursów. Kontrole API uruchomisz przyciskiem **Opisy per kanał** ze szczegółów powiązanego scenariusza — uruchamia on cały zestaw. Scenariusze CMS, sklepu i integracji pozostają do wdrożenia lub wykonania ręcznego. Brak serwera testowego Empik nie upoważnia do testowania aktualizacji na produkcji.
+
+**Automaty kursów `DESC-018` i `DESC-019`:** w tym samym zestawie dostępne są odczyty `GET /academy/closed-courses` i `GET /academy/paid-courses` z kanałem ACADEMY i tokenem zalogowanego konta. Porównują `title` i `slug` z głównym tłumaczeniem wskazanych kursów. Błędny tytuł/slug, brak kursu, duplikat identyfikatora lub niezgodna struktura odpowiedzi daje FAIL; brak wzorców daje SKIP bez wysyłania żądania. Nie kupują kursów ani nie sprawdzają dostępu innych kont. Kontrole sprawdzono lokalnie i na DEV; zakres potwierdzonego przebiegu opisano poniżej.
+
+Konfiguracja jest w `config/catalog-fixtures.local.json`, w `courses.closed` i `courses.paid`; szablon zawiera `config/catalog-fixtures.example.json`. Dla każdej kolekcji:
+
+- `expected`: lista `{ "id": "identyfikator-kursu", "title": "Tytuł główny z CMS", "slug": "slug-glowny-z-cms" }`. Użyj faktycznego identyfikatora i niezależnych danych CMS; nie kopiuj oczekiwań z badanego endpointu.
+- `itemsPath`: położenie tablicy rekordów, np. `["data"]`; `[]` oznacza odpowiedź będącą tablicą.
+- `identityPath`, `titlePath`, `slugPath`: ścieżki wewnątrz rekordu, np. `["id"]`, `["title"]`, `["slug"]`. Jeżeli identyfikator jest zagnieżdżony, np. `product.code`, użyj `["product", "code"]` i zgodnych identyfikatorów we wzorcach.
+- `query`: potwierdzone parametry strony zawierającej wskazane kursy. Przykładowe `page` i `limit` w szablonie wymagają sprawdzenia kontraktu. Automat nie przeszukuje kolejnych stron.
+
+Konto skonfigurowane dla tego zestawu musi widzieć wskazane kursy. Sam brak kursu w wyniku nie pozwala stwierdzić błędu tłumaczenia: najpierw sprawdź jego dostępność dla konta i wybraną stronę.
+
+**Wiele kursów i stron:** opcjonalne `pages` zastępuje pojedyncze `query`/`expected`. Każda strona wymaga własnych parametrów i co najmniej jednego niezależnego wzorca. Pozostałe ścieżki pól są dziedziczone z konfiguracji kolekcji. Przykład:
+
+```json
+"pages": [
+  {"query": {"page": 1, "limit": 2}, "expected": [
+    {"id": "kurs-1", "title": "Tytuł główny 1", "slug": "slug-glowny-1"},
+    {"id": "kurs-2", "title": "Tytuł główny 2", "slug": "slug-glowny-2"}
+  ]},
+  {"query": {"page": 2, "limit": 2}, "expected": [
+    {"id": "kurs-3", "title": "Tytuł główny 3", "slug": "slug-glowny-3"}
+  ]}
+]
+```
+
+Automat sprawdza duplikaty identyfikatorów w odpowiedzi i między wskazanymi stronami oraz tytuł/slug wszystkich podanych wzorców. Nie przechodzi po nieznanych kolejnych stronach i nie nadaje dostępu do kursów. Lokalnie przygotowano cztery wzorce kursów rad na dwóch stronach z tytułami/slugami potwierdzonymi w CMS. Konto zwraca obecnie tylko jeden kurs płatny — rozszerzenie tej kolekcji wymaga następnych dostępnych kursów. Dwie kontrole konfiguracji nie są odczytami API; mają oddzielne wiersze, bez żądań w dowodach.
+
+### Opisy kanałowe — zapis i walidacje CMS
+
+Osobny przycisk **Opisy kanałowe — CMS** w grupie Produkty uruchamia zestaw `descriptions-cms`. Ten sam zestaw jest podpięty do scenariuszy `DESC-001`, `DESC-003`–`DESC-009`. Można go uruchomić również przez `npm run descriptions:cms`.
+
+1. Odczytuje `config/description-cms.local.json` (szablon: `config/description-cms.example.json`), loguje administratora, potwierdza kod produktu `qa-` i wyłączoną sprzedaż tego produktu w EMPIK.
+2. Odczytuje główne opisy i sekcje WHOLESALE/EMPIK. Mapuje pola na podstawie nagłówków kanałów; numery formularza mogą zmieniać kolejność po zapisie.
+3. Tworzy dziennik `.auth/description-cms-restore.json` przed pierwszym zapisem. Istniejący dziennik blokuje nowy test.
+4. Wysyła rzeczywisty formularz CMS przez HTTP z aktualnym tokenem CSRF. Zmienia wyłącznie cztery pola opisów kanałowych: nazwę, slug, pełny i krótki opis. Pozostałe pola bierze z najświeższego formularza.
+5. Potwierdza zapis ponownym odczytem CMS oraz odczytem `products-dto-by-slug` dla WHOLESALE, RETAIL i ACADEMY. WHOLESALE ma używać nadpisania, pozostałe kanały tłumaczenia głównego.
+6. Czyści każde pole WHOLESALE osobno, a następnie wszystkie naraz. Sprawdza zapis pustych wartości i fallback odpowiednich pól do opisu głównego.
+7. Sprawdza odrzucenie slugu innego produktu w WHOLESALE i slugu równego głównemu; akceptację takiego samego slugu w WHOLESALE i EMPIK; nazwy 1/2 znaki oraz slugi 256/255 znaków.
+8. W bloku końcowym przywraca pierwotne pola także po błędzie lub przerwaniu i potwierdza je odczytem. Raport zawiera wynik przywracania, `description-cms-audit.json` i `cms-restored.png`.
+
+Nie testuje interakcji JavaScript edytora treści, pełnego frontendu, generowania URL ani wysyłki do Empiku. Obsługuje opisy z elementami HTML edytora; inne rodzaje bloków wymagają rozszerzenia adaptera. Nie finalizuje zamówień. Przypadki ukrywania zakładki dla specjalnych typów i tworzenia nowego produktu nadal wymagają osobnych danych i automatów.
+
+Nie edytuj równocześnie produktu QA. Przy wykryciu zmiany zewnętrznej automat blokuje dalszy zapis i zachowuje dziennik zamiast nadpisywać cudze dane. Po zabiciu procesu użyj `npm run descriptions:restore`; polecenie porównuje aktualne pola z zapisanymi stanami i odmawia zapisu przy konflikcie. Przywracanie pól nie usuwa historii zmian CMS ani ewentualnych wewnętrznych rekordów utworzonych przez backend. Sam test API opisów blokuje się, jeśli dziennik CMS wskazuje niedokończoną zmianę.
+
+**Powody SKIP:** nowe raporty rozdzielają brak danych testowych (`data_missing`), brak automatu (`not_automated`), ograniczenie środowiska (`environment`), błąd zależnego kroku (`dependency`) i przypadek należący do innego zestawu (`out_of_scope`). W teście odczytu API kontrole CMS wskazują osobny zestaw, zamiast twierdzić, że nie mają automatu. Stare wpisy bez oznaczenia pozostają w kategorii „Pozostałe pominięcia”; nie zmieniamy historycznych wyników.
+
+**Potwierdzenie DEV z 19.10.2026:**
+
+- [Zapis i walidacje CMS — raport](http://127.0.0.1:18767/reports/descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8/raport.html): **15 PASS**, łącznie z ponownym odczytem pierwotnych pól po przywróceniu. Kontrole formularza HTTP nie potwierdzają działania JavaScript edytora.
+- [Odczyt opisów, wariantów i kursów — raport](http://127.0.0.1:18767/reports/descriptions-2026-10-19T07-41-22-238Z-05d08f9e/raport.html): **23 PASS, 6 FAIL, 19 SKIP**. Kursy rad: 4 wzorce na 2 stronach; kursy płatne: 1 wzorzec na 1 stronie. Pięć PASS kursów obejmuje dwie walidacje konfiguracji i trzy rzeczywiste odczyty stron API.
+- Wszystkie 6 FAIL dotyczą `DESC-017`: `GET /api/v2/shop/orders/{token}` nie zwraca `items[].variantName`, mimo zapisanych w CMS nazw dwóch wariantów QA. Potwierdzono w WHOLESALE, RETAIL i ACADEMY. Odpowiedź zawiera `productName` oraz `variant` z polami ceny/dostępności; nie zastępuje to wymaganej nazwy wariantu. Test nie pomija tej niezgodności.
+- 19 SKIP w raporcie API: 8 kontroli przeniesionych do osobnego zestawu CMS, 10 bez automatu, 1 z ograniczeniem środowiska Empik. Nie jest to 19 nowych błędów backendu.
+
 ### Porównanie zapisanego zamówienia z bazą
 
 1. Wybierz raport z potwierdzoną finalizacją i kliknij Porównaj z bazą albo zaznacz kontrolę baz przed uruchomieniem zamówienia.
@@ -323,7 +393,7 @@ Wzorce odczytane z ekranów CMS: pierwsze konto — przelew bankowy 23%, odbiór
 6. Powtórz te same próby w odwrotnym kierunku. Po nieudanej kontroli zapisu przerwij dalsze mutacje tego koszyka, zachowując FAIL.
 7. Pokaż osobne wyniki w raporcie regresji. Bez danych drugiego konta jest SKIP; niepoprawne dane, brak oczekiwanego rabatu, obcy odczyt lub zmiana dają FAIL. HTTP 401 nie zalicza izolacji — oba konta muszą być poprawnie zalogowane.
 
-Kontrole drugiego konta tworzą wyłącznie koszyki, bez complete i PDF, także w regresji z zapisem. Test zakłada, że cudzy token koszyka nie zastępuje uprawnień zalogowanego właściciela; jeśli projekt API celowo udostępnia koszyki na podstawie samego tokenu, wymaga to uzgodnienia kontraktu, a wyniku nie należy automatycznie uznawać za poprawną izolację.
+Standardowe próby izolacji tworzą wyłącznie koszyki. **Regresja z zapisem** wykonuje dodatkowo ISO-006: po jednym nowym zamówieniu diagnostycznym dla każdego kierunku kont (do dwóch), także po zmianie wyceny przez obce żądanie. Raport porównuje trzy stany: przed próbą, po próbie i po finalizacji. Poprawne przeliczenie podczas zapisu nie usuwa wcześniejszego FAIL izolacji. Nie są pobierane PDF-y tych dwóch zamówień. Zwykły silnik zamówień nadal blokuje finalizację przy niezgodnościach cen. Test zakłada, że token koszyka nie zastępuje uprawnień właściciela.
 
 ## Co oznacza „ziarno losowania”?
 
@@ -559,9 +629,11 @@ Rzeczywista odpowiedź listy jest obiektem `{data, pagination}`. W szczegółach
 
 Podczas ręcznej diagnostyki używano również `GET /shop/products/{code}` (np. identyfikacja wariantu), `GET /admin/products` i `GET /admin/taxons` (sprawdzenie dostępu) oraz `GET /api/v2` (odczyt osadzonej specyfikacji). Nie są stałą częścią powyższych scenariuszy.
 
-W przekazanym opisie zadania występują `/academy/closed-courses` i `/academy/paid-courses`. Ten projekt **nie wykonuje jeszcze ich testów**: brakuje przygotowanych szkoleń i niezależnych oczekiwań. Integracja OfferUpdater Empik również nie jest wywoływana.
+`GET /academy/closed-courses` i `GET /academy/paid-courses` są testowane w zestawie opisów kanałowych z kanałem ACADEMY, zgodnie z lokalnymi wzorcami kursów i stron. Integracja OfferUpdater Empik nie jest wywoływana.
 
 Panel CMS `/login`, formularze `/products/new/simple/BOOK`, `/products/{id}/edit` i ustawienia hurtownika są odrębnym interfejsem administracyjnym. Formularz „Nowy produkt API” nie wysyła do nich danych i nie obchodzi uprawnień admin API.
+
+Zestaw `descriptions-cms` korzysta z `GET /products/{id}/edit` i `POST /products/{id}/edit` na hoście `https://cms-ksiegarnia.gwodev.pl`, z aktualnym CSRF, sesją administratora i nagłówkiem Referer formularza. Są to operacje formularza CMS, a nie `/api/v2/admin/products`. Nazwy wariantów QA przygotowano w oddzielnych formularzach `/products/{id}/variants/{variantId}/edit` i potwierdzono po zapisie; zwykły test opisów tylko porównuje je z API koszyka.
 
 ## Endpointy lokalnego panelu
 
@@ -574,7 +646,7 @@ Te ścieżki należą do `http://127.0.0.1:18767`, nie do Syliusa.
 | GET | `/api/documentation` | Bieżący README jako bezpiecznie sformatowana dokumentacja i spis treści |
 | GET | `/README.md` | Pobranie źródłowego README projektu |
 | GET | `/api/state` | Stan danych, przebiegów i raportów; bez haseł/tokenów |
-| POST | `/api/run` | Uruchomienie dozwolonego zestawu: `cart`, `order`, `wizard`, `catalog`, `product-create`, `rounding`, `descriptions`, `login` |
+| POST | `/api/run` | Uruchomienie dozwolonego zestawu: m.in. `cart`, `order`, `wizard`, `catalog`, `product-create`, `rounding`, `descriptions`, `descriptions-cms`, `login`; również zestawy regresji i zgłoszeń opisane wyżej |
 | POST | `/api/stop` | Zatrzymanie aktywnego przebiegu po jego identyfikatorze |
 | POST | `/api/preview` | Bezpiecznie ograniczony podgląd GET listy lub szczegółów katalogu |
 | POST | `/api/product/preview` | Lokalna walidacja danych i przygotowanie JSON; bez zapisu w Syliusie |
@@ -746,7 +818,11 @@ Konfiguracja: `config/order-regression.local.json` (ignorowana przez Git), wzór
 | `paymentRebates` | Oczekiwane rabaty konta według kodów płatności. Brak wpisu oznacza tylko sprawdzenie spójności z ofertą API, nie poprawności ustawień konta |
 | `maxCombinations` | Limit 1–96 kombinacji w jednym przebiegu. Każda pominięta z powodu limitu jest widoczna jako SKIP |
 | `nonPackageShippingCodes` | Potwierdzone w CMS dostawy bez kalkulatora paczek, np. `personal_collection` (flat_rate) |
-| `validationStatuses` | Konkretne dozwolone statusy walidacji; 401, 403 i 500 nie zaliczają testu negatywnego |
+| `validationStatuses` | Konkretne dozwolone statusy walidacji; 401 i 500 nie zaliczają testu negatywnego. 403 jest dopuszczony wyłącznie w kontroli uprawnień do istniejącej płatności |
+| `forbiddenPayments` | Tablica `{code, source}`: metoda istniejąca w systemie, ale niedostępna kontu; `source` opisuje niezależne potwierdzenie w CMS. Pusta tablica daje SKIP, nie zastępuj jej losowym kodem |
+| `stockFixture` | `null` lub `{productVariant, availableQuantity, source}`: potwierdzony zapas 1–999 sztuk, aktywna kontrola zapasu, bez backorder. Test próbuje dodać jedną sztukę ponad zapas, bez complete. Brak wzorca daje SKIP |
+| `validationStatuses.forbiddenPayment` | Odmowa wyboru istniejącej niedostępnej płatności; domyślnie 400/403/422 |
+| `validationStatuses.repeatComplete` | Dopuszczalne odpowiedzi drugiego complete: domyślnie 200/204/400/409/422, zawsze z wymaganiem niezmienionego id, numeru i zapisu. 404 można dodać po uzgodnieniu kontraktu |
 | `packages.product.unitWeightGrams` | Waga jednej sztuki potwierdzona w CMS, w gramach |
 | `packages.paymentCode` | Dostępna płatność używana do niezależnych pomiarów kosztu GLS |
 | `packages.paymentSurchargeGrossMinor` | Potwierdzona dopłata tej płatności dla GLS w groszach, także jawne 0. Przy cash_on_delivery na dev odczytano 1500. Nie wolno pomijać dopłaty przy porównaniu shippingTotal |
@@ -755,16 +831,19 @@ Konfiguracja: `config/order-regression.local.json` (ignorowana przez Git), wzór
 
 ### Zakres przypadków
 
+- AUTH-002: jedna próba logowania prawidłowego konta z losowym błędnym hasłem, oczekiwane HTTP 401 bez JWT. AUTH-003: sześć prób GET koszyka, płatności i dostaw — bez JWT oraz z błędnym JWT. Każda ma nowy, wcześniej dostępny właścicielowi koszyk i porównanie stanu po odmowie. Nie bada to naturalnego wygasania poprawnie podpisanego JWT ani blokady konta po wielu nieudanych logowaniach.
+- Kolejne płatności w tym samym koszyku i powrót do pierwszej, z kontrolą rabatów, kodu metody, ofert i dostaw. Brak dwóch dostępnych metod daje SKIP.
+- Istniejąca, ale niedostępna płatność po skonfigurowaniu `forbiddenPayments`. Kontrola obejmuje bezpośredni PATCH i niezmienność koszyka, także adresów.
 - Każda dostępna płatność, a następnie dostawy dostępne po jej zapisaniu. Każda kombinacja ma nowy koszyk; obie grupy produktów są testowane oddzielnie.
 - Przeliczenie po zmianie ilości, rabat pozycji, świeża oferta płatności, sumy pozycji i suma produktów z dostawą. Pola pieniężne muszą być nieujemnymi całkowitymi kwotami w groszach.
 - Kilka produktów jednej grupy, ponowne dodanie produktu zwiększające ilość oraz `DELETE /api/v2/shop/orders/{tokenValue}/items/{itemId}` usuwające pozycję.
 - Ilości niepoprawne, nieistniejące produkty/płatności/dostawy i niepełny adres. Po odrzuceniu porównywany jest stan koszyka, aby wykryć częściowy zapis.
 - Dla GLS: `shipmentPackageQuantity`, `shippingTotal`, `shippingTotalNet`, wzrost i spadek ilości oraz przejście na metodę bez kalkulatora. Liczba paczek = sufit(waga/pojemność), cena paczki pochodzi z przedziału wagi całego zamówienia. Wzorzec kosztu uwzględnia dopłatę płatności i VAT, z zaokrągleniem do grosza.
-- Wariant `--complete`: zapis maksymalnie po jednym poprawnym zamówieniu dla każdej grupy i dla scenariusza paczek (do 3), pobranie PDF przez istniejący silnik, kontrola niezmienności kosztu netto dostawy i liczby paczek. Dodatkowo próba odrzucenia pustego oraz mieszanego koszyka Adamada. Jeżeli backend błędnie zaakceptuje negatywną próbę complete, zamówienie może powstać; test zgłosi FAIL i nie ponowi żądania.
+- Wariant `--complete`: zapis maksymalnie po jednym poprawnym zamówieniu dla każdej grupy i dla scenariusza paczek (do 3), pobranie PDF, kontrola kosztów i liczby paczek. Po potwierdzonym zapisie z numerem zamówienia: jedna jawna druga próba complete i porównanie id, numeru, kwot, pozycji, metod i adresów. Po timeoutcie pierwszego complete nie wykonuje tej próby; po timeoutcie drugiego tylko odczytuje stan, bez trzeciego PATCH. Nie dowodzi to braku dodatkowych e-maili lub rekordów transferu. Dodatkowo ISO-006 może zapisać dwa zamówienia diagnostyczne izolacji, a negatywne próby pustego i mieszanego koszyka mogą utworzyć zamówienie, jeśli backend błędnie je zaakceptuje. Test odnotowuje FAIL i nie ponawia negatywnego żądania.
 
 Nie zakładamy, że sprawdzenie kilku osiągalnych wag książki 210 g potwierdza dokładnie granicę 8000/8001 g. Do dokładnych granic można użyć tymczasowego profilu, np. 420 g i książki 210 g: 1, 2, 3 szt. dają wagi poniżej, na i powyżej limitu. Nie zmieniamy wagi istniejących produktów.
 
-Bez włączenia porównania baz zapisy `sylius_shipment.shipment_package_details` i transfer `orders_items` z kodem KWys mają SKIP. Izolacja między klientami jest sprawdzana po skonfigurowaniu drugiego konta. Pozostałe niepotwierdzone zakresy: przekroczenie zapasu bez referencyjnego stanu magazynowego, kontrakt ponownego complete i niedostępna dla konta płatność istniejąca w systemie. E-mail i treść PDF nadal nie są sprawdzane przez ekstraktor. Jeśli brak błędów, ale są pominięcia, zbiorczy raport ma INCOMPLETE, nie pełny PASS.
+Bez włączenia porównania baz zapisy `sylius_shipment.shipment_package_details` i transfer `orders_items` z kodem KWys mają SKIP. Izolacja między klientami jest sprawdzana po skonfigurowaniu drugiego konta; porównuje również treść adresów, jeśli GET udostępnia oba. Różnice adresowe w dowodach nie zawierają ich wartości. Nadal wymagają danych lub osobnej integracji: przekroczenie potwierdzonego zapasu, istniejąca niedostępna metoda bez wzorca, wykrywanie zduplikowanych e-maili/transferów i treść PDF. Jeśli brak błędów, ale są pominięcia, raport ma INCOMPLETE, nie pełny PASS.
 
 ### Tymczasowa konfiguracja GLS przez CMS
 

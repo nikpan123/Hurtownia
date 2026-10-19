@@ -8,7 +8,7 @@ test('Drugie konto ma oddzielne dane, wspólną bramkę i niezależne rabaty',()
   const result=secondAccountFromEnv({HURT_SECOND_EMAIL:'b',HURT_SECOND_API_PASSWORD:'secret-b',HURT_SECOND_REBATE_ADAMADA:'12,5',HURT_SECOND_REBATE_CASH_ON_DELIVERY:'0'},{email:'a',password:'secret-a',testsToken:'tests',cookies:[{value:'gate'}]});
   assert.equal(result.credentials.testsToken,'tests');assert.equal(result.credentials.email,'b');assert.equal(result.rebates.adamada,12.5);assert.equal(result.rebates.cash_on_delivery,0);
 });
-async function exercise({allowForeign=false,badRebate=false,unauthorized=false,foreignMutation=false}={}){
+async function exercise({allowForeign=false,badRebate=false,unauthorized=false,foreignMutation=false,foreignAddressMutation=false,diagnosticComplete=false,restoreAtComplete=true}={}){
   let serial=0;const carts=new Map(),checks=[],calls=[];
   const config={baseUrl:'http://127.0.0.1:11111/api/v2',environment:'dev',enabled:true,scenario:{shippingAddress:{city:'Test'},billingAddress:{city:'Test'}}};
   const fetchImpl=async(url,opts)=>{
@@ -16,17 +16,18 @@ async function exercise({allowForeign=false,badRebate=false,unauthorized=false,f
     if(endpoint==='shop/authentication-token')return response({token:'token-'+body.email});
     if(endpoint==='shop/orders'){const token='cart-'+(++serial);carts.set(token,{id:serial,owner:actor,tokenValue:token,items:[],payments:[],shipments:[]});return response({id:serial,tokenValue:token},201);}
     const token=endpoint.split('/')[2],c=carts.get(token);assert(c);
-    if(c.owner!==actor&&!allowForeign){if(foreignMutation&&endpoint.endsWith('/payments'))for(const item of c.items)item.rebatePercent=99;return response({message:'blocked'},unauthorized?401:403);}
+    if(c.owner!==actor&&!allowForeign){if(foreignMutation&&endpoint.endsWith('/payments'))for(const item of c.items)item.rebatePercent=99;if(foreignAddressMutation&&endpoint.startsWith('wholesale/checkout-step-two/')&&opts.method==='POST')c.shippingAddress=body.shippingAddress;return response({message:'blocked'},unauthorized?401:403);}
     if(endpoint.endsWith('/payments'))return response([{code:'cash_on_delivery',rebatePercent:badRebate?99:20}]);
     if(endpoint.endsWith('/payment-method')){c.payments=[{method:{code:body.paymentMethodCode}}];for(const i of c.items)i.rebatePercent=20;return response({});}
-    if(endpoint.startsWith('wholesale/checkout-step-two/'))return response({shippingMethods:[{code:'pickup'}]});
+    if(endpoint.startsWith('wholesale/checkout-step-two/')){if(opts.method==='POST'){c.shippingAddress=body.shippingAddress;c.billingAddress=body.billingAddress;c.shipments=[{method:{code:body.shippingMethodCode}}];return response({});}return response({shippingMethods:[{code:'pickup'}]});}
     if(endpoint.endsWith('/items/bulk')){for(const item of body.items){const found=c.items.find(i=>i.product.code===item.productVariant);if(found)found.quantity+=item.quantity;else c.items.push({id:1,product:{code:item.productVariant},quantity:item.quantity,rebatePercent:0});}return response({},201);}
     if(endpoint.includes('/items/')){if(opts.method==='DELETE')c.items=[];else c.items[0].quantity=body.quantity;return response({});}
-    return response(c);
+    if(endpoint.endsWith('/complete')){c.number='order-'+c.id;c.state='new';if(restoreAtComplete)for(const item of c.items)item.rebatePercent=20;return response(c);}
+    const amount=c.items.reduce((sum,item)=>sum+item.quantity*(100-item.rebatePercent),0);return response({...c,itemsTotal:amount,total:amount,totalNet:amount,shippingTotal:0});
   };
   const primary=new ApiClient(config,{email:'a',password:'password-a',testsToken:'tests'},{allowLocal:true,fetchImpl});await primary.loginShop();
-  await checkSecondAccount({config,primary,secondary:secondAccountFromEnv({HURT_SECOND_EMAIL:'b',HURT_SECOND_API_PASSWORD:'password-b',HURT_SECOND_REBATE_CASH_ON_DELIVERY:'20',HURT_SECOND_REBATE_ADAMADA:'20'},primary.credentials),settings:{groups:{pozostale:[{productVariant:'p1'}],adamada:[{productVariant:'a1'}]}},options:{allowLocal:true,fetchImpl},skip:(name,detail)=>checks.push({name,detail,status:'SKIP'}),test:async(name,fn)=>{try{const evidence=await fn();checks.push({name,status:'PASS',evidence});return true;}catch(error){checks.push({name,status:'FAIL',detail:error.message,evidence:error.evidence});return false;}}});
-  assert(!calls.some(c=>c.endpoint.endsWith('/complete')));assert(!JSON.stringify(primary.clean({requests:primary.requests,secret:'password-b token-b'})).includes('password-b'));
+  await checkSecondAccount({config,primary,secondary:secondAccountFromEnv({HURT_SECOND_EMAIL:'b',HURT_SECOND_API_PASSWORD:'password-b',HURT_SECOND_REBATE_CASH_ON_DELIVERY:'20',HURT_SECOND_REBATE_ADAMADA:'20'},primary.credentials),settings:{paymentRebates:{cash_on_delivery:20},groups:{pozostale:[{productVariant:'p1'}],adamada:[{productVariant:'a1'}]}},options:{allowLocal:true,fetchImpl,complete:diagnosticComplete},skip:(name,detail)=>checks.push({name,detail,status:'SKIP'}),test:async(name,fn)=>{try{const evidence=await fn();checks.push({name,status:'PASS',evidence});return true;}catch(error){checks.push({name,status:'FAIL',detail:error.message,evidence:error.evidence});return false;}}});
+  assert.equal(calls.filter(c=>c.endpoint.endsWith('/complete')).length,diagnosticComplete?2:0);assert(!JSON.stringify(primary.clean({requests:primary.requests,secret:'password-b token-b'})).includes('password-b'));
   return checks;
 }
 test('Oba kierunki izolacji przechodzą tylko dla 403/404 i niezmienionego koszyka',async()=>{
@@ -43,4 +44,19 @@ test('Izolacja tworzy nowy koszyk dla każdej obcej operacji; zmiana podczas GET
   const failures=foreign.filter(c=>c.status==='FAIL');assert.equal(failures.length,2);
   assert(failures.every(c=>c.name.includes('odczyt płatności')));
   assert(failures.every(c=>c.evidence.isolation.freshCart&&c.evidence.isolation.status===403&&c.evidence.isolation.changes.some(d=>d.field==='items.0.rebatePercent'&&d.before===20&&d.after===99)));
+});
+
+test('Odmowa 403 po zapisaniu obcego adresu jest FAIL; dowody nie zawierają treści adresu',async()=>{
+  const checks=await exercise({foreignAddressMutation:true});const failures=checks.filter(c=>c.status==='FAIL');assert.equal(failures.length,2);
+  assert(failures.every(c=>c.evidence.isolation.addressComparison&&c.evidence.isolation.changes.some(d=>d.field==='shippingAddress.city')));
+  assert(!JSON.stringify(failures).includes('QA foreign address'));
+});
+
+test('ISO-006 porównuje trzy stany: poprawny zapis nie usuwa FAIL izolacji',async()=>{
+  for(const foreignMutation of [false,true]){
+    const checks=await exercise({diagnosticComplete:true,foreignMutation});const diagnostic=checks.filter(c=>c.name.startsWith('ISO-006'));assert.equal(diagnostic.length,2);
+    assert(diagnostic.every(c=>c.status===(foreignMutation?'FAIL':'PASS')));
+    for(const c of diagnostic){const d=c.evidence.completionComparison;assert.deepEqual(d.saved,d.before);assert.equal(d.afterForeign.rebatePercent,foreignMutation?99:20);assert(d.orderNumber);assert.equal(d.changes.length,0);}
+  }
+  const checks=await exercise({diagnosticComplete:true,foreignMutation:true,restoreAtComplete:false});assert(checks.filter(c=>c.name.startsWith('ISO-006')).every(c=>c.evidence.completionComparison.changes.length>0));
 });

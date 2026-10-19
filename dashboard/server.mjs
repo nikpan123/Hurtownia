@@ -7,18 +7,20 @@ import {parseEnv} from 'node:util';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {ApiClient} from '../api-tests/http.mjs';
-import {runShipmentRegression} from '../api-tests/redmine-37162.mjs';
-import {runAddressRegression} from '../api-tests/redmine-36926.mjs';
+import {runShipmentRegression,shipmentCases} from '../api-tests/redmine-37162.mjs';
+import {runAddressRegression,addressCases} from '../api-tests/redmine-36926.mjs';
 import {runScenario} from '../api-tests/engine.mjs';
 import {runCatalog} from '../api-tests/catalog.mjs';
 import {ChoiceGate,validateSelection,availableProducts} from './wizard.mjs';
 import {redactText} from '../api-tests/config.mjs';
 import {runProductCreation,runRounding,runDescriptions,productPayload} from '../api-tests/features.mjs';
+import {runDescriptionCms} from '../api-tests/description-cms.mjs';
 import {runOrderRegression} from '../api-tests/order-regression.mjs';
 import {withShippingConfiguration,validateShippingProfile} from '../api-tests/shipping-cms.mjs';
 import {databaseVerifier,verifySavedReport} from '../api-tests/database.mjs';
 import {saveFeatureReport} from '../api-tests/feature-report.mjs';
 import {renderDocumentation} from './documentation.mjs';
+import {loadScenarioCatalog,renderScenarioMarkdown} from './scenario-catalog.mjs';
 import {secondAccountFromEnv} from '../api-tests/second-account.mjs';
 import {checkoutForAccount} from './checkout-account.mjs';
 import {saveCustomEmail} from './custom-user.mjs';
@@ -42,6 +44,7 @@ const definitions={
   'product-create':{name:'Tworzenie produktu przez API',script:'',args:[]},
   rounding:{name:'Ceny netto / brutto — wzorzec starej hurtowni',script:'',args:[]},
   descriptions:{name:'Opisy produktów zależne od kanału — API',script:'',args:[]},
+  'descriptions-cms':{name:'Opisy kanałowe — zapis i walidacje CMS',script:'',args:[]},
   login:{name:'Logowanie GitLab',script:'api-tests/login.mjs',args:[]}
 };
 let lastCustomProfile;
@@ -94,8 +97,8 @@ async function executeSuite(body,vars,options) {
     const source=JSON.parse(await readFile(await safeReportPath(reportRoot,[body.reportId,'raport.json']),'utf8'));const report=await verifySavedReport(source,dbOptions);const directory=path.join(reportRoot,'database-'+new Date().toISOString().replace(/[:.]/g,'-')+'-'+randomUUID().slice(0,8));await saveFeatureReport(report,directory);return {report,directory};
   }
   if(!credentials.testsToken||(body.suite!=='product-create'&&(!credentials.email||!credentials.password)))throw new Error('Uzupełnij wymagane dane API w .env.');
-  if(body.suite==='redmine-37162')return runShipmentRegression(cartConfig,credentials,options);
-  if(body.suite==='redmine-36926')return runAddressRegression(cartConfig,credentials,{...options,otherRunning:async()=>false});
+  if(body.suite==='redmine-37162')return runShipmentRegression(cartConfig,credentials,{...options,caseIds:body.caseIds});
+  if(body.suite==='redmine-36926')return runAddressRegression(cartConfig,credentials,{...options,caseIds:body.caseIds,otherRunning:async()=>false});
   if(['regression','regression-order','packages','packages-profile'].includes(body.suite)){
     const settings=JSON.parse(await readFile(path.join(workspace,'config/order-regression.local.json'),'utf8'));
     const run=()=>runOrderRegression(cartConfig,credentials,{...options,settings,secondAccount:secondAccountFromEnv(vars,credentials),complete:body.suite==='regression-order',packagesOnly:body.suite.startsWith('packages')});
@@ -108,6 +111,7 @@ async function executeSuite(body,vars,options) {
   if(body.suite==='product-create')return runProductCreation(cartConfig,credentials,{...options,input:body.input,adminEmail:vars.SYLIUS_ADMIN_EMAIL,adminPassword:vars.SYLIUS_ADMIN_PASSWORD});
   if(body.suite==='rounding')return runRounding(cartConfig,credentials,options);
   if(body.suite==='descriptions')return runDescriptions(cartConfig,credentials,options);
+  if(body.suite==='descriptions-cms')return runDescriptionCms(cartConfig,credentials,{...options,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
   if(body.suite==='wizard') {
     cartConfig.scenario.products=validateSelection(body.items,await wizardProducts(body.account??'primary'));
     cartConfig.scenario.randomProducts={enabled:false};
@@ -131,6 +135,11 @@ async function launch(body,runner) {
   launching=true;
   try {
   const d=definitions[body.suite];if(!d)throw Object.assign(new Error('Nieznany zestaw testów.'),{status:400});
+  if(body.caseIds!==undefined){
+    const cases=body.suite==='redmine-37162'?shipmentCases:body.suite==='redmine-36926'?addressCases:null;
+    if(!cases||!Array.isArray(body.caseIds)||!body.caseIds.length||body.caseIds.some(id=>typeof id!=='string'||!cases.some(c=>c.id===id)))throw Object.assign(new Error('Wybierz istniejące przypadki z tego zestawu.'),{status:400});
+    body.caseIds=[...new Set(body.caseIds)];
+  }
   if(!['login','database'].includes(body.suite)){
     try{await readFile(path.join(workspace,'.auth/shipping-restore.json'),'utf8');throw new Error('Najpierw przywróć konfigurację GLS: npm run packages:restore. Istnieje niedokończony dziennik zmian CMS.');}catch(e){if(e.code!=='ENOENT')throw e;}
   }
@@ -142,6 +151,7 @@ async function launch(body,runner) {
   const vars=await env();
   const job={id:randomUUID(),suite:body.suite,name:d.name+(['cart','order','wizard'].includes(body.suite)?' — '+(body.account==='custom'?'Użytkownik zdefiniowany':body.account==='secondary'?'Konto 2':'Konto 1'):''),account:body.account??'primary',status:'RUNNING',startedAt:new Date().toISOString(),log:'',seed:body.seed??null,automatic:body.suite==='wizard'&&body.automatic===true};
   const sensitive=Object.fromEntries(Object.entries(vars).filter(([k])=>/PASSWORD|TOKEN|COOKIE|EMAIL|USERNAME/i.test(k)));
+  if(body.caseIds){job.caseIds=body.caseIds;job.name+=' — wybrane przypadki ('+body.caseIds.length+')';}
   jobs.push(job);
   const append=chunk=>{job.log=(job.log+scrub(chunk.toString(),sensitive)).slice(-64000);};
   if(body.suite!=='login') {
@@ -154,7 +164,7 @@ async function launch(body,runner) {
     }
     append('Rozpoczęto testy na dev.\n');
     Promise.resolve().then(()=>runner(body,vars,{signal:controller.signal,onProgress:line=>append(line+'\n'),...interactive})).then(result=>{
-      job.status=controller.signal.aborted?'CANCELLED':result.report.status;
+      job.status=result.report.restorationFailed?'FAIL':controller.signal.aborted?'CANCELLED':result.report.status;
       job.error=result.report.error??null;
       job.completionBlocked=result.report.completionBlocked??false;
       job.finalization=result.report.finalization;
@@ -251,6 +261,12 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
       }
       if(req.method!=='GET')return send(404,{error:'Nie znaleziono.'});
       if(url.pathname==='/api/documentation')return send(200,renderDocumentation(await readFile(path.join(workspace,'README.md'),'utf8')));
+      if(url.pathname==='/api/scenarios')return send(200,await loadScenarioCatalog());
+      const scenarioDownloads={'/SCENARIUSZE-KOSZYKA-HURTOWEGO.md':'cart','/SCENARIUSZE-OPISOW-KANALOWYCH.md':'descriptions','/SCENARIUSZE-TESTOWE.md':'all'};
+      if(scenarioDownloads[url.pathname]){
+        res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Content-Disposition':'attachment; filename="'+url.pathname.slice(1)+'"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+        return res.end(renderScenarioMarkdown(await loadScenarioCatalog(scenarioDownloads[url.pathname])));
+      }
       if(url.pathname==='/README.md'){
         res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Content-Disposition':'attachment; filename="README.md"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
         return res.end(await readFile(path.join(workspace,'README.md')));
@@ -260,7 +276,7 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
         const file=await safeReportPath(reportRoot,url.pathname.slice('/reports/'.length).split('/').map(decodeURIComponent));
         res.writeHead(200,{'Content-Type':file.endsWith('.pdf')?'application/pdf':file.endsWith('.json')?'application/json; charset=utf-8':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; sandbox allow-popups allow-same-origin"});return res.end(await readFile(file));
       }
-      const assets={'/':'index.html','/app.js':'app.js','/wizard.js':'wizard.js','/product-form.js':'product-form.js','/style.css':'style.css'};
+      const assets={'/':'index.html','/app.js':'app.js','/wizard.js':'wizard.js','/scenarios.js':'scenarios.js','/product-form.js':'product-form.js','/style.css':'style.css'};
       const asset=assets[url.pathname];if(!asset)return send(404,{error:'Nie znaleziono.'});
       let data=await readFile(path.join(workspace,'dashboard/public',asset));
       if(asset==='index.html')data=Buffer.from(data.toString().replace('__UI_TOKEN__',secret));

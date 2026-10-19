@@ -9,7 +9,7 @@ const credentials={email:'qa@example.invalid',password:'secret-password-mock',te
 const input={code:'qa-form-1',variantCode:'qa-form-v1',name:'QA książka',slug:'qa-ksiazka',channel:'WHOLESALE',price:'18,40',originalPrice:'18.40',minimumPrice:'0'};
 const fixture=(code,override)=>({code,productVariant:code,main:{name:'Główna '+code,slug:code,description:'Główny opis',shortDescription:'Główny krótki'},channels:Object.fromEntries(['WHOLESALE','RETAIL','ACADEMY'].map(channel=>[channel,{visible:true,name:override&&channel==='WHOLESALE'?'Hurt '+code:'Główna '+code,slug:override&&channel==='WHOLESALE'?'hurt-'+code:code,description:override&&channel==='WHOLESALE'?'Hurt opis':'Główny opis',shortDescription:override&&channel==='WHOLESALE'?'Hurt krótki':'Główny krótki'}]))});
 const fixtures=[fixture('qa-one',false),fixture('qa-two',true)];
-function mock({deny=false,wrongPrice=false,no23=false,wrongName=false}={}){
+function mock({deny=false,wrongPrice=false,no23=false,wrongName=false,variantName}={}){
   const calls=[];const orders=new Map();let serial=0;
   const fetchImpl=async(url,options)=>{
     url=new URL(url);const endpoint=url.pathname.replace('/api/v2/',''),body=options.body?JSON.parse(options.body):null,channel=options.headers['X-Api-Channel'];calls.push({method:options.method,endpoint,body,channel});
@@ -27,7 +27,7 @@ function mock({deny=false,wrongPrice=false,no23=false,wrongName=false}={}){
       if(endpoint.endsWith('/items/bulk')){o.variant=body.items[0].productVariant;return response({},201);}
       if(options.method==='PATCH'){o.quantity=body.quantity;return response({});}
       const f=fixtures.find(f=>f.code===o.variant);const q=o.quantity;const total=q===6?(wrongPrice?8502:8499):1416*q;
-      return response({id:serial,itemsTotal:total,total:total+1000,shippingTotal:1000,items:[{id:1,quantity:q,unitPrice:1840,originalUnitPrice:1840,unitPriceNet:1752,discountedUnitPriceNet:wrongPrice?1350:1349,totalNetSalesAfterDiscount:1349*q,total,rebatePercent:23,productName:wrongName?'Błędna nazwa':f?.channels[o.channel].name??'Książka'}]});
+      return response({id:serial,itemsTotal:total,total:total+1000,shippingTotal:1000,items:[{id:1,quantity:q,unitPrice:1840,originalUnitPrice:1840,unitPriceNet:1752,discountedUnitPriceNet:wrongPrice?1350:1349,totalNetSalesAfterDiscount:1349*q,total,rebatePercent:23,variantName,productName:wrongName?'Błędna nazwa':f?.channels[o.channel].name??'Książka'}]});
     }
     throw new Error('Nieoczekiwane żądanie '+endpoint);
   };return {calls,fetchImpl};
@@ -70,4 +70,51 @@ test('Opisy sprawdzają trzy kanały i zapis productName, jawnie wskazują niesp
 });
 test('Nieprawidłowy productName w zamówieniu nie zostaje ukryty przez poprawne DTO',async()=>{
   const m=mock({wrongName:true});const r=await runDescriptions(config,credentials,await options({...m,fixtures}));assert.equal(r.report.status,'FAIL');assert.equal(r.report.tests.filter(t=>t.name.includes('nazwa zapisana')&&t.status==='FAIL').length,6);
+});
+
+test('Raport opisów wiąże rzeczywiste kontrole z 29 scenariuszami i nie zalicza nieuruchomionych wymagań',async()=>{
+  const m=mock();const {report,directory}=await runDescriptions(config,credentials,await options({...m,fixtures}));
+  assert.equal(report.scenarioCoverage.length,29);
+  assert(report.scenarioCoverage.every(s=>s.checks.length>0));
+  for(const s of report.scenarioCoverage.filter(s=>s.automation==='planned')){
+    assert.deepEqual(s.counts,{PASS:0,FAIL:0,SKIP:1});
+  }
+  assert.deepEqual(report.scenarioCoverage.find(s=>s.id==='DESC-017').counts,{PASS:0,FAIL:0,SKIP:6});
+  assert.deepEqual(report.scenarioCoverage.find(s=>s.id==='DESC-012').counts,{PASS:2,FAIL:0,SKIP:0});
+  for(const check of report.tests){
+    assert(check.scenarioIds.every(id=>report.scenarioCoverage.some(s=>s.id===id)));
+    if(check.status==='PASS')assert(Array.isArray(check.evidence.requests));
+  }
+  const html=await readFile(path.join(directory,'raport.html'),'utf8');
+  assert.match(html,/scenario=DESC-012#scenarios/);assert.match(html,/nie pełne zaliczenie wymagań/);
+  assert(!m.calls.some(c=>c.endpoint.startsWith('admin/')||c.endpoint.endsWith('/complete')));
+});
+
+test('Niepełny wzorzec opisu nie może zaliczyć czterech pól ani uruchomić zależnego koszyka',async()=>{
+  const incomplete=structuredClone(fixtures);delete incomplete[0].channels.WHOLESALE.description;
+  const m=mock();const {report}=await runDescriptions(config,credentials,await options({...m,fixtures:incomplete}));
+  assert.equal(report.status,'FAIL');
+  assert(report.tests.some(t=>t.status==='FAIL'&&t.scenarioIds.includes('DESC-012')&&t.detail.includes('Brak wzorca')));
+  assert(report.tests.some(t=>t.status==='SKIP'&&t.scenarioIds.includes('DESC-015')));
+  assert.equal(m.calls.filter(c=>c.endpoint==='shop/orders'&&c.method==='POST').length,5);
+});
+
+test('Nazwa wariantu ma osobny wynik DESC-017 i nie jest zaliczana na podstawie productName',async()=>{
+  for(const variantName of ['Wariant QA','Błędny wariant']){
+    const m=mock({variantName});const withVariant=fixtures.map(f=>({...f,variantName:'Wariant QA'}));
+    const {report}=await runDescriptions(config,credentials,await options({...m,fixtures:withVariant}));
+    assert.deepEqual(report.scenarioCoverage.find(s=>s.id==='DESC-017').counts,variantName==='Wariant QA'?{PASS:6,FAIL:0,SKIP:0}:{PASS:0,FAIL:6,SKIP:0});
+    assert.equal(report.tests.filter(t=>t.name.includes('nazwa zapisana')&&t.status==='PASS').length,6);
+  }
+});
+
+test('Automaty kursów są podpięte do raportu opisów z dowodami GET i odnośnikami do scenariuszy',async()=>{
+  const m=mock();const course={itemsPath:['data'],identityPath:['id'],titlePath:['title'],slugPath:['slug'],query:{page:1},expected:[{id:12,title:'Kurs główny',slug:'kurs-glowny'}]};
+  const fetchImpl=async(url,args)=>new URL(url).pathname.includes('/academy/')?new Response(JSON.stringify({data:[{id:12,title:'Kurs główny',slug:'kurs-glowny'}]}),{headers:{'content-type':'application/json'}}):m.fetchImpl(url,args);
+  const {report,directory}=await runDescriptions(config,credentials,await options({fetchImpl,fixtures,courses:{closed:course,paid:course}}));
+  for(const id of ['DESC-018','DESC-019']){
+    assert.deepEqual(report.scenarioCoverage.find(s=>s.id===id).counts,{PASS:2,FAIL:0,SKIP:0});
+    const check=report.tests.find(t=>t.scenarioIds.includes(id)&&t.evidence.requests.length);assert.equal(check.evidence.requests.length,1);assert.equal(check.evidence.requests[0].method,'GET');
+  }
+  assert.match(await readFile(path.join(directory,'raport.html'),'utf8'),/scenario=DESC-018#scenarios/);
 });

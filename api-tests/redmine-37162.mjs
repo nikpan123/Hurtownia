@@ -14,8 +14,10 @@ export const shipmentCases=[
  {id:'HURT-BUG-37162-06',name:'Dodawanie kolejno: D414, następnie m-F8P',batches:[[printed],[multimedia]],repeat:1},
 ];
 export async function runShipmentRegression(config,credentials,options={}){
+ const selected=options.caseIds?shipmentCases.filter(c=>options.caseIds.includes(c.id)):shipmentCases;
+ if(!selected.length||options.caseIds?.some(id=>!shipmentCases.some(c=>c.id===id)))throw new Error('Nie wybrano istniejących przypadków.');
  const api=new ApiClient(config,credentials,options);
- const report={kind:'redmine-37162',scenario:'Redmine #37162 — ShipmentInterface: Got NULL',issue:37162,generatedAt:new Date().toISOString(),baseUrl:config.baseUrl,status:'RUNNING',tests:[],requests:api.requests,attempts:[],reference:{cases:shipmentCases},scopeNote:'Osiem nowych koszyków na koncie 1: oryginalny payload powtarzany trzy razy i pięć wariantów. Bez płatności, dostawy, finalizacji i zmian CMS. Koszyki pozostają na DEV. Skończona liczba prób nie wyklucza rzadkiego błędu; 4xx jest niepowodzeniem próby, a nie dowodem usunięcia błędu 500.',tables:[]};
+ const report={kind:'redmine-37162',scenario:'Redmine #37162 — ShipmentInterface: Got NULL',issue:37162,generatedAt:new Date().toISOString(),baseUrl:config.baseUrl,status:'RUNNING',tests:[],requests:api.requests,attempts:[],reference:{cases:selected},scopeNote:'Wyłącznie wybrane przypadki: '+selected.map(c=>c.id).join(', ')+'. Każda próba korzysta z nowego koszyka na koncie 1. Bez płatności, dostawy, finalizacji i zmian CMS. Koszyki pozostają na DEV. Skończona liczba prób nie wyklucza rzadkiego błędu; 4xx jest niepowodzeniem próby, a nie dowodem usunięcia błędu 500.',tables:[]};
  const directory=options.directory??path.resolve('raporty-api','redmine-37162-'+new Date().toISOString().replace(/[:.]/g,'-')+'-'+randomUUID().slice(0,8));
  function verify(response,label,allowed){
   const message=[response.data?.message,response.data?.detail,response.data?.['hydra:description']].filter(Boolean).join(' ');
@@ -23,7 +25,7 @@ export async function runShipmentRegression(config,credentials,options={}){
  }
  try{
   await api.loginShop();
-  for(const scenario of shipmentCases){
+  for(const scenario of selected){
    for(let trial=1;trial<=scenario.repeat;trial++){
     options.signal?.throwIfAborted();
     const name=`${scenario.id}: ${scenario.name}${scenario.repeat>1?' — próba '+trial+'/'+scenario.repeat:''}`;

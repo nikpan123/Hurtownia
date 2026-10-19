@@ -5,6 +5,36 @@ import path from 'node:path';
 import os from 'node:os';
 import {createDashboardServer,safeReportPath} from '../dashboard/server.mjs';
 
+test('Nieudane przywracanie CMS pozostaje FAIL także po zatrzymaniu testu przez użytkownika',async()=>{
+  let finish;const ended=new Promise(resolve=>finish=resolve);
+  const server=createDashboardServer({runSuite:async(body,vars,{signal})=>{
+    await new Promise(resolve=>signal.addEventListener('abort',resolve,{once:true}));
+    finish();return {report:{status:'FAIL',restorationFailed:true},directory:'raporty-api/restore-mock'};
+  }});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
+  try{
+    const html=await(await fetch(base)).text();assert(html.includes('data-suite="descriptions-cms"'));const token=html.match(/name="ui-token" content="([^"]+)"/)[1];
+    const post=(url,body)=>fetch(base+url,{method:'POST',headers:{origin:base,'x-ui-token':token,'content-type':'application/json'},body:JSON.stringify(body)});
+    const response=await post('/api/run',{suite:'descriptions-cms'});assert.equal(response.status,202);const job=await response.json();
+    assert.equal((await post('/api/stop',{id:job.id})).status,200);await ended;
+    const state=await(await fetch(base+'/api/state')).json();assert.equal(state.jobs.find(j=>j.id===job.id).status,'FAIL');
+  }finally{await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}
+});
+
+test('Panel przekazuje wybrane przypadki i odrzuca nieznane lub z innego zestawu',async()=>{
+ let called;const server=createDashboardServer({runSuite:async body=>{called=body;return {report:{status:'PASS'},directory:'raporty-api/selection-mock'};}});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
+ try{const html=await(await fetch(base)).text();const token=html.match(/name="ui-token" content="([^"]+)"/)[1];
+ const post=body=>fetch(base+'/api/run',{method:'POST',headers:{origin:base,'x-ui-token':token,'content-type':'application/json'},body:JSON.stringify(body)});
+ assert.equal((await post({suite:'redmine-37162',caseIds:['HURT-FEAT-36926-01']})).status,400);
+ assert.equal((await post({suite:'catalog',caseIds:['HURT-BUG-37162-02']})).status,400);
+ assert.equal((await post({suite:'redmine-37162',caseIds:[]})).status,400);
+ assert.equal(called,undefined);
+ assert.equal((await post({suite:'redmine-37162',caseIds:['HURT-BUG-37162-02']})).status,202);
+ assert.deepEqual(called.caseIds,['HURT-BUG-37162-02']);
+ }finally{await new Promise(r=>{server.close(r);server.closeAllConnections();});}
+});
+
 test('Raporty można czytać tylko z dozwolonego katalogu i rozszerzeń',async()=>{
   const root=await mkdtemp(path.join(os.tmpdir(),'hurt-ui-'));await mkdir(path.join(root,'run'));await writeFile(path.join(root,'run','raport.json'),'{}');await writeFile(path.join(root,'.env'),'secret');
   assert.equal(await safeReportPath(root,['run','raport.json']),path.join(root,'run','raport.json'));

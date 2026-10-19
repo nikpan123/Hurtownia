@@ -45,6 +45,8 @@ Odczyt drugiego kroku udostępnia `defaultShippingAddress` i `defaultBillingAddr
 
 Brak `notes` w GET koszyka daje SKIP kontroli carrierName, nie PASS. W takim przypadku potrzebny jest niezależny odczyt `order.notes` z backendu/bazy; samo przesłanie pola nie potwierdza zapisu.
 
+Weryfikacja ręczna użytkownika z 19.10.2026: po wysłaniu `shippingAddress.carrierName` w Postmanie ta sama wartość została pokazana jako „Przewoźnik: …” w sekcji „Uwagi” zapisanego zamówienia w Syliusie. Potwierdza to zapis i prezentację w tym konkretnym przebiegu. Nie zmienia historycznego SKIP automatu, który nie miał dostępu do `notes`, ani nie zastępuje odczytu dla nowych koszyków.
+
 ## Raport i uruchomienie
 
 Panel Hurtowni: **Sprawdź #36926** (po ponownym uruchomieniu serwera, jeżeli nie zna nowej definicji). Alternatywa: `Testuj-Redmine-36926-dev.cmd` lub `npm run redmine:36926`.

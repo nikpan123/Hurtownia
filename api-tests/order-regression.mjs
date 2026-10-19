@@ -4,7 +4,8 @@ import path from 'node:path';
 import {ApiClient} from './http.mjs';
 import {normalizeOrder,runScenario} from './engine.mjs';
 import {saveFeatureReport} from './feature-report.mjs';
-import {checkSecondAccount,orderDifferences} from './second-account.mjs';
+import {checkSecondAccount} from './second-account.mjs';
+import {checkDeniedAuthentication,checkRepeatedCompletion,accessSnapshot,accessDifferences} from './regression-access.mjs';
 
 export function packageQuote(weight,settings,surchargeGrossMinor=0){
   assert(Number.isSafeInteger(weight)&&weight>=0,'Waga musi być całkowitą liczbą gramów');
@@ -31,7 +32,7 @@ export async function runOrderRegression(config,credentials,options={}){
   const settings=options.settings??JSON.parse(await readFile('config/order-regression.local.json','utf8'));
   const directory=options.directory??path.resolve(config.outputDirectory??'raporty-api','order-regression-'+new Date().toISOString().replace(/[:.]/g,'-')+'-'+crypto.randomUUID().slice(0,8));
   const api=new ApiClient(config,credentials,options);
-  const report={scenario:options.packagesOnly?'Paczki i koszt dostawy GLS':'Regresja koszyka i zamówienia',kind:'order-regression',generatedAt:new Date().toISOString(),baseUrl:config.baseUrl,status:'RUNNING',scopeNote:options.complete?'Zapis maksymalnie jednego poprawnego zamówienia na grupę; pozostałe przypadki pozostają koszykami.':'Bez finalizacji. Przypadki wymagające zapisu są jawnie pomijane.',tests:[],requests:api.requests,tables:[],reference:settings};
+  const report={scenario:options.packagesOnly?'Paczki i koszt dostawy GLS':'Regresja koszyka i zamówienia',kind:'order-regression',generatedAt:new Date().toISOString(),baseUrl:config.baseUrl,status:'RUNNING',scopeNote:options.complete?'Zapis do 3 poprawnych zamówień oraz do 2 diagnostycznych ISO-006. Druga próba complete tylko po potwierdzonym zapisie. Negatywne próby mogą ujawnić błędny zapis backendu.':'Bez finalizacji. Przypadki wymagające zapisu są jawnie pomijane.',tests:[],requests:api.requests,tables:[],reference:settings};
   const quoteRows=[];const quoteTable={title:'Oferty płatności — zestawienie informacyjne, bez oceny zgodności zaokrągleń',headers:['Koszyk','Płatność','Podstawa','Oferta (grosze)','Produkty (grosze)','Różnica (grosze)'],rows:quoteRows};
   const snapshots=[],combinations=[];report.tables.push({title:'Kombinacje płatności i dostawy',headers:['Grupa','Koszyk','Płatność','Dostawa','Brutto produkty','Brutto dostawa','Paczki'],rows:combinations});
   report.tables.push({title:'Pomiary koszyka',headers:['Przypadek / etap','Koszyk','Kod','Ilość','Rabat %','Netto / szt.','Brutto pozycji','Brutto dostawy','Netto dostawy','Paczki'],rows:snapshots});
@@ -53,9 +54,9 @@ export async function runOrderRegression(config,credentials,options={}){
   const shipping=async cart=>{const r=await request('GET',cart.checkout);const raw=r?.shippingMethods;const list=Array.isArray(raw)?raw:raw?.['hydra:member']??raw?.member;assert(Array.isArray(list)&&list.length,'Brak dostaw');assert(list.every(v=>typeof v.code==='string'&&v.code),'Nieprawidłowe kody dostawy');assert.equal(new Set(list.map(v=>v.code)).size,list.length,'Powtórzone dostawy');return list;};
   const ship=(cart,code,address=config.scenario.shippingAddress)=>request('POST',cart.checkout,{body:{orderTokenValue:cart.token,shippingMethodCode:code,shippingAddress:address,billingAddress:config.scenario.billingAddress}},[200,201,204]);
   const expectedRebate=(group,code,offer)=>group==='adamada'?settings.adamadaRebatePercent:settings.paymentRebates?.[code]??offer.rebatePercent;
-  async function rejectUnchanged(cart,method,endpoint,args,statuses){
-    assert(Array.isArray(statuses)&&statuses.length&&statuses.every(s=>[400,404,409,422].includes(s)),'Skonfiguruj oczekiwane błędy walidacji (bez 401/403/500)');
-    const before=normalizeOrder(await get(cart));const r=await api.request(method,endpoint,args);const after=normalizeOrder(await get(cart));const changes=orderDifferences(before,after);
+  async function rejectUnchanged(cart,method,endpoint,args,statuses,authorization=false){
+    assert(Array.isArray(statuses)&&statuses.length&&statuses.every(s=>[400,404,409,422].includes(s)||(authorization&&s===403)),'Skonfiguruj oczekiwane błędy walidacji (403 tylko dla braku uprawnień; bez 401/500)');
+    const before=accessSnapshot(await get(cart));const r=await api.request(method,endpoint,args);const after=accessSnapshot(await get(cart));const changes=accessDifferences(before,after);
     const evidence={cartId:before.id,validation:{method,expectedStatuses:statuses,actualStatus:r.status,changes}};
     if(!statuses.includes(r.status)||changes.length)throw Object.assign(new Error((!statuses.includes(r.status)?'Oczekiwano '+statuses.join('/')+', otrzymano '+r.status+'. ':'')+(changes.length?'Żądanie zmieniło koszyk: '+changes.slice(0,5).map(d=>d.field+': '+JSON.stringify(d.before)+' → '+JSON.stringify(d.after)).join('; '):'Koszyk po żądaniu pozostał niezmieniony.')),{evidence});
     return evidence;
@@ -64,9 +65,44 @@ export async function runOrderRegression(config,credentials,options={}){
     if(!await test('Logowanie hurtownika',()=>api.loginShop()))throw new Error('Nie można uruchomić scenariuszy bez logowania');
     assert(settings.groups?.pozostale?.length&&settings.groups?.adamada?.length,'Skonfiguruj produkty obu grup');
     assert(Number.isInteger(settings.maxCombinations)&&settings.maxCombinations>0&&settings.maxCombinations<=96,'maxCombinations: 1–96');
+    if(!options.packagesOnly)await checkDeniedAuthentication({api,create:async()=>{const c=await create([settings.groups.pozostale[0]]);await pay(c,(await payments(c))[0].code);return c;},get,test});
+    if(!options.packagesOnly)await test('CART-001: utworzenie i odczyt pustego koszyka',async()=>{
+      const c=await create(),o=await get(c);assert.equal(o.id,c.id,'Inny koszyk niż utworzony');assert.deepEqual(o.items,[],'Nowy koszyk zawiera produkty');assert.equal(o.itemsTotal,0,'Pusty koszyk ma koszt produktów');verify(o,'Pusty koszyk');
+      assert.deepEqual(accessSnapshot(await get(c)),accessSnapshot(o),'Ponowny GET zmienił pusty koszyk');
+    });
+    if(!options.packagesOnly){
+      const stock=settings.stockFixture;
+      if(!stock)skip('Przekroczenie zapasu','Uzupełnij stockFixture: {productVariant, availableQuantity, source}; aktualny zapas i blokada backorder muszą być potwierdzone niezależnie.');
+      else await test('Przekroczenie potwierdzonego zapasu',async()=>{
+        assert(typeof stock.productVariant==='string'&&stock.productVariant&&typeof stock.source==='string'&&stock.source.trim(),'Potrzebny kod produktu i niezależne źródło zapasu');
+        assert(Number.isSafeInteger(stock.availableQuantity)&&stock.availableQuantity>=1&&stock.availableQuantity<1000,'Zapas referencyjny: 1–999 sztuk, bez backorder');
+        const c=await create([{productVariant:stock.productVariant,quantity:1}]),o=await get(c);
+        return rejectUnchanged(c,'PATCH',c.path+'/items/'+o.items[0].id,{body:{quantity:stock.availableQuantity+1}},settings.validationStatuses.stock??[400,422]);
+      });
+    }
     let count=0;const firstChoices={};
     if(!options.packagesOnly)for(const [group,products]of Object.entries(settings.groups)){
       let offered=[];await test(group+': pobranie dostępnych płatności',async()=>{const c=await create([products[0]]);offered=await payments(c);if(group==='adamada')for(const p of offered)assert.equal(p.rebatePercent,settings.adamadaRebatePercent,'Rabat Adamada dla '+p.code);});
+      if(offered.length>1)await test(group+': zmiana płatności i powrót do pierwszej w tym samym koszyku',async()=>{
+        const c=await create([products[0]]);let baseline;
+        for(const offer of [...offered,offered[0]]){
+          assert((await payments(c)).some(p=>p.code===offer.code),'Płatność przestała być dostępna: '+offer.code);
+          await pay(c,offer.code);const o=await get(c);verify(o,'Zmiana płatności / '+offer.code,expectedRebate(group,offer.code,offer));
+          assert.equal(normalizeOrder(o).paymentCode,offer.code,'Nie zapisano wybranej płatności');
+          await shipping(c);
+          if(!baseline)baseline=normalizeOrder(o);
+          const before=accessSnapshot(o);await payments(c);assert.deepEqual(accessSnapshot(await get(c)),before,'Własny odczyt ofert zmienił wycenę lub adresy');
+        }
+        assert.deepEqual(normalizeOrder(await get(c)),baseline,'Powrót do pierwszej płatności nie przywrócił stanu koszyka');
+      });else skip(group+': zmiana między dostępnymi płatnościami','API nie udostępniło co najmniej dwóch płatności. Nie zastępujemy ich nieistniejącymi kodami.');
+      const forbidden=settings.forbiddenPayments??[];
+      if(!forbidden.length)skip(group+': istniejąca niedostępna płatność','Uzupełnij forbiddenPayments: [{code, source}] po potwierdzeniu istnienia i braku uprawnień w CMS.');
+      for(const fixture of forbidden)await test(group+': istniejąca niedostępna płatność '+fixture.code,async()=>{
+        assert(typeof fixture.code==='string'&&fixture.code&&typeof fixture.source==='string'&&fixture.source.trim(),'Potrzebny kod i niezależne źródło potwierdzenia istnienia płatności');
+        const c=await create([products[0]]);const offers=await payments(c);assert(!offers.some(p=>p.code===fixture.code),'Płatność referencyjna jest dostępna dla konta');
+        await pay(c,offers[0].code);
+        return rejectUnchanged(c,'PATCH',c.wholesale+'/payment-method',{body:{paymentMethodCode:fixture.code}},settings.validationStatuses.forbiddenPayment??[400,403,422],true);
+      });
       for(const offer of offered){
         let methods=[];await test(group+' / '+offer.code+': dostawy po płatności',async()=>{const c=await create([products[0]]);await pay(c,offer.code);methods=await shipping(c);});
         for(const method of methods){
@@ -114,13 +150,23 @@ export async function runOrderRegression(config,credentials,options={}){
         if(readable)await test('Pusty koszyk: niezmienność po odrzuceniu',async()=>assert.deepEqual(normalizeOrder(await get(c)),before,'Zatwierdzenie zmieniło pusty koszyk'));
         else skip('Pusty koszyk: niezmienność po odrzuceniu','Odczyt przed próbą nie powiódł się. Próba PATCH complete została wykonana osobno; brak wiarygodnego stanu do porównania.');
       }
-      for(const [group,choice]of Object.entries(firstChoices))await test(group+': zapis i PDF',async()=>{const child=structuredClone(config);child.scenario.randomProducts={enabled:false};child.scenario.randomCheckout={payment:false,shipping:false};child.scenario.products=[choice.product??{...settings.groups[group][0],group,quantity:1}];child.scenario.expectations={...child.scenario.expectations,beforeComplete:choice.expected??{}};child.scenario.paymentMethodCode=choice.payment;child.scenario.shippingMethodCode=choice.shipping;child.scenario.name='Regresja — finalizacja '+group;const r=await runScenario(child,credentials,{...options,complete:true,directory:path.join(directory,'final-'+group)});(report.relatedReports??=[]).push({name:'Raport zapisu i PDF: '+group,file:'final-'+group+'/raport.html'});report.tables.push({title:'Finalizacja '+group,headers:['Wynik','Raport'],rows:[[r.report.status,'final-'+group+'/raport.html']]});assert.equal(r.report.status,'PASS',r.report.error);});
+      for(const [group,choice]of Object.entries(firstChoices))await test(group+': zapis i PDF',async()=>{
+        const child=structuredClone(config);child.scenario.randomProducts={enabled:false};child.scenario.randomCheckout={payment:false,shipping:false};
+        child.scenario.products=[choice.product??{...settings.groups[group][0],group,quantity:1}];child.scenario.expectations={...child.scenario.expectations,beforeComplete:choice.expected??{}};
+        child.scenario.paymentMethodCode=choice.payment;child.scenario.shippingMethodCode=choice.shipping;child.scenario.name='Regresja — finalizacja '+group;
+        const r=await runScenario(child,credentials,{...options,complete:true,directory:path.join(directory,'final-'+group),afterComplete:async({token,order})=>{
+          api.secrets.push(token);
+          if(!order.number||order.state==='cart'){skip(group+': ponowne zatwierdzenie','GET nie potwierdził numeru zapisanego zamówienia lub nadal pokazuje koszyk. Nie wysłano drugiego complete.');return;}
+          await test(group+': ponowne zatwierdzenie zapisanego zamówienia',()=>checkRepeatedCompletion({api,cart:{path:'shop/orders/'+encodeURIComponent(token)},get,statuses:settings.validationStatuses.repeatComplete}));
+        }});
+        (report.relatedReports??=[]).push({name:'Raport zapisu i PDF: '+group,file:'final-'+group+'/raport.html'});report.tables.push({title:'Finalizacja '+group,headers:['Wynik','Raport'],rows:[[r.report.status,'final-'+group+'/raport.html']]});assert.equal(r.report.status,'PASS',r.report.error);
+      });
       if(!Object.keys(firstChoices).length)skip('Finalizacja','Brak poprawnej kombinacji płatności i dostawy');
       if(!options.packagesOnly)await test('Adamada: mieszany koszyk nie może zostać zatwierdzony',async()=>{const c=await create();const added=await api.request('POST',c.path+'/items/bulk',{body:{items:[settings.groups.adamada[0],settings.groups.pozostale[0]].map(p=>({productVariant:p.productVariant,quantity:1}))}});if([400,422].includes(added.status))return;assert([200,201,204].includes(added.status),'Nieoczekiwany status dodania '+added.status);await pay(c,(await payments(c))[0].code);await ship(c,(await shipping(c))[0].code);await rejectUnchanged(c,'PATCH',c.path+'/complete',{body:{}},settings.validationStatuses.complete);});
     }else skip('Finalizacja, PDF i blokada finalizacji mieszanego koszyka','Wybierz regresję z zapisem. Bez finalizacji nie potwierdzamy reguły blokady zamówienia Adamady.');
     if(!options.verifyDatabase||!options.complete)skip('sylius_shipment.shipment_package_details i transfer orders_items / KWys','Włącz porównanie z bazą i wariant z finalizacją. Poprawne pola API nie potwierdzają zapisów w tabelach.');
     if(!options.packagesOnly){if(options.secondAccount)report.reference={...settings,secondAccountRebates:options.secondAccount.rebates};await checkSecondAccount({config,primary:api,secondary:options.secondAccount,settings,test,skip,options,snapshots});}
-    if(!options.packagesOnly){skip('Przekroczenie zapasu','Wymagany produkt z niezależnie potwierdzonym stanem magazynowym');skip('Ponowne zatwierdzenie i niedostępna płatność istniejąca w systemie','Wymagany kontrakt idempotencji complete i skonfigurowany kod płatności niedostępnej dla konta. Nie utożsamiamy nieistniejącego kodu z brakiem uprawnień.');}
+    if(!options.packagesOnly&&!options.complete)skip('Ponowne zatwierdzenie','Wybierz wariant regresji z zapisem. Nie ponawiamy niepotwierdzonego pierwszego complete.');
   }catch(e){report.tests.push({name:'Przebieg regresji',status:'FAIL',detail:api.clean(e.message)});}
   report.status=report.tests.some(t=>t.status==='FAIL')?'FAIL':report.tests.some(t=>t.status==='SKIP')?'INCOMPLETE':'PASS';
   const safe=api.clean(report);await saveFeatureReport(safe,directory);return {report:safe,directory};

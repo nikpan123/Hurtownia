@@ -45,12 +45,26 @@ test('Pełny checkout, historia cen, dokumenty i brak sekretów w raporcie',asyn
   assert(r.files.includes('pdfSummary.pdf'));
   for(const secret of [...Object.values(credentials),'mock-bearer-private','mock-order-token-private'])assert(!r.json.includes(secret),secret);
   assert(r.html.includes('Produkt demonstracyjny WHOLESALE'));
+  const optional=r.report.checks.find(c=>c.name==='Po dodaniu produktów: oczekiwane ceny i rabaty');assert.equal(optional.status,'SKIP');assert(optional.detail.includes('Ten etap nie przekazuje'));assert(!optional.detail.includes('Uzupełnij expectations'));
   assert.equal(r.requests.filter(r=>r.url.endsWith('/complete')).length,1);
   for (const request of r.requests.filter(r=>r.method==='PATCH')) assert.equal(request.headers['content-type'],'application/merge-patch+json');
 });
 test('Bez --complete nie finalizuje i nie pobiera PDF',async()=>{
   const r=await exercise({},false);assert.equal(r.report.status,'PASS',r.report.error);
   assert(!r.requests.some(r=>r.url.endsWith('/complete')));assert.equal(r.report.documents.length,0);
+});
+
+test('Kontrola po complete uruchamia się tylko po potwierdzonej odpowiedzi; token pozostaje poza raportem',async()=>{
+  for(const mode of ['success','without-complete','timeout']){
+    const mock=await startMock({completeTimeout:mode==='timeout'});let calls=0;
+    try{
+      const config=await fixtureConfig(mock.baseUrl);if(mode==='timeout')config.timeoutMs=50;
+      const directory=await mkdtemp(path.join(os.tmpdir(),'hurt-repeat-hook-'));
+      const r=await runScenario(config,credentials,{complete:mode!=='without-complete',allowLocal:true,directory,afterComplete:async({token,order})=>{calls++;assert.equal(token,'mock-order-token-private');assert.equal(order.state,'new');assert(!order.tokenValue);}});
+      assert.equal(calls,mode==='success'?1:0);assert(mock.requests.filter(r=>r.url.endsWith('/complete')).length<=1);
+      assert(!JSON.stringify(r.report).includes('mock-order-token-private'));
+    }finally{await mock.close();}
+  }
 });
 
 test('Wzorzec rabatów wybranego konta odrzuca ofertę z rabatem innego użytkownika',async()=>{

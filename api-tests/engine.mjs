@@ -24,7 +24,7 @@ export function normalizeOrder(o) {
   };
 }
 
-export async function runScenario(config, credentials, {complete=false, allowLocal=false, allowTest=false, fetchImpl=fetch, directory,signal,onProgress=()=>{},choosePayment,chooseShipping,beforeComplete,interactiveMode='manual',verifyDatabase} = {}) {
+export async function runScenario(config, credentials, {complete=false, allowLocal=false, allowTest=false, fetchImpl=fetch, directory,signal,onProgress=()=>{},choosePayment,chooseShipping,beforeComplete,afterComplete,interactiveMode='manual',verifyDatabase} = {}) {
   config=await prepareProducts(config);
   validateConfig(config, {allowLocal,allowTest});
   const s = config.scenario;
@@ -134,6 +134,7 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
     }
   }
   function assertExpectations(order, expected, stage) {
+    if(expected===undefined){skip(stage+': oczekiwane ceny i rabaty','Ten etap nie przekazuje osobnego wzorca konkretnych cen i rabatów. Nie wymaga to uzupełnienia .env. Pozostałe kontrole tego etapu są wykazane oddzielnie; wzorce afterPayment i beforeComplete dotyczą późniejszych etapów.');return;}
     if (!expected || !Object.keys(expected).length) { skip(stage+': oczekiwane ceny i rabaty','Uzupełnij expectations — nie potwierdzono reguł biznesowych na podstawie samych sum.'); return; }
     for (const [key,value] of Object.entries(expected)) {
       if (key==='items') {
@@ -286,6 +287,7 @@ export async function runScenario(config, credentials, {complete=false, allowLoc
       check('Kwoty nie zmieniły się przy finalizacji',after.total===order.total && after.totalNet===order.totalNet && after.itemsTotal===order.itemsTotal && after.shippingTotal===order.shippingTotal);
       for(const field of ['shippingTotalNet','shipmentPackageQuantity'])if(order[field]!==undefined)check(field+': bez zmiany przy finalizacji',after[field]===order[field],`przed ${order[field]}, po ${after[field]}`);
       report.finalization='potwierdzona przez API';
+      if(afterComplete)await afterComplete({token,order:publicOrder(after)});
       startStage('Dokumenty PDF');
       const documents={...final,...after,pdfSummary:after.pdfSummary??final?.pdfSummary,paymentForm:after.paymentForm??final?.paymentForm,checkoutInformation:after.checkoutInformation??final?.checkoutInformation};
       for (const info of s.expectations?.checkoutInformationIncludes??[]) check('checkoutInformation zawiera '+info,Array.isArray(documents.checkoutInformation)?documents.checkoutInformation.includes(info):typeof documents.checkoutInformation==='object'&&documents.checkoutInformation!==null ? Object.hasOwn(documents.checkoutInformation,info):String(documents.checkoutInformation??'').includes(info));

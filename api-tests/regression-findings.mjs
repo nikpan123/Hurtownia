@@ -6,7 +6,7 @@ export function regressionFindings(report){
     if(t.status!=='FAIL')continue;
     const requests=t.evidence?.requests??[],serverError=requests.find(r=>r.status>=500);
     let title,meaning;
-    if(t.name.startsWith('Izolacja')&&(t.evidence?.isolation?.changes?.length||t.detail?.includes('zmieniło koszyk'))){title='Obce konto zmienia dane koszyka';meaning='Odmowa dostępu nie wystarcza: po żądaniu drugiego konta stan koszyka właściciela się zmienił. To problem API, wymagający poprawy backendu.';}
+    if((t.name.startsWith('Izolacja')||t.name.startsWith('ISO-006'))&&(t.evidence?.isolation?.changes?.length||t.detail?.includes('zmieniło koszyk'))){title='Obce konto zmienia dane koszyka';meaning='Odmowa dostępu nie wystarcza: po żądaniu drugiego konta stan koszyka właściciela się zmienił. To problem API, wymagający poprawy backendu.';}
     else if(serverError){title=t.name.includes('ilości')?'HTTP 500 dla nieprawidłowej ilości':t.name.includes('kod payment')?'HTTP 500 dla nieistniejącej płatności':t.name.includes('kod shipping')?'HTTP 500 dla nieistniejącej dostawy':t.name.includes('Pusty koszyk')?'HTTP 500 przy obsłudze pustego koszyka':'Błąd serwera HTTP 500';meaning='API zwróciło błąd serwera. Dla błędnych danych test oczekuje kontrolowanej odpowiedzi walidacji 4xx. Odczyt istniejącego koszyka powinien działać. Tego wyniku nie zaliczamy jako poprawnego odrzucenia.';}
     else {title=t.name;meaning='Sprawdź szczegóły i zapisane żądania tego przypadku. Sam status FAIL nie rozstrzyga, czy przyczyną są dane, test czy API.';}
     const item=groups.get(title)??{title,meaning,cases:[]};item.cases.push({name:t.name,detail:t.detail,cartId:t.evidence?.cartId,request:serverError,isolation:t.evidence?.isolation});groups.set(title,item);

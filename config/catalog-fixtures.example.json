@@ -1,5 +1,24 @@
 {
   "products":[],
   "filters":[],
+  "courses": {
+    "closed": {
+      "itemsPath": ["data"],
+      "identityPath": ["id"],
+      "titlePath": ["title"],
+      "slugPath": ["slug"],
+      "query": {"page": 1, "limit": 50},
+      "expected": []
+    },
+    "paid": {
+      "itemsPath": ["data"],
+      "identityPath": ["id"],
+      "titlePath": ["title"],
+      "slugPath": ["slug"],
+      "query": {"page": 1, "limit": 50},
+      "expected": []
+    },
+    "note": "Ścieżki i query są przykładowe: potwierdź strukturę endpointów. itemsPath [] oznacza odpowiedź będącą tablicą. expected: [{id: identyfikator kursu, title: główny tytuł z CMS, slug: główny slug z CMS}]. Konto musi mieć dostęp do kursów. Pusta lista oznacza SKIP, nie PASS."
+  },
   "note":"Produkty i niezależne oczekiwania testów. Wypełniane po utworzeniu fixture QA; filtry wymagają wartości rzeczywiście obsługiwanych przez API, nie zgadywanych etykiet."
 }

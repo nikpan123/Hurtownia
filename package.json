@@ -13,6 +13,8 @@
     "ui": "node dashboard/server.mjs",
     "prices": "node api-tests/features-run.mjs --suite rounding",
     "descriptions": "node api-tests/features-run.mjs --suite descriptions",
+    "descriptions:cms": "node api-tests/description-cms-run.mjs",
+    "descriptions:restore": "node api-tests/description-cms-run.mjs --restore",
     "setup": "node api-tests/setup.mjs",
     "regression": "node api-tests/order-regression-run.mjs",
     "packages": "node api-tests/order-regression-run.mjs --packages",

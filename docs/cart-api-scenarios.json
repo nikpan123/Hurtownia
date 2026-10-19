@@ -1,0 +1,1691 @@
+{
+  "version": 1,
+  "title": "Scenariusze testowe API koszyka hurtowego",
+  "updatedAt": "2026-10-19",
+  "scope": "Koszyk WHOLESALE, płatności, dostawy, paczki, izolacja kont, finalizacja i odczyt bazy. Katalog opisuje warunki do sprawdzenia; nie jest wynikiem uruchomienia testów.",
+  "baseUrl": "https://ksiegarnia.gwodev.pl/api/v2",
+  "categories": [
+    {
+      "id": "access",
+      "label": "Logowanie i dostęp"
+    },
+    {
+      "id": "cart",
+      "label": "Produkty i ilości"
+    },
+    {
+      "id": "payments",
+      "label": "Płatności i rabaty"
+    },
+    {
+      "id": "shipping",
+      "label": "Dostawa i adresy"
+    },
+    {
+      "id": "packages",
+      "label": "Paczki GLS"
+    },
+    {
+      "id": "orders",
+      "label": "Zapis i dokumenty"
+    },
+    {
+      "id": "isolation",
+      "label": "Izolacja użytkowników"
+    },
+    {
+      "id": "database",
+      "label": "Porównanie z bazą"
+    },
+    {
+      "id": "reporting",
+      "label": "Raporty i interpretacja"
+    }
+  ],
+  "coverageLabels": {
+    "automated": "Obsługiwane przez automat",
+    "partial": "Częściowo obsługiwane",
+    "planned": "Do automatyzacji"
+  },
+  "effectLabels": {
+    "read": "Odczyt",
+    "cart": "Zmiana koszyka",
+    "order": "Możliwy zapis zamówienia",
+    "cms": "Tymczasowa zmiana CMS"
+  },
+  "priorities": {
+    "P0": "Najpierw: poprawność zakupu i izolacja kont.",
+    "P1": "Podstawowa regresja, walidacja i integracje.",
+    "P2": "Odtwarzalność i czytelność obsługi."
+  },
+  "prerequisites": [
+    "Testy wykonuj na DEV. Środowisko gwotest wymaga wdrożenia zmian i osobnego dopuszczenia.",
+    "Dane dostępowe, token testowy i sesję GitLab przechowuj lokalnie. Dokument nie zawiera prawdziwych haseł ani JWT.",
+    "Każdy niezależny przypadek i wariant negatywny zaczynaj od nowego koszyka. Nie współdziel koszyka między próbami izolacji.",
+    "Przed porównaniem skutków ustabilizuj poprawny stan koszyka i zapisz wybrane metody oraz rabaty.",
+    "Potwierdź aktualne dane produktu, ceny, VAT, grupę i rabaty kont w CMS. Wartości przykładowe nie zastępują aktualnego wzorca.",
+    "Zapis zamówienia, e-mail i transfer są wykonywane tylko na dedykowanych kontach testowych. Odczyt bazy wymaga osobnego dostępu."
+  ],
+  "rules": [
+    "Opis automatyzacji mówi o pokryciu kodem, nie o bieżącym wyniku API. Żaden przypadek nie uzyskuje PASS przez samo umieszczenie w katalogu.",
+    "Wykonanie zapisuj jako PASS, FAIL, SKIP lub BLOCKED. W raportach narzędzia brak warunku bywa zapisany jako SKIP z przyczyną.",
+    "INCOMPLETE opisuje niepełne pokrycie przebiegu bez FAIL. Liczby przypadków w katalogu nie są liczbą asercji ani nowych zamówień.",
+    "Dla negatywnego żądania oceniaj osobno brak przyjęcia danych, status HTTP oraz brak nieoczekiwanej zmiany koszyka.",
+    "HTTP 403/404 w izolacji nie wystarcza: wymagany jest również niezmieniony stan właściciela.",
+    "Powrót prawidłowej kwoty przy complete nie usuwa błędu wcześniejszego podsumowania. Bieżący koszyk i utrwalone zamówienie oceniaj osobno.",
+    "Pobranie pliku PDF nie potwierdza jego treści ani dostarczenia e-maila.",
+    "Znane obserwacje z 16.10.2026 są punktami do ponownej weryfikacji, a nie deklaracją aktualnego stanu serwera."
+  ],
+  "setupNotes": [
+    "Przykładowy zestaw A: przelew 23%, odbiór 50%, przelew 1-dniowy 75%, terminowa 25%, Adamada 10%.",
+    "Przykładowy zestaw B: 47%, 13%, 30.5%, 90%, Adamada 20% w tej samej kolejności.",
+    "Własny użytkownik ma rabaty odczytywane z CMS; nie wolno przypisywać mu automatycznie wzorca A lub B.",
+    "Przykładowy GLS: W=8000 g, produkt 210 g. Uzupełnij potwierdzone przedziały i ceny, VAT oraz dopłatę płatności przed sprawdzaniem kosztu."
+  ],
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/shop/authentication-token",
+      "purpose": "Logowanie hurtownika"
+    },
+    {
+      "method": "POST",
+      "path": "/shop/orders",
+      "purpose": "Utworzenie koszyka"
+    },
+    {
+      "method": "GET",
+      "path": "/shop/orders/{token}",
+      "purpose": "Odczyt koszyka lub zamówienia"
+    },
+    {
+      "method": "POST",
+      "path": "/shop/orders/{token}/items/bulk",
+      "purpose": "Dodanie produktów"
+    },
+    {
+      "method": "PATCH",
+      "path": "/shop/orders/{token}/items/{item_id}",
+      "purpose": "Zmiana ilości"
+    },
+    {
+      "method": "DELETE",
+      "path": "/shop/orders/{token}/items/{item_id}",
+      "purpose": "Usunięcie pozycji"
+    },
+    {
+      "method": "GET",
+      "path": "/wholesale/orders/{token}/payments",
+      "purpose": "Dostępne płatności i rabaty"
+    },
+    {
+      "method": "PATCH",
+      "path": "/wholesale/orders/{token}/payment-method",
+      "purpose": "Wybór płatności"
+    },
+    {
+      "method": "GET",
+      "path": "/wholesale/checkout-step-two/{token}",
+      "purpose": "Dostępne dostawy"
+    },
+    {
+      "method": "POST",
+      "path": "/wholesale/checkout-step-two/{token}",
+      "purpose": "Zapis dostawy i adresów"
+    },
+    {
+      "method": "PATCH",
+      "path": "/shop/orders/{token}/complete",
+      "purpose": "Zatwierdzenie zamówienia"
+    }
+  ],
+  "headers": [
+    "X-Api-Channel: WHOLESALE",
+    "X-Tests-Token: wartość lokalna",
+    "Authorization: Bearer JWT właściwego konta, poza samym logowaniem",
+    "Accept: application/json",
+    "Content-Type: application/json dla POST; application/merge-patch+json dla PATCH"
+  ],
+  "executionFields": [
+    "Data i wersja backendu",
+    "ID scenariusza i wariant parametrów",
+    "Konto A/B lub identyfikator testowego użytkownika",
+    "ID koszyka i numer zamówienia, jeżeli zapisano",
+    "Oczekiwane i otrzymane HTTP",
+    "Wartości przed i po wraz z jednostką",
+    "Wynik każdego warunku oraz wynik przypadku",
+    "Link do raportu, odpowiedzi lub zgłoszenia bez sekretów"
+  ],
+  "cases": [
+    {
+      "id": "AUTH-001",
+      "category": "access",
+      "title": "Poprawne logowanie hurtownika",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "read",
+      "conditions": [
+        "Ważna sesja GitLab i aktywne konto hurtownika A."
+      ],
+      "data": "Konto A; dane dostępowe uzupełnione lokalnie.",
+      "steps": [
+        "Wyślij POST /shop/authentication-token z email i apiPassword.",
+        "Sprawdź odpowiedź i zapisz otrzymany JWT.",
+        "Użyj JWT A do utworzenia własnego koszyka."
+      ],
+      "expected": [
+        "Logowanie zwraca HTTP 200 i niepusty token.",
+        "Odpowiedź jest JSON, a nie stroną logowania GitLab.",
+        "Token pozwala wykonać operację konta A."
+      ],
+      "automation": {
+        "runner": "Koszyk / regresja",
+        "sources": [
+          "api-tests/engine.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "cart"
+        ]
+      }
+    },
+    {
+      "id": "AUTH-002",
+      "category": "access",
+      "title": "Niepoprawne hasło API",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "read",
+      "conditions": [
+        "Ważna bramka GitLab; znany poprawny adres konta."
+      ],
+      "data": "Prawidłowy e-mail, celowo błędne apiPassword.",
+      "steps": [
+        "Potwierdź poprawne logowanie konta i działanie bramki.",
+        "Wyślij jedną próbę logowania z losowym błędnym hasłem API.",
+        "Sprawdź HTTP 401 i brak JWT w odpowiedzi."
+      ],
+      "expected": [
+        "Dla uzgodnionego kontraktu logowania: kontrolowana odmowa, typowo HTTP 401.",
+        "Brak tokenu umożliwiającego działanie jako użytkownik.",
+        "Brak HTTP 500 i ujawnienia danych dostępowych."
+      ],
+      "automation": {
+        "runner": "Regresja — AUTH-002",
+        "sources": [
+          "api-tests/order-regression.mjs",
+          "api-tests/regression-access.mjs",
+          "tests/regression-access.test.mjs",
+          "tests/order-regression.test.mjs"
+        ],
+        "limits": "Jedna błędna próba na przebieg. Nie bada blokady konta po wielu próbach ani limitowania żądań.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "AUTH-003",
+      "category": "access",
+      "title": "Żądanie chronione bez ważnego JWT",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "read",
+      "conditions": [
+        "Potwierdzony wymóg JWT dla badanego endpointu WHOLESALE.",
+        "Istniejący koszyk A; sprawna bramka GitLab."
+      ],
+      "data": "GET koszyka, GET płatności i GET dostaw. Dla każdego: brak JWT oraz celowo błędny JWT, łącznie sześć prób.",
+      "steps": [
+        "Zapisz stan koszyka jako A.",
+        "Wyślij żądanie bez JWT; powtórz na nowym koszyku z nieważnym JWT.",
+        "Odczytaj stan jako A po każdej próbie."
+      ],
+      "expected": [
+        "Każdy endpoint jest najpierw dostępny dla właściciela (HTTP 200).",
+        "Brak JWT i błędny JWT dają HTTP 401 bez danych koszyka i list metod.",
+        "Wycena, metody i udostępnione adresy właściciela pozostają bez zmian."
+      ],
+      "automation": {
+        "runner": "Regresja — AUTH-003 (6 prób)",
+        "sources": [
+          "api-tests/order-regression.mjs",
+          "api-tests/regression-access.mjs",
+          "tests/regression-access.test.mjs",
+          "tests/order-regression.test.mjs"
+        ],
+        "limits": "Nie bada naturalnego wygasania poprawnie podpisanego JWT. HTTP 401 jest jawnym oczekiwaniem ochrony tych endpointów; nie jest to izolacja dwóch zalogowanych kont.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "CART-001",
+      "category": "cart",
+      "title": "Utworzenie i odczyt pustego koszyka",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Konto A zalogowane."
+      ],
+      "data": "POST /shop/orders, body {\"localeCode\":\"pl_PL\"}.",
+      "steps": [
+        "Utwórz nowy koszyk jako A.",
+        "Zapisz id i tokenValue.",
+        "Odczytaj GET /shop/orders/{token_A} przed dodaniem produktów."
+      ],
+      "expected": [
+        "POST zwraca nowy identyfikator i token.",
+        "GET zwraca HTTP 200 i pustą listę produktów.",
+        "Brak HTTP 500 z powodu nieutworzonej przesyłki."
+      ],
+      "automation": {
+        "runner": "Regresja — utworzenie i dwukrotny odczyt pustego koszyka",
+        "sources": [
+          "api-tests/order-regression.mjs",
+          "tests/order-regression.test.mjs"
+        ],
+        "limits": "Sprawdzany także bez finalizacji. Osobny przypadek w wariancie z zapisem sprawdza odmowę complete pustego koszyka.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "CART-002",
+      "category": "cart",
+      "title": "Dodanie pojedynczego produktu",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Nowy koszyk A; produkt dostępny w WHOLESALE."
+      ],
+      "data": "5lp-1, quantity=1; kod wariantu potwierdzony w API.",
+      "steps": [
+        "Wyślij POST /shop/orders/{token_A}/items/bulk.",
+        "Dodaj jedną pozycję productVariant=5lp-1, quantity=1.",
+        "Odczytaj koszyk."
+      ],
+      "expected": [
+        "Odpowiedź operacji odpowiada kontraktowi sukcesu; GET zwraca dodaną pozycję.",
+        "Kod, ilość i tożsamość koszyka są prawidłowe.",
+        "itemsTotal jest sumą total pozycji, a total obejmuje produkty i zwrócony shippingTotal."
+      ],
+      "automation": {
+        "runner": "Koszyk / regresja",
+        "sources": [
+          "api-tests/engine.mjs",
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "cart"
+        ]
+      }
+    },
+    {
+      "id": "CART-003",
+      "category": "cart",
+      "title": "Kilka produktów z tej samej grupy",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Dostępne co najmniej dwa produkty jednej grupy."
+      ],
+      "data": "Osobne wykonania: 5lp-1 + POP1 oraz D087 + D090.",
+      "steps": [
+        "Utwórz nowy koszyk dla wskazanej grupy.",
+        "Dodaj dwa różne warianty w jednym żądaniu bulk.",
+        "Odczytaj pozycje i sumy."
+      ],
+      "expected": [
+        "W koszyku znajdują się oba produkty z właściwymi ilościami.",
+        "Nie dodano produktu z innej grupy.",
+        "Sumy i później zastosowany rabat odpowiadają wybranej grupie i kontu."
+      ],
+      "automation": {
+        "runner": "Regresja",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "CART-004",
+      "category": "cart",
+      "title": "Ponowne dodanie tego samego produktu",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Koszyk z jednym produktem w ilości 1."
+      ],
+      "data": "Ten sam productVariant dodany drugi raz z quantity=1.",
+      "steps": [
+        "Dodaj produkt do koszyka.",
+        "Ponów dodanie tego samego wariantu.",
+        "Odczytaj pozycje."
+      ],
+      "expected": [
+        "Ilość tego wariantu wynosi 2.",
+        "Nie powstaje nieoczekiwana druga pozycja tego samego wariantu.",
+        "Sumy uwzględniają łączną ilość."
+      ],
+      "automation": {
+        "runner": "Regresja",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "CART-005",
+      "category": "cart",
+      "title": "Zmiana ilości po wyborze płatności",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Koszyk z produktem i wybraną dostępną płatnością."
+      ],
+      "data": "quantity kolejno 2, 6, 1; osobno obie grupy produktów.",
+      "steps": [
+        "Zapisz płatność i odczytaj rabat.",
+        "Dla każdej ilości wyślij PATCH /shop/orders/{token_A}/items/{item_id}.",
+        "Po każdej zmianie ponownie odczytaj koszyk."
+      ],
+      "expected": [
+        "Każdy odczyt pokazuje nową ilość.",
+        "Rabat pozostaje zgodny z kontem, grupą i płatnością.",
+        "Suma produktów oraz total odpowiadają aktualnym ilościom; nie używa się poprzedniej sumy."
+      ],
+      "automation": {
+        "runner": "Regresja",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "CART-006",
+      "category": "cart",
+      "title": "Usunięcie pozycji z koszyka",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Koszyk z dwoma różnymi produktami jednej grupy."
+      ],
+      "data": "DELETE /shop/orders/{token_A}/items/{item_id}.",
+      "steps": [
+        "Zapisz identyfikatory obu pozycji i sumy.",
+        "Usuń jedną pozycję przez DELETE.",
+        "Odczytaj koszyk."
+      ],
+      "expected": [
+        "Usunięta pozycja nie występuje w odpowiedzi.",
+        "Druga pozycja pozostaje z prawidłową ilością.",
+        "Sumy są przeliczone dla pozostałego produktu."
+      ],
+      "automation": {
+        "runner": "Regresja",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "CART-007",
+      "category": "cart",
+      "title": "Nieprawidłowa ilość produktu",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Świeży koszyk z jedną poprawną pozycją dla każdego wariantu."
+      ],
+      "data": "quantity=-1, 0, 1.5; każda wartość osobno dla obu grup.",
+      "steps": [
+        "Odczytaj stan przed próbą.",
+        "Wyślij PATCH ilości z badaną wartością.",
+        "Zapisz status HTTP i odczytaj koszyk jako właściciel.",
+        "Oceń osobno odrzucenie wartości i sposób obsługi błędu."
+      ],
+      "expected": [
+        "Ilość i pozostałe dane koszyka nie zmieniają się.",
+        "API zwraca uzgodniony status walidacji, obecnie oczekiwane 400 lub 422.",
+        "Odrzucenie 1.5 przy HTTP 500 oznacza poprawny brak przyjęcia wartości, ale błąd obsługi żądania; cały przypadek nie jest pełnym PASS."
+      ],
+      "automation": {
+        "runner": "Regresja",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "Obecny raport może agregować obie kontrole w jeden FAIL. Przy analizie opisz oba warunki osobno.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "CART-008",
+      "category": "cart",
+      "title": "Nieistniejący kod produktu",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Świeży koszyk z poprawną pozycją."
+      ],
+      "data": "productVariant=qa-nonexistent-{unikalny_id}, quantity=1.",
+      "steps": [
+        "Odczytaj koszyk.",
+        "Spróbuj dodać nieistniejący wariant przez items/bulk.",
+        "Odczytaj koszyk ponownie."
+      ],
+      "expected": [
+        "Kontrolowana odmowa 400, 404 lub 422 zgodnie z konfiguracją kontraktu.",
+        "Brak nowej pozycji i nieoczekiwanej zmiany istniejących produktów lub wyceny.",
+        "HTTP 500 nie jest zaliczaną walidacją."
+      ],
+      "automation": {
+        "runner": "Regresja",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "CART-009",
+      "category": "cart",
+      "title": "Losowanie produktów i powtórzenie przebiegu",
+      "priority": "P2",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Stała pula produktów i niezmienione ustawienia losowania."
+      ],
+      "data": "Ziarno zapisane w raporcie; grupy Adamada i pozostałe.",
+      "steps": [
+        "Uruchom koszyk z losowaniem i zapisz ziarno oraz plan.",
+        "Uruchom ponownie z tym samym ziarnem i identyczną pulą danych.",
+        "Porównaj produkty, ilości i plan wyboru metod."
+      ],
+      "expected": [
+        "Plan losowania odtwarza się przy tej samej puli i ustawieniach.",
+        "Każdy wygenerowany koszyk ma jedną grupę; Adamada nie jest mieszana z pozostałymi.",
+        "Wybrane metody należą do aktualnych odpowiedzi API; zmiana dostępności może zmienić wybór metod i wymaga odnotowania."
+      ],
+      "automation": {
+        "runner": "Koszyk z ziarnem",
+        "sources": [
+          "api-tests/products.mjs",
+          "api-tests/checkout.mjs",
+          "api-tests/engine.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "cart"
+        ]
+      }
+    },
+    {
+      "id": "CART-010",
+      "category": "cart",
+      "title": "Przekroczenie potwierdzonego zapasu",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Produkt fizyczny z aktywną kontrolą zapasu i wyłączonym backorder.",
+        "Niezależnie potwierdzony aktualny zapas 1–999 sztuk."
+      ],
+      "data": "stockFixture: {productVariant, availableQuantity, source}. Próba ilości availableQuantity + 1.",
+      "steps": [
+        "Utwórz nowy koszyk i dodaj jedną sztukę produktu.",
+        "Zapisz stan koszyka.",
+        "Wyślij PATCH ilości powyżej potwierdzonego zapasu.",
+        "Odczytaj koszyk i porównaj stan."
+      ],
+      "expected": [
+        "Odmowa HTTP 400/422 lub uzgodniony status validationStatuses.stock.",
+        "Koszyk pozostaje niezmieniony; nie wykonano complete."
+      ],
+      "automation": {
+        "runner": "Regresja — przekroczenie potwierdzonego zapasu",
+        "sources": [
+          "api-tests/order-regression.mjs",
+          "tests/order-regression.test.mjs"
+        ],
+        "limits": "Brak potwierdzonego stanu magazynowego daje SKIP. Zapas i brak backorder potwierdź przed uruchomieniem; współbieżne zmiany zapasu mogą unieważnić wzorzec.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "PAY-001",
+      "category": "payments",
+      "title": "Lista dostępnych płatności",
+      "priority": "P0",
+      "coverage": "partial",
+      "effect": "cart",
+      "conditions": [
+        "Koszyk A z produktem.",
+        "Dla kontroli uprawnień: niezależnie potwierdzona lista metod konta."
+      ],
+      "data": "GET /wholesale/orders/{token_A}/payments.",
+      "steps": [
+        "Pobierz oferty płatności.",
+        "Sprawdź code, nazwę, rabat i orderItemTotal.",
+        "Porównaj dostępność z ustawieniami hurtownika, gdy zapisano niezależny wzorzec."
+      ],
+      "expected": [
+        "Niepusta lista z unikalnymi kodami i poprawnymi typami pól.",
+        "Rabaty mają zakres 0–100, kwoty są całkowitymi groszami.",
+        "Przy skonfigurowanej liście uprawnień nie ma brakujących ani dodatkowych metod."
+      ],
+      "automation": {
+        "runner": "Koszyk / regresja",
+        "sources": [
+          "api-tests/engine.mjs",
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "Sama lista API nie jest niezależnym dowodem poprawnych uprawnień. Bez wzorca lista uprawnień pozostaje niesprawdzona.",
+        "actions": [
+          "cart"
+        ]
+      }
+    },
+    {
+      "id": "PAY-002",
+      "category": "payments",
+      "title": "Rabaty zwykłych produktów dla obu kont",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Rabaty obu kont potwierdzone w CMS lub wzorcach konfiguracji."
+      ],
+      "data": "A: przelew 23%, odbiór 50%, przelew 1-dniowy 75%, terminowa 25%. B: 47%, 13%, 30.5%, 90%. Wartości są przykładowym zestawem referencyjnym i wymagają potwierdzenia przed uruchomieniem.",
+      "steps": [
+        "Dla każdej dostępnej płatności pobierz jej ofertę.",
+        "Wybierz ją w koszyku zwykłych produktów.",
+        "Odczytaj rabaty pozycji i porównaj z niezależnym wzorcem.",
+        "Powtórz na drugim koncie."
+      ],
+      "expected": [
+        "Oferta i pozycje stosują rabat właściwego konta i metody.",
+        "Niedostępnej metody nie wybiera się poza listą; jej pokrycie jest odnotowane jako pominięte."
+      ],
+      "automation": {
+        "runner": "Regresja / drugie konto",
+        "sources": [
+          "api-tests/order-regression.mjs",
+          "api-tests/second-account.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "PAY-003",
+      "category": "payments",
+      "title": "Rabat Adamady dla wszystkich dostępnych płatności",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Koszyk zawiera wyłącznie produkty Adamada.",
+        "Potwierdzony indywidualny rabat Adamady konta."
+      ],
+      "data": "Przykładowo A=10%, B=20%; użytkownik własny może mieć np. 0%.",
+      "steps": [
+        "Pobierz wszystkie dostępne płatności.",
+        "Sprawdź rebatePercent każdej oferty.",
+        "Wybieraj dostępne płatności i po każdej zmianie odczytaj pozycje."
+      ],
+      "expected": [
+        "Każda oferta i każda pozycja stosuje indywidualny rabat Adamady, niezależnie od standardowego rabatu danej płatności.",
+        "Nie zakłada się stałego rabatu 10% dla wszystkich hurtowników."
+      ],
+      "automation": {
+        "runner": "Koszyk / regresja / drugie konto",
+        "sources": [
+          "api-tests/engine.mjs",
+          "api-tests/order-regression.mjs",
+          "api-tests/second-account.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "cart"
+        ]
+      }
+    },
+    {
+      "id": "PAY-004",
+      "category": "payments",
+      "title": "Zmiana dostępnej płatności w tym samym koszyku",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Co najmniej dwie płatności oferowane danemu kontu."
+      ],
+      "data": "Zwykły produkt; kolejne metody z różnymi rabatami.",
+      "steps": [
+        "Wybierz pierwszą płatność i zapisz kwoty.",
+        "Zmień ją na drugą przez payment-method.",
+        "Odczytaj kod metody, rabat i sumy.",
+        "Wróć do pierwszej metody i odczytaj ponownie."
+      ],
+      "expected": [
+        "Zapisany kod odpowiada ostatniemu wyborowi.",
+        "Promocje nie sumują się ze starym rabatem; wycena odpowiada aktualnej metodzie.",
+        "Dostawy pobrano ponownie dla aktualnej płatności."
+      ],
+      "automation": {
+        "runner": "Regresja — kolejne metody i powrót do pierwszej",
+        "sources": [
+          "api-tests/second-account.mjs",
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "Wymaga co najmniej dwóch dostępnych metod; brak daje SKIP. Po każdym wyborze pobierane są aktualne dostawy.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "PAY-005",
+      "category": "payments",
+      "title": "Nieistniejąca metoda płatności",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Nowy koszyk dla każdej grupy."
+      ],
+      "data": "paymentMethodCode=qa-nonexistent-{unikalny_id}.",
+      "steps": [
+        "Przygotuj i zapisz stabilny stan początkowy koszyka.",
+        "Wyślij PATCH /wholesale/orders/{token_A}/payment-method z nieistniejącym kodem.",
+        "Odczytaj koszyk i status operacji."
+      ],
+      "expected": [
+        "Status walidacji 400, 404 lub 422 według kontraktu.",
+        "Brak zapisania nieistniejącej metody i nieoczekiwanej zmiany rabatu lub kwot."
+      ],
+      "automation": {
+        "runner": "Regresja",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "Przy zmianie ceny sprawdź także, czy stan początkowy był już w pełni przeliczony. Samo HTTP 500 pozostaje błędem obsługi żądania.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "PAY-006",
+      "category": "payments",
+      "title": "Istniejąca płatność niedozwolona hurtownikowi",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Niezależnie potwierdzony kod metody istniejącej w systemie, ale niedostępnej dla A."
+      ],
+      "data": "forbiddenPayments: [{code, source}] w order-regression.local.json; source dokumentuje potwierdzone istnienie metody w CMS.",
+      "steps": [
+        "Potwierdź brak metody w ofertach A.",
+        "Wyślij bezpośrednią próbę ustawienia tej metody jako A.",
+        "Odczytaj koszyk i porównaj z początkowym stanem."
+      ],
+      "expected": [
+        "Metoda nie jest oferowana i bezpośrednie przypisanie zostaje odrzucone.",
+        "Płatność i kwoty pozostają niezmienione."
+      ],
+      "automation": {
+        "runner": "Regresja — istniejąca niedostępna płatność",
+        "sources": [
+          "api-tests/order-regression.mjs",
+          "tests/order-regression.test.mjs"
+        ],
+        "limits": "Bez potwierdzonego kodu i źródła przypadek ma SKIP. Losowy nieistniejący kod nie zastępuje tej kontroli uprawnień.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "PAY-007",
+      "category": "payments",
+      "title": "Zaokrąglenia według wzorca starej hurtowni",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cart",
+      "conditions": [
+        "Produkt referencyjny 18.40 zł brutto, VAT 5%, cena oryginalna równa cenie, minimum price=0.",
+        "Dostępna płatność z potwierdzonym rabatem 23%."
+      ],
+      "data": "Ilości 1–10; wartości wzorcowe dla 1 i 6 sztuk.",
+      "steps": [
+        "Potwierdź cenę i rabat referencyjny.",
+        "Dodawaj ustalone ilości i odczytuj wycenę.",
+        "Dla 1 sztuki sprawdź 13.49 zł netto po rabacie.",
+        "Dla 6 sztuk sprawdź 84.99 zł brutto po rabacie."
+      ],
+      "expected": [
+        "Wartości odpowiadają uzgodnionemu wzorcowi starej hurtowni.",
+        "Dla pozostałych ilości zapisano pomiary; brak jawnego wzorca nie jest pozornym PASS.",
+        "Brak płatności 23% oznacza niespełniony warunek, a nie błąd kalkulacji produktu."
+      ],
+      "automation": {
+        "runner": "Zaokrąglenia cen",
+        "sources": [
+          "api-tests/features.mjs"
+        ],
+        "limits": "Kontrola wymaga przygotowanych danych. Jeżeli tymczasowo zmieniano rabat w CMS, należy go przywrócić i potwierdzić odczytem.",
+        "actions": [
+          "rounding"
+        ]
+      }
+    },
+    {
+      "id": "SHIP-001",
+      "category": "shipping",
+      "title": "Dostawy dostępne po wyborze płatności",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Koszyk z dostępną, zapisaną płatnością."
+      ],
+      "data": "GET /wholesale/checkout-step-two/{token_A}.",
+      "steps": [
+        "Zapisz płatność w koszyku.",
+        "Pobierz listę dostaw.",
+        "Powtórz dla kolejnych płatności na osobnych koszykach."
+      ],
+      "expected": [
+        "Niepusta lista z unikalnymi kodami metod.",
+        "Wybór dostawy następuje z odpowiedzi dla bieżącego koszyka i płatności.",
+        "Brak wykorzystywania starej listy z innej płatności lub konta."
+      ],
+      "automation": {
+        "runner": "Koszyk / regresja",
+        "sources": [
+          "api-tests/engine.mjs",
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "cart"
+        ]
+      }
+    },
+    {
+      "id": "SHIP-002",
+      "category": "shipping",
+      "title": "Zapis dostawy i poprawnych adresów",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Wybrana płatność i dostępna metoda dostawy."
+      ],
+      "data": "POST checkout-step-two: orderTokenValue, shippingMethodCode, shippingAddress, billingAddress.",
+      "steps": [
+        "Prześlij poprawne adresy i oferowany kod dostawy.",
+        "Odczytaj koszyk.",
+        "Sprawdź kod dostawy, płatność, koszt i total."
+      ],
+      "expected": [
+        "Zapisany kod dostawy jest zgodny z wyborem.",
+        "total odpowiada itemsTotal + shippingTotal.",
+        "Poprawne adresy nie powodują błędu walidacji."
+      ],
+      "automation": {
+        "runner": "Koszyk / regresja / Redmine 36926",
+        "sources": [
+          "api-tests/engine.mjs",
+          "api-tests/order-regression.mjs",
+          "api-tests/redmine-36926.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "cart",
+          "addresses"
+        ]
+      }
+    },
+    {
+      "id": "SHIP-003",
+      "category": "shipping",
+      "title": "Niekompletny adres dostawy",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Stabilny koszyk z wybraną płatnością."
+      ],
+      "data": "Puste city, street, postcode; poprawny billingAddress i oferowana dostawa.",
+      "steps": [
+        "Zapisz stan przed zmianą.",
+        "Wyślij checkout-step-two z niekompletnym adresem.",
+        "Sprawdź status i ponowny odczyt koszyka."
+      ],
+      "expected": [
+        "Kontrolowany błąd walidacji 400/422 zgodnie z kontraktem.",
+        "Koszyk nie przechodzi do poprawnie przygotowanego zamówienia z niepełnym adresem.",
+        "Brak nieoczekiwanych zmian stanu po odrzuceniu."
+      ],
+      "automation": {
+        "runner": "Regresja / Redmine 36926",
+        "sources": [
+          "api-tests/order-regression.mjs",
+          "api-tests/redmine-36926.mjs"
+        ],
+        "limits": "Regresja koszyka sprawdza wskazany zestaw pustych pól. Pełne warianty pól adresowych są opisane w REDMINE-36926.md.",
+        "actions": [
+          "addresses",
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "SHIP-004",
+      "category": "shipping",
+      "title": "Nieistniejąca dostawa",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Koszyk z poprawnie zapisaną płatnością."
+      ],
+      "data": "shippingMethodCode=qa-nonexistent-{unikalny_id}.",
+      "steps": [
+        "Odczytaj stan koszyka.",
+        "Prześlij nieistniejącą dostawę i poprawne adresy.",
+        "Sprawdź status i stan po próbie."
+      ],
+      "expected": [
+        "Kontrolowana odmowa 400, 404 lub 422 według kontraktu.",
+        "Metoda, produkty, rabaty i kwoty nie zmieniają się w wyniku odrzuconego żądania."
+      ],
+      "automation": {
+        "runner": "Regresja",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "PACK-001",
+      "category": "packages",
+      "title": "Granice wagi i liczba paczek GLS",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cart",
+      "conditions": [
+        "Potwierdzona waga produktu oraz waga paczki W w aktualnym CMS."
+      ],
+      "data": "Przykład: W=8000 g, produkt 210 g, ilości 1, 38, 39, 76, 77. Dokładne W/W+1 wymagają odpowiedniej masy fixture.",
+      "steps": [
+        "Wybierz gls_wholesale.",
+        "Dla każdej ilości ustaw ilość, ponownie zapisz dostawę i odczytaj koszyk.",
+        "Oblicz wagę jako ilość × wagę sztuki.",
+        "Porównaj shipmentPackageQuantity z ceil(waga/W)."
+      ],
+      "expected": [
+        "Dla przykładu: 38 szt.=7980 g → 1 paczka; 39 szt.=8190 g → 2; 76 szt.=15960 g → 2; 77 szt.=16170 g → 3.",
+        "Sprawdź też dokładne granice W i W+1 na przygotowanym produkcie, jeżeli to wymagane."
+      ],
+      "automation": {
+        "runner": "Paczki / regresja",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "Automat sprawdza granice osiągalne przez ilości całkowite. Nie oznacza to automatycznie sprawdzenia dokładnie 8000 i 8001 g dla produktu ważącego 210 g.",
+        "actions": [
+          "packages"
+        ]
+      }
+    },
+    {
+      "id": "PACK-002",
+      "category": "packages",
+      "title": "Ceny paczek i dopłata do płatności",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Niezależnie odczytany kalkulator GLS: przedziały, cena paczki, netto/brutto, VAT i dopłata płatności."
+      ],
+      "data": "Cennik i paymentSurchargeGrossMinor z potwierdzonej konfiguracji.",
+      "steps": [
+        "Utwórz koszyki o wagach z obu przedziałów.",
+        "Wyznacz liczbę paczek i cenę właściwego przedziału.",
+        "Uwzględnij oznaczenie netto/brutto i potwierdzony VAT.",
+        "Dodaj dopłatę płatności i porównaj shippingTotal oraz shippingTotalNet."
+      ],
+      "expected": [
+        "Koszt wynika z niezależnego cennika, a nie z ponownego użycia otrzymanej kwoty API jako wzorca.",
+        "Koszt paczek i opłata płatności są rozróżnione.",
+        "Przedziały nie są pomylone z samą liczbą paczek."
+      ],
+      "automation": {
+        "runner": "Paczki z przygotowaną konfiguracją",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "Bez danych kalkulatora przypadek pozostaje niesprawdzony. Regułę VAT i zaokrągleń dostawy należy potwierdzić dla użytej konfiguracji.",
+        "actions": [
+          "packages"
+        ]
+      }
+    },
+    {
+      "id": "PACK-003",
+      "category": "packages",
+      "title": "Zmniejszenie ilości zmniejsza koszt paczek",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Koszyk GLS przekraczający co najmniej jeden próg paczek."
+      ],
+      "data": "Zmniejszenie ilości np. 77 → 1.",
+      "steps": [
+        "Odczytaj liczbę paczek i koszty dla dużej ilości.",
+        "Zmień ilość na 1 i przelicz zapisując dostawę.",
+        "Odczytaj ilość paczek i koszty ponownie."
+      ],
+      "expected": [
+        "Liczba paczek i ceny odpowiadają nowej, mniejszej wadze.",
+        "Nie pozostają stare koszty wielopaczkowej przesyłki."
+      ],
+      "automation": {
+        "runner": "Paczki",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "packages"
+        ]
+      }
+    },
+    {
+      "id": "PACK-004",
+      "category": "packages",
+      "title": "Zmiana GLS na dostawę bez kalkulatora paczek",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Dla tego samego koszyka API oferuje GLS oraz metodę bez kalkulatora."
+      ],
+      "data": "Kod potwierdzony w nonPackageShippingCodes; nie zakładaj dostępności personal_collection.",
+      "steps": [
+        "Przygotuj GLS z dodatnią ilością paczek.",
+        "Zmień dostawę na oferowaną metodę bez kalkulatora.",
+        "Odczytaj podsumowanie."
+      ],
+      "expected": [
+        "Kod dostawy jest zmieniony.",
+        "shipmentPackageQuantity wynosi 0; koszt odpowiada nowej metodzie.",
+        "Jeżeli metoda nie jest oferowana, ten wariant jest pominięty z podaniem powodu."
+      ],
+      "automation": {
+        "runner": "Paczki",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "packages"
+        ]
+      }
+    },
+    {
+      "id": "PACK-005",
+      "category": "packages",
+      "title": "Tymczasowy cennik GLS i przywrócenie CMS",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "cms",
+      "conditions": [
+        "Dostęp CMS i uzgodniony zakres zmian na DEV.",
+        "Brak równoległych testów korzystających ze wspólnego cennika."
+      ],
+      "data": "Kontrolowany profil wag i cen oraz kopia początkowych ustawień.",
+      "steps": [
+        "Zapisz kopię konfiguracji i dziennik przywracania.",
+        "Ustaw profil testowy, odczytaj go i wykonaj próby progów.",
+        "Zakończ poprawnie, z błędem lub anulowaniem jako osobne warianty.",
+        "Przywróć konfigurację i potwierdź odczytem."
+      ],
+      "expected": [
+        "Zastosowano żądany profil, a po teście wróciła konfiguracja początkowa.",
+        "Przerwanie procesu pozostawia możliwość przywrócenia z dziennika.",
+        "Obca równoległa zmiana nie jest bezwarunkowo nadpisywana."
+      ],
+      "automation": {
+        "runner": "Paczki z tymczasową konfiguracją CMS",
+        "sources": [
+          "api-tests/shipping-cms.mjs",
+          "api-tests/shipping-restore.mjs",
+          "tests/order-regression.test.mjs"
+        ],
+        "limits": "Błędy i anulowanie mają testy lokalne adaptera; gwałtowne zabicie procesu i odtworzenie stanu wymagają kontrolowanej próby integracyjnej.",
+        "actions": [
+          "package-settings"
+        ]
+      }
+    },
+    {
+      "id": "ORD-001",
+      "category": "orders",
+      "title": "Zapis poprawnego zamówienia",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "order",
+      "conditions": [
+        "Dedykowane konto DEV.",
+        "Poprawny koszyk, płatność, dostawa i adresy; brak blokujących błędów wyceny."
+      ],
+      "data": "PATCH /shop/orders/{token_A}/complete, body {}.",
+      "steps": [
+        "Zapisz podsumowanie przed complete.",
+        "Wyślij complete dokładnie raz jako właściciel.",
+        "Odczytaj ten sam token zamówienia.",
+        "Zapisz numer, ID i kwoty."
+      ],
+      "expected": [
+        "API przyjmuje zatwierdzenie i pozwala odczytać to samo zamówienie.",
+        "Kwoty poprawnego koszyka są zgodne przed i po zapisie.",
+        "Jeżeli zwracane jest state, zamówienie nie pozostaje cart; brak pola jest osobną niesprawdzoną kontrolą.",
+        "Potwierdzenie API samo nie potwierdza e-maila ani transferu do bazy."
+      ],
+      "automation": {
+        "runner": "Pełne zamówienie / regresja z zapisem",
+        "sources": [
+          "api-tests/engine.mjs",
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "order",
+          "regression-order"
+        ]
+      }
+    },
+    {
+      "id": "ORD-002",
+      "category": "orders",
+      "title": "Pusty koszyk nie może zostać zatwierdzony",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "order",
+      "conditions": [
+        "Nowy pusty koszyk A."
+      ],
+      "data": "Osobno GET pustego koszyka i PATCH complete z body {}.",
+      "steps": [
+        "Spróbuj odczytać pusty koszyk i zapisz wynik.",
+        "Niezależnie od sukcesu GET wykonaj jedną próbę complete.",
+        "Jeżeli istnieje wiarygodny stan przed próbą, porównaj odczyt po odmowie."
+      ],
+      "expected": [
+        "Zatwierdzenie zostaje odrzucone kontrolowanym statusem walidacji, obecnie 400/422.",
+        "Nie powstaje złożone zamówienie bez produktów.",
+        "Błąd GET i błąd complete są osobnymi wynikami; bez poprawnego odczytu nie zalicza się niezmienności."
+      ],
+      "automation": {
+        "runner": "Regresja z zapisem",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "To test negatywny endpointu zapisującego. Jeżeli API błędnie przyjmie żądanie, może powstać nieprawidłowe zamówienie testowe.",
+        "actions": [
+          "regression-order"
+        ]
+      }
+    },
+    {
+      "id": "ORD-003",
+      "category": "orders",
+      "title": "Blokada zamówienia mieszanego Adamada i pozostałe",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "order",
+      "conditions": [
+        "Dostępny produkt Adamada i zwykły produkt."
+      ],
+      "data": "D087 + 5lp-1 w jednym nowym koszyku.",
+      "steps": [
+        "Spróbuj dodać obie grupy.",
+        "Jeżeli API odrzuci dodanie, zapisz odmowę.",
+        "Jeżeli je dopuści, przygotuj dostępne metody i wykonaj jedną próbę complete."
+      ],
+      "expected": [
+        "Nie można skutecznie złożyć zamówienia mieszanego.",
+        "Odrzucenie może nastąpić przy dodawaniu albo najpóźniej przy finalizacji zgodnie z uzgodnioną regułą.",
+        "Komunikat walidacji wyjaśnia problem bez HTTP 500."
+      ],
+      "automation": {
+        "runner": "Regresja z zapisem",
+        "sources": [
+          "api-tests/order-regression.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression-order"
+        ]
+      }
+    },
+    {
+      "id": "ORD-004",
+      "category": "orders",
+      "title": "Powtórne zatwierdzenie i utrata odpowiedzi",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "order",
+      "conditions": [
+        "Dedykowane konto DEV i uzgodniony kontrakt ponownego complete."
+      ],
+      "data": "Ponowne complete po sukcesie; osobno timeout po wysłaniu.",
+      "steps": [
+        "Zapisz numer zamówienia po pierwszej próbie.",
+        "Sprawdź uzgodniony wariant ponownego wywołania na tym samym tokenie.",
+        "W wariancie utraconej odpowiedzi odczytaj status lub sprawdź CMS przed kolejną akcją."
+      ],
+      "expected": [
+        "Nie powstaje drugie zamówienie ani zduplikowany transfer lub e-mail.",
+        "Status ponowienia jest zgodny z uzgodnionym kontraktem.",
+        "Narzędzie nie ponawia automatycznie complete po timeout."
+      ],
+      "automation": {
+        "runner": "Regresja z zapisem — drugie complete po potwierdzonym sukcesie",
+        "sources": [
+          "api-tests/order-regression.mjs",
+          "api-tests/regression-access.mjs",
+          "tests/regression-access.test.mjs",
+          "tests/order-regression.test.mjs"
+        ],
+        "limits": "Automat sprawdza numer, id i niezmienność tego samego zamówienia. Nie potwierdza braku dodatkowego e-maila lub rekordu w transferze. Kontrola timeoutu jest sprawdzona lokalnie; bez potwierdzenia pierwszego zapisu nie wysyła drugiego complete.",
+        "actions": [
+          "regression-order"
+        ]
+      }
+    },
+    {
+      "id": "ORD-005",
+      "category": "orders",
+      "title": "Potwierdzenie PDF i informacje po zakupie",
+      "priority": "P1",
+      "coverage": "partial",
+      "effect": "order",
+      "conditions": [
+        "Poprawnie zapisane zamówienie.",
+        "Dla paymentForm: uzgodniona wymagalność druczka danej płatności."
+      ],
+      "data": "pdfSummary, paymentForm, checkoutInformation; potwierdzona lista wymaganych informacji.",
+      "steps": [
+        "Odczytaj link potwierdzenia i pobierz plik.",
+        "Sprawdź Content-Type i sygnaturę PDF.",
+        "Gdy wymagany, pobierz paymentForm.",
+        "Sprawdź shop_billing lub pickup_address dla odpowiednich metod.",
+        "Ręcznie albo parserem porównaj zawartość PDF z zamówieniem."
+      ],
+      "expected": [
+        "Potwierdzenie jest prawidłowym plikiem PDF.",
+        "Wymagane linki i informacje są obecne dla danego wariantu.",
+        "Numer, produkty, ilości, rabaty i kwoty w treści PDF odpowiadają zamówieniu."
+      ],
+      "automation": {
+        "runner": "Pełne zamówienie / ręczne sprawdzenie treści",
+        "sources": [
+          "api-tests/engine.mjs"
+        ],
+        "limits": "Automat potwierdza typ i sygnaturę pliku, a nie poprawność jego treści ani doręczenie e-maila. Warunki checkoutInformation są sprawdzane po ich skonfigurowaniu.",
+        "actions": [
+          "order",
+          "regression-order"
+        ]
+      }
+    },
+    {
+      "id": "ISO-001",
+      "category": "isolation",
+      "title": "Dwa konta mają odrębne logowanie i wzorce rabatów",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Dwa różne, aktywne konta A i B.",
+        "Rabaty obu kont potwierdzone niezależnie."
+      ],
+      "data": "Przykładowo odbiór A=50%, B=13%; Adamada A=10%, B=20%.",
+      "steps": [
+        "Zaloguj A i B, zapisując JWT osobno.",
+        "Potwierdź różne tokeny.",
+        "Na własnych koszykach obu kont sprawdź dostępne płatności i rabaty."
+      ],
+      "expected": [
+        "JWT nie są zamienne ani identyczne.",
+        "Każde konto otrzymuje własny rabat.",
+        "Brakująca metoda konta nie jest wybierana poza listą dostępności."
+      ],
+      "automation": {
+        "runner": "Drugie konto",
+        "sources": [
+          "api-tests/second-account.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "ISO-002",
+      "category": "isolation",
+      "title": "Obce konto odczytuje cudzy koszyk",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Dla każdego kierunku nowy koszyk właściciela z ustabilizowaną wyceną."
+      ],
+      "data": "JWT B + token koszyka A; potem JWT A + token koszyka B.",
+      "steps": [
+        "Przygotuj koszyk właściciela i zapisz jego stan.",
+        "Wyślij GET /shop/orders/{cudzy_token} jako drugie konto.",
+        "Odczytaj koszyk jako właściciel."
+      ],
+      "expected": [
+        "Obce żądanie zwraca 403/404 bez ujawnienia zamówienia.",
+        "Ponowny odczyt właściciela pokazuje identyczny stan, rabaty i kwoty."
+      ],
+      "automation": {
+        "runner": "Izolacja w regresji",
+        "sources": [
+          "api-tests/second-account.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "ISO-003",
+      "category": "isolation",
+      "title": "Obce konto odczytuje płatności lub dostawy",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Nowy koszyk dla każdej operacji i każdego kierunku; właściciel wybrał płatność."
+      ],
+      "data": "GET /wholesale/orders/{cudzy_token}/payments oraz GET /wholesale/checkout-step-two/{cudzy_token}.",
+      "steps": [
+        "Zapisz stan koszyka jako właściciel.",
+        "Wykonaj jedną z badanych operacji z JWT drugiego konta.",
+        "Zapisz HTTP obcego żądania.",
+        "Ponownie odczytaj koszyk jako właściciel i porównaj pola."
+      ],
+      "expected": [
+        "HTTP 403/404 oraz niezmieniony koszyk są dwoma wymaganymi warunkami.",
+        "Rabat i kwoty nie przejmują ustawień obcego konta ani nie zerują się.",
+        "Powtórz każdy endpoint w obu kierunkach na nowych koszykach."
+      ],
+      "automation": {
+        "runner": "Izolacja w regresji / Postman dla odczytu płatności",
+        "sources": [
+          "api-tests/second-account.mjs",
+          "postman/HURTOWNIA - Izolacja uzytkownikow.postman_collection.json"
+        ],
+        "limits": "Znajomość tokenu jest założeniem testu. Przypadek nie sprawdza możliwości odgadnięcia tokenu ani przejęcia logowania.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "ISO-004",
+      "category": "isolation",
+      "title": "Obce konto modyfikuje produkty koszyka",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Osobny nowy koszyk dla każdej próby i kierunku."
+      ],
+      "data": "PATCH ilości; POST items/bulk; DELETE pozycji.",
+      "steps": [
+        "Zapisz stan koszyka właściciela.",
+        "Jako drugie konto spróbuj kolejno na osobnych koszykach: zmienić ilość, dodać produkt, usunąć pozycję.",
+        "Po każdej próbie odczytaj stan jako właściciel."
+      ],
+      "expected": [
+        "Każda obca operacja otrzymuje 403/404.",
+        "Produkty, ilości, rabaty i sumy pozostają identyczne.",
+        "Odmowa bez kontroli stanu nie wystarcza do PASS."
+      ],
+      "automation": {
+        "runner": "Izolacja w regresji",
+        "sources": [
+          "api-tests/second-account.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "ISO-005",
+      "category": "isolation",
+      "title": "Obce konto zmienia płatność lub dostawę",
+      "priority": "P0",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Nowy przygotowany koszyk dla każdej próby i kierunku."
+      ],
+      "data": "PATCH payment-method; POST checkout-step-two z odmiennymi testowymi adresami, poprawnymi strukturalnie.",
+      "steps": [
+        "Przygotuj nowy koszyk i zapisz w nim metody oraz adresy jako właściciel.",
+        "Wyślij jedną obcą próbę zmiany płatności albo dostawy; próba dostawy zawiera inne adresy QA.",
+        "Odczytaj koszyk jako właściciel.",
+        "Porównaj kwoty, metody i treść adresów; powtórz na nowym koszyku w odwrotnym kierunku."
+      ],
+      "expected": [
+        "Obce żądanie zwraca 403/404.",
+        "Kod płatności, kod dostawy i wycena nie zmieniają się.",
+        "Nie zapisano obcych adresów."
+      ],
+      "automation": {
+        "runner": "Izolacja w regresji — kwoty, metody i adresy",
+        "sources": [
+          "api-tests/second-account.mjs",
+          "api-tests/regression-access.mjs",
+          "tests/second-account.test.mjs"
+        ],
+        "limits": "Jeżeli GET koszyka nie ujawnia obu adresów, kontrola pełnych adresów ma jawny SKIP. Raport pokazuje nazwy zmienionych pól, bez treści danych adresowych.",
+        "actions": [
+          "regression"
+        ]
+      }
+    },
+    {
+      "id": "ISO-006",
+      "category": "isolation",
+      "title": "Wycena po obcym żądaniu i po finalizacji",
+      "priority": "P0",
+      "coverage": "partial",
+      "effect": "order",
+      "conditions": [
+        "Dedykowane konto DEV; dostawa i adresy przygotowane przed pomiarem.",
+        "Świadomy diagnostyczny zapis po odtworzeniu błędu izolacji."
+      ],
+      "data": "Trzy odczyty: przed obcą operacją, po niej i po complete tego samego koszyka.",
+      "steps": [
+        "Zapisz początkowy rabat i total jako A.",
+        "Wykonaj obce żądanie i ponowny odczyt jako A.",
+        "Zachowaj wynik izolacji oraz zmienione wartości.",
+        "Zatwierdź ten sam koszyk jako A, bez dodatkowych zmian między pomiarem a complete.",
+        "Odczytaj zapis i sprawdź numer w Syliusie."
+      ],
+      "expected": [
+        "Wymaganie izolacji: wycena po obcym żądaniu nie zmienia się.",
+        "Wymaganie zapisu: utrwalone zamówienie ma prawidłową wycenę właściciela.",
+        "Jeżeli zapis przywróci poprawną cenę, wynik finalizacji może być poprawny, ale wcześniejszy błąd izolacji pozostaje FAIL.",
+        "Raport rozdziela nieprawidłowe podsumowanie koszyka od niepotwierdzonego wpływu na końcowe rozliczenie."
+      ],
+      "automation": {
+        "runner": "Regresja z zapisem — diagnostyczne trzy stany, oba kierunki kont",
+        "sources": [
+          "api-tests/second-account.mjs",
+          "tests/second-account.test.mjs",
+          "postman/isolation-scripts.mjs"
+        ],
+        "limits": "Wariant z zapisem może utworzyć dwa dodatkowe zamówienia diagnostyczne, także po błędzie izolacji. Zwykły silnik zamówienia nadal blokuje zapis przy błędach cen. Automat porównuje API; widok CMS, transfer i e-maile wymagają osobnej kontroli.",
+        "actions": [
+          "regression-order"
+        ]
+      }
+    },
+    {
+      "id": "DB-001",
+      "category": "database",
+      "title": "Porównanie zapisanego zamówienia z Syliusem i transferem",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "read",
+      "conditions": [
+        "Zapisane zamówienie z potwierdzonym ID i numerem.",
+        "Dostęp tylko do odczytu obu baz; porównanie jawnie włączone."
+      ],
+      "data": "bookshop2.sylius_order, sylius_order_item, sylius_payment; gwo_transfer.orders i orders_items.",
+      "steps": [
+        "Pobierz zapisane zamówienie z API bez ponawiania complete.",
+        "Powiąż API id z sylius_order.id.",
+        "Powiąż sylius_order.number z transferowym nOrderID.",
+        "Porównaj walutę, sumy, płatność, produkty, ilości, ceny i rabaty."
+      ],
+      "expected": [
+        "Rekordy dotyczą dokładnie tego samego zamówienia.",
+        "Kwoty porównano po prawidłowym przeliczeniu groszy i wartości DECIMAL.",
+        "Przy kilku rekordach transferu produktu sumuje się ilości i wartości.",
+        "Kod wariantu API jest poprawnie mapowany na kod handlowy."
+      ],
+      "automation": {
+        "runner": "Porównanie z bazą",
+        "sources": [
+          "api-tests/database.mjs",
+          "api-tests/database-run.mjs"
+        ],
+        "limits": "Nie potwierdzaj zapisu transferowego na podstawie samego HTTP 200. Bez dostępu do bazy zakres pozostaje niesprawdzony.",
+        "actions": [
+          "database"
+        ]
+      }
+    },
+    {
+      "id": "DB-002",
+      "category": "database",
+      "title": "Paczki w przesyłce i koszt KWys w transferze",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "read",
+      "conditions": [
+        "Zapisane zamówienie GLS z paczkami i dostęp do obu baz."
+      ],
+      "data": "sylius_shipment.shipment_package_details oraz gwo_transfer.orders_items, vcIDT=KWys.",
+      "steps": [
+        "Odczytaj ilość paczek i koszty z API.",
+        "Sprawdź JSON przesyłki: kod dostawy, liczbę paczek, cenę jednostkową i netto/brutto.",
+        "Odszukaj KWys w transferze.",
+        "Porównaj liczbę i wartość paczek, oddzielając dopłatę płatności."
+      ],
+      "expected": [
+        "Dane przesyłki odpowiadają zwróconej ilości paczek i metodzie.",
+        "KWys reprezentuje koszt paczek.",
+        "Nie wymaga się, by KWys obejmował dodatkową opłatę płatności zawartą w shippingTotal API."
+      ],
+      "automation": {
+        "runner": "Porównanie z bazą",
+        "sources": [
+          "api-tests/database.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "database"
+        ]
+      }
+    },
+    {
+      "id": "REPORT-001",
+      "category": "reporting",
+      "title": "Czytelny raport i rozróżnienie wyników",
+      "priority": "P2",
+      "coverage": "partial",
+      "effect": "read",
+      "conditions": [
+        "Raport z przypadkami pozytywnymi, błędem i pominięciem."
+      ],
+      "data": "PASS, FAIL, SKIP i INCOMPLETE; osobne dane warunku oraz wykonania.",
+      "steps": [
+        "Otwórz raport w panelu.",
+        "Sprawdź opis kroków, oczekiwania, statusy HTTP i pomiary.",
+        "Sprawdź, czy pominięte etapy mają powód.",
+        "Dla błędu cen sprawdź produkt, pole, wartości przed/po i jednostkę."
+      ],
+      "expected": [
+        "Czytelnik rozumie, co sprawdzono i co wymaga dalszej pracy.",
+        "Liczby kontroli nie są przedstawione jako liczba zamówień lub niezależnych usterek.",
+        "Pominięcie nie jest przedstawiane jako zaliczenie.",
+        "Raport nie zawiera haseł, JWT, cookies ani tokenów koszyka."
+      ],
+      "automation": {
+        "runner": "Kontrola raportu / testy lokalne generatorów",
+        "sources": [
+          "api-tests/report-explanations.mjs",
+          "api-tests/report.mjs",
+          "api-tests/feature-report.mjs",
+          "tests/report-explanations.test.mjs"
+        ],
+        "limits": "Kontrola czytelności i prezentacji wymaga przeglądu przez człowieka; lokalne testy sprawdzają strukturę i wybrane zabezpieczenia.",
+        "actions": [
+          "reports"
+        ]
+      }
+    },
+    {
+      "id": "REPORT-002",
+      "category": "reporting",
+      "title": "Różnice netto bez potwierdzonej reguły zaokrągleń",
+      "priority": "P1",
+      "coverage": "automated",
+      "effect": "cart",
+      "conditions": [
+        "Produkt z różnymi jednostkowymi polami netto przy rabacie 0%.",
+        "Nie włączono nieuzgodnionego wymagania ścisłej równości."
+      ],
+      "data": "Przykład historyczny: D090, unitPriceNet=20286 i discountedUnitPriceNet=20285; 10 sztuk.",
+      "steps": [
+        "Odczytaj wartości jednostkowe netto i sumę netto pozycji.",
+        "Porównaj z orderItemTotal oferty płatności.",
+        "Sprawdź osobno poprawność brutto i rabatu względem niezależnego wzorca.",
+        "Otwórz raport i zweryfikuj klasyfikację obserwacji."
+      ],
+      "expected": [
+        "Różnica 1 gr/szt. i 10 gr dla 10 sztuk jest pokazana z nazwami źródłowych pól.",
+        "Bez potwierdzonej reguły równości różnica pozostaje obserwacją i nie blokuje zapisu.",
+        "Różnica brutto pozycji i porównanie netto nie są mylone.",
+        "Potwierdzone błędy brutto lub rabatu nadal powodują FAIL."
+      ],
+      "automation": {
+        "runner": "Koszyk / lokalne testy raportowania",
+        "sources": [
+          "api-tests/engine.mjs",
+          "api-tests/diagnostic-summary.mjs",
+          "tests/diagnostic-summary.test.mjs"
+        ],
+        "limits": "",
+        "actions": [
+          "cart"
+        ]
+      }
+    }
+  ],
+  "actions": {
+    "cart": {
+      "suite": "cart",
+      "label": "Uruchom test koszyka",
+      "note": "Cały test koszyka, bez finalizacji. Używa użytkownika wybranego u góry panelu oraz ustawień losowania i ziarna z widoku „Uruchom testy”."
+    },
+    "regression": {
+      "suite": "regression",
+      "label": "Uruchom regresję bez zapisu",
+      "note": "Cały zestaw regresji, w tym izolacja kont. Bez finalizacji; używa kont i danych z konfiguracji regresji, niezależnie od użytkownika wybranego u góry."
+    },
+    "regression-order": {
+      "suite": "regression-order",
+      "label": "Uruchom regresję z zapisem",
+      "note": "Cały zestaw z zapisem do 3 poprawnych zamówień i do 2 dodatkowych zamówień diagnostycznych izolacji na kontach z konfiguracji. Może zapisać zamówienia, wysłać e-maile i uruchomić transfer. Wysyła też drugie complete po potwierdzonym zapisie; nie ponawia timeoutu."
+    },
+    "order": {
+      "suite": "order",
+      "label": "Uruchom pełne zamówienie",
+      "note": "Cały proces dla użytkownika wybranego u góry panelu. Zatwierdza zamówienie; może wysłać e-mail i uruchomić transfer."
+    },
+    "packages": {
+      "suite": "packages",
+      "label": "Uruchom test paczek",
+      "note": "Cały zestaw paczek z lokalną konfiguracją progów i produktu. Bez finalizacji i bez zmiany CMS; konto z konfiguracji regresji."
+    },
+    "rounding": {
+      "suite": "rounding",
+      "label": "Uruchom test zaokrągleń",
+      "note": "Zestaw ilości 1–10 dla przygotowanego produktu 18,40 zł i rabatu 23%. Wymaga przygotowanych danych; nie zmienia rabatu automatycznie."
+    },
+    "addresses": {
+      "suite": "redmine-36926",
+      "label": "Uruchom test adresów #36926",
+      "note": "Cały zestaw 38 przypadków na koncie 1. Bez finalizacji. Testuje też książkę adresową i usuwa nowo utworzone dane QA; ograniczenia opisuje raport."
+    },
+    "package-settings": {
+      "view": "start",
+      "target": "package-profile",
+      "label": "Otwórz ustawienia testu paczek",
+      "note": "Uzupełnij profil w sekcji „Paczki i koszt dostawy”. Dopiero przycisk formularza zmienia wspólną konfigurację CMS na czas testu i ją przywraca."
+    },
+    "database": {
+      "view": "reports",
+      "label": "Wybierz zamówienie do porównania",
+      "note": "W raporcie zatwierdzonego zamówienia użyj „Porównaj z bazą”. To odczyt istniejącego zapisu, bez składania nowego zamówienia. Wymaga dostępu do baz."
+    },
+    "reports": {
+      "view": "reports",
+      "label": "Otwórz raporty",
+      "note": "Wybierz raport uruchomienia i porównaj jego zawartość z oczekiwaniami scenariusza."
+    }
+  }
+}

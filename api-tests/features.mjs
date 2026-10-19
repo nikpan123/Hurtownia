@@ -1,19 +1,23 @@
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile,access} from 'node:fs/promises';
 import path from 'node:path';
 import {ApiClient} from './http.mjs';
 import {saveFeatureReport} from './feature-report.mjs';
+import {descriptionScenarioIds,descriptionScenarioCatalog,descriptionCoverage} from './description-scenarios.mjs';
+import {checkDescriptionCourses} from './description-courses.mjs';
 
 const money=n=>Number.isSafeInteger(n)?(n/100).toLocaleString('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2})+' zł':'brak';
 async function context(config,credentials,options,scenario,kind){
   const api=new ApiClient(config,credentials,options);
   const report={scenario,kind,generatedAt:new Date().toISOString(),baseUrl:config.baseUrl,status:'RUNNING',scopeNote:'Test API na dev. Nie zatwierdza zamówień.',tests:[],requests:api.requests,tables:[]};
   const directory=options.directory??path.resolve(config.outputDirectory??'raporty-api',kind+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'-'+crypto.randomUUID().slice(0,8));
-  const skip=(name,detail)=>report.tests.push({name,status:'SKIP',detail});
-  const test=async(name,fn)=>{
+  const skip=(name,detail,scenarioIds=[],skipReason='unspecified')=>report.tests.push({name,status:'SKIP',detail,skipReason,...(scenarioIds.length?{scenarioIds}:{})});
+  const test=async(name,fn,scenarioIds=[])=>{
     options.signal?.throwIfAborted();options.onProgress?.(name);
-    try{const detail=await fn();report.tests.push({name,status:'PASS',detail:typeof detail==='string'?detail:''});return true;}
-    catch(e){report.tests.push({name,status:'FAIL',detail:api.clean(e.message)});options.signal?.throwIfAborted();return false;}
+    const start=api.requests.length;
+    const metadata=()=>scenarioIds.length?{scenarioIds,evidence:{requests:api.requests.slice(start)}}:{};
+    try{const detail=await fn();report.tests.push({name,status:'PASS',detail:typeof detail==='string'?detail:'',...metadata()});return true;}
+    catch(e){report.tests.push({name,status:'FAIL',detail:api.clean(e.message),...metadata()});options.signal?.throwIfAborted();return false;}
   };
   const request=async(method,endpoint,args={},statuses=[200])=>{
     const r=await api.request(method,endpoint,args);
@@ -38,10 +42,15 @@ async function context(config,credentials,options,scenario,kind){
     return {endpoint,token:created.tokenValue,id:created.id};
   };
   const finish=async()=>{
+    if(kind==='descriptions'){
+      const catalog=await descriptionScenarioCatalog();
+      report.scenarioCoverage=descriptionCoverage(report.tests,catalog);
+      report.tables.push({title:'Powiązanie kontroli ze scenariuszami — liczby kontroli, nie pełne zaliczenie wymagań',headers:['ID','Scenariusz','Wymaganie','PASS','FAIL','SKIP','Powiązanych kontroli'],rows:report.scenarioCoverage.map(s=>[s.id,s.title,s.requirement,s.counts.PASS,s.counts.FAIL,s.counts.SKIP,s.checks.length])});
+    }
     report.status=report.tests.some(t=>t.status==='FAIL')?'FAIL':report.tests.some(t=>t.status==='SKIP')?'INCOMPLETE':'PASS';
     const safe=api.clean(report);await saveFeatureReport(safe,directory);return {report:safe,directory};
   };
-  return {api,report,test,skip,request,cart,finish};
+  return {api,report,test,skip,request,cart,finish,directory};
 }
 
 export function minorUnits(value){
@@ -123,36 +132,47 @@ export async function runRounding(config,credentials,options={}){
 }
 
 export async function runDescriptions(config,credentials,options={}){
-  const fixtures=options.fixtures??JSON.parse(await readFile('config/catalog-fixtures.local.json','utf8')).products.filter(p=>p.main);
+  const fixtureData=options.fixtures?{products:options.fixtures,courses:options.courses}:JSON.parse(await readFile('config/catalog-fixtures.local.json','utf8'));
+  const fixtures=fixtureData.products.filter(p=>p.main);
   const c=await context(config,credentials,options,'Opisy produktów zależne od kanału — API','descriptions');const {api,report,test,skip,request,cart,finish}=c;
+  try{await access('.auth/description-cms-restore.json');skip('Odczyt API zablokowany podczas zmiany CMS','Najpierw zakończ test CMS lub przywróć dane poleceniem npm run descriptions:restore. Nie porównujemy wzorców ze stanem tymczasowym.',[],'environment');return finish();}catch(e){if(e.code!=='ENOENT')throw e;}
   report.reference=fixtures;report.scopeNote='Sprawdza listę, szczegóły produktu i nazwę w koszyku w API. Tworzy koszyki testowe, bez complete. Nie potwierdza walidacji CMS, e-maili, PDF ani integracji Empik.';
   const rows=[];report.tables.push({title:'Dane zwrócone przez API',headers:['Produkt','Kanał','Nazwa','Slug','Krótki opis','Nazwa w koszyku'],rows});
   const compare=(actual,expected)=>{for(const [field,value]of Object.entries(expected))if(field==='descriptionContains')assert(actual.description?.includes(value),'Opis nie zawiera niezależnej treści z CMS');else if(['name','slug','description','shortDescription'].includes(field))assert.deepEqual(actual[field],value,field);};
+  const validateReference=(reference,label)=>{
+    for(const field of ['name','slug','shortDescription'])assert(typeof reference?.[field]==='string','Brak niezależnego wzorca '+label+'.'+field);
+    assert(typeof reference.description==='string'||typeof reference.descriptionContains==='string','Brak wzorca '+label+'.description lub descriptionContains');
+  };
   try{
     await api.loginShop();assert(fixtures.length>=2,'Brak fixture fallback i osobnego opisu WHOLESALE');
     for(const f of fixtures)for(const channel of ['WHOLESALE','RETAIL','ACADEMY']){
-      const expected=f.channels[channel];if(!expected?.visible){skip(`${f.code} / ${channel}`,'Brak produktu QA aktywnego dla tego kanału.');continue;}
+      const ids=stage=>descriptionScenarioIds(channel,stage);
+      const expected=f.channels[channel];if(!expected?.visible){skip(`${f.code} / ${channel}`,'Brak produktu QA aktywnego dla tego kanału.',[...new Set(['detail','list','cart','variant'].flatMap(ids))]);continue;}
       let detail;
       const ok=await test(`${f.code} / ${channel}: nazwa, slug, opis, krótki opis`,async()=>{
+        validateReference(expected,channel);validateReference(f.main,'main');
         detail=await request('GET','shop/products-dto-by-slug/'+encodeURIComponent(expected.slug),{channel});assert.equal(detail.code,f.code);compare(detail,expected);
         if(channel!=='WHOLESALE')compare(detail,f.main);
-      });
+      },ids('detail'));
       await test(`${f.code} / ${channel}: lista zwraca właściwą nazwę i slug`,async()=>{
         const list=await request('GET','shop/products-dto',{channel,query:{name:expected.name,limit:50,order_by:'name'}});
         assert(Array.isArray(list.data));const row=list.data.find(p=>p.code===f.code);assert(row,'Brak produktu referencyjnego w wyszukiwaniu');assert.equal(row.name,expected.name);assert.equal(row.slug,expected.slug);
-      });
-      if(ok)await test(`${f.code} / ${channel}: nazwa zapisana w koszyku`,async()=>{
+      },ids('list'));
+      let cartItem;let cartOK=false;
+      if(ok)cartOK=await test(`${f.code} / ${channel}: nazwa zapisana w koszyku`,async()=>{
         const s=await cart(channel,f.productVariant??f.code);const order=await request('GET',s.endpoint,{channel});
         assert.equal(order.items.length,1);const item=order.items[0];rows.push([f.code,channel,detail.name,detail.slug,detail.shortDescription,item.productName]);
-        assert.equal(item.productName,expected.name,'productName w zamówieniu');if(f.variantName!==undefined)assert.equal(item.variantName,f.variantName,'variantName');
-      });
-      if(f.variantName===undefined)skip(`${f.code} / ${channel}: nazwa wariantu`,'Brak niezależnie ustawionej nazwy wariantu w fixture.');
+        cartItem=item;assert.equal(item.productName,expected.name,'productName w zamówieniu');
+      },ids('cart'));
+      else skip(`${f.code} / ${channel}: nazwa zapisana w koszyku`,'Nie wykonano po nieudanej kontroli szczegółów produktu.',ids('cart'),'dependency');
+      if(f.variantName===undefined)skip(`${f.code} / ${channel}: nazwa wariantu`,'Brak niezależnie ustawionej nazwy wariantu w fixture.',ids('variant'),'data_missing');
+      else if(cartOK)await test(`${f.code} / ${channel}: nazwa wariantu`,()=>{assert.equal(typeof cartItem.variantName,'string','API nie zwróciło pola variantName mimo zdefiniowanej nazwy wariantu w CMS: '+f.variantName);assert.equal(cartItem.variantName,f.variantName,'variantName różni się od niezależnej nazwy z CMS');},ids('variant'));
+      else skip(`${f.code} / ${channel}: nazwa wariantu`,'Brak poprawnie odczytanej pozycji koszyka do porównania wariantu.',ids('variant'),'dependency');
     }
-    skip('CMS: walidacja unikalności slugów i długości pól','Osobny test interfejsu CMS; ten zestaw wykonuje żądania API sklepu.');
-    skip('CMS: ukrywanie zakładki dla SpecialOffer / szkoleń','Wymagane fixture specjalnych typów oraz test UI CMS.');
-    skip('ACADEMY: closed-courses i paid-courses','Brak niezależnych fixture szkoleń z oczekiwanym tytułem i slugiem.');
-    skip('PDF / e-maile / powiadomienia / OfferUpdater Empik','Wymagają osobnych integracji i scenariuszy. Nie uruchomiono wysyłek ani finalizacji.');
-    skip('GenerateProductUrlByChannel i SpecialOffer','Wymagany dostęp do wygenerowanych URL i fixture oferty z dołączonymi produktami.');
+    await checkDescriptionCourses({fixtures:options.courses??fixtureData.courses??{},test,skip,request,report});
+    const catalog=await descriptionScenarioCatalog();
+    for(const scenario of catalog.cases.filter(s=>s.coverage==='planned'||s.automation.actions.includes('descriptions-cms')))skip(`${scenario.id}: ${scenario.title}`,scenario.automation.limits,[scenario.id],scenario.automation.actions.includes('descriptions-cms')?'out_of_scope':scenario.id==='DESC-028'?'environment':'not_automated');
   }catch(e){report.error=api.clean(e.message);report.tests.push({name:'Przebieg / logowanie',status:'FAIL',detail:report.error});}
   return finish();
 }
+export {context as descriptionContext};

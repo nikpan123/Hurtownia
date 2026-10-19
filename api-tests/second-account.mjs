@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {ApiClient} from './http.mjs';
 import {normalizeOrder} from './engine.mjs';
+import {accessSnapshot,accessDifferences,hasReadableAddresses} from './regression-access.mjs';
 
 export function secondAccountFromEnv(vars,primary){
   const keys={bank_transfer:'HURT_SECOND_REBATE_BANK_TRANSFER',cash_on_delivery:'HURT_SECOND_REBATE_CASH_ON_DELIVERY',bank_transfer_1_day:'HURT_SECOND_REBATE_BANK_TRANSFER_1_DAY',payment_timely:'HURT_SECOND_REBATE_PAYMENT_TIMELY',adamada:'HURT_SECOND_REBATE_ADAMADA'};
@@ -32,27 +33,49 @@ export async function checkSecondAccount({config,primary,secondary,settings,test
       const c=await create(owner,settings.groups.pozostale[0]);const offers=await call(owner,'GET',c.wholesale+'/payments');assert(offers?.length,'Brak płatności właściciela');await call(owner,'PATCH',c.wholesale+'/payment-method',{body:{paymentMethodCode:offers[0].code}},[200,204]);const o=await call(owner,'GET',c.root);assert(o.items.length,'Brak pozycji właściciela');
     });
     if(!ready)continue;
-    const attempts=[['odczyt koszyka','GET',c=>c.root,()=>({})],['odczyt płatności','GET',c=>c.wholesale+'/payments',()=>({})],['odczyt dostaw','GET',c=>c.checkout,()=>({})],['zmiana ilości','PATCH',c=>c.root+'/items/'+c.itemId,()=>({body:{quantity:2}})],['dodanie produktu','POST',c=>c.root+'/items/bulk',()=>({body:{items:[{productVariant:settings.groups.pozostale[0].productVariant,quantity:1}]}})],['zmiana płatności','PATCH',c=>c.wholesale+'/payment-method',c=>({body:{paymentMethodCode:c.paymentCode}})],['zmiana dostawy','POST',c=>c.checkout,c=>({body:{orderTokenValue:c.token,shippingMethodCode:c.shippingCode,shippingAddress:config.scenario.shippingAddress,billingAddress:config.scenario.billingAddress}})],['usunięcie pozycji','DELETE',c=>c.root+'/items/'+c.itemId,()=>({})]];
+    const attempts=[['odczyt koszyka','GET',c=>c.root,()=>({})],['odczyt płatności','GET',c=>c.wholesale+'/payments',()=>({})],['odczyt dostaw','GET',c=>c.checkout,()=>({})],['zmiana ilości','PATCH',c=>c.root+'/items/'+c.itemId,()=>({body:{quantity:2}})],['dodanie produktu','POST',c=>c.root+'/items/bulk',()=>({body:{items:[{productVariant:settings.groups.pozostale[0].productVariant,quantity:1}]}})],['zmiana płatności','PATCH',c=>c.wholesale+'/payment-method',c=>({body:{paymentMethodCode:c.paymentCode}})],['zmiana dostawy','POST',c=>c.checkout,c=>({body:{orderTokenValue:c.token,shippingMethodCode:c.shippingCode,shippingAddress:{...config.scenario.shippingAddress,city:'QA foreign address'},billingAddress:{...config.scenario.billingAddress,city:'QA foreign billing'}}})],['usunięcie pozycji','DELETE',c=>c.root+'/items/'+c.itemId,()=>({})]];
     for(const [name,method,endpoint,args]of attempts)await test('Izolacja '+label+': cudzy '+name,async()=>{
       // Każda obca operacja otrzymuje nowy koszyk. Poprzednia próba nie może zanieczyścić następnej.
       const c=await create(owner,settings.groups.pozostale[0]);const offers=await call(owner,'GET',c.wholesale+'/payments');assert(offers?.length,'Brak płatności właściciela');c.paymentCode=offers[0].code;await call(owner,'PATCH',c.wholesale+'/payment-method',{body:{paymentMethodCode:c.paymentCode}},[200,204]);
       const delivery=await call(owner,'GET',c.checkout);const raw=delivery.shippingMethods,methods=Array.isArray(raw)?raw:raw?.['hydra:member']??raw?.member;assert(methods?.length,'Brak dostaw właściciela');c.shippingCode=methods[0].code;
-      const before=normalizeOrder(await call(owner,'GET',c.root));assert(before.items.length,'Brak pozycji właściciela');c.itemId=before.items[0].id;c.token=before.tokenValue;
-      const target=endpoint(c),r=await intruder.request(method,target,args(c)),after=normalizeOrder(await call(owner,'GET',c.root));
-      const changes=orderDifferences(before,after),evidence={cartId:before.id,isolation:{direction:label,method,status:r.status,expectedStatuses:[403,404],freshCart:true,changes}};
+      c.token=(await call(owner,'GET',c.root)).tokenValue;
+      await call(owner,'POST',c.checkout,{body:{orderTokenValue:c.token,shippingMethodCode:c.shippingCode,shippingAddress:config.scenario.shippingAddress,billingAddress:config.scenario.billingAddress}},[200,201,204]);
+      const rawBefore=await call(owner,'GET',c.root),addressesReadable=hasReadableAddresses(rawBefore);
+      if(!addressesReadable)skip('Izolacja '+label+' / '+name+': pełne adresy','GET koszyka nie zwraca obu adresów. Kontrola kwot i metod pozostaje niezależna.');
+      const before=accessSnapshot(rawBefore);assert(before.items.length,'Brak pozycji właściciela');c.itemId=before.items[0].id;
+      const target=endpoint(c),r=await intruder.request(method,target,args(c)),after=accessSnapshot(await call(owner,'GET',c.root));
+      const changes=accessDifferences(before,after),evidence={cartId:before.id,isolation:{direction:label,method,status:r.status,expectedStatuses:[403,404],freshCart:true,changes,addressComparison:addressesReadable}};
       if(changes.length)throw Object.assign(new Error('Obce żądanie '+method+' (HTTP '+r.status+') zmieniło koszyk '+before.id+'. '+changes.slice(0,5).map(d=>d.field+': '+JSON.stringify(d.before)+' → '+JSON.stringify(d.after)).join('; ')),{evidence});
       if(![403,404].includes(r.status))throw Object.assign(new Error('Dostęp do cudzego koszyka: oczekiwano 403/404, otrzymano '+r.status),{evidence});
       return evidence;
     });
+    if(options.complete)await test('ISO-006 / '+label+': wycena przed obcym żądaniem, po nim i po zapisie',async()=>{
+      const c=await create(owner,settings.groups.pozostale[0]);const offers=await call(owner,'GET',c.wholesale+'/payments');assert(offers?.length,'Brak płatności');
+      const payment=offers[0],expected=(owner===primary?settings.paymentRebates:secondary.rebates)?.[payment.code];
+      assert(Number.isFinite(expected),'Brak niezależnego rabatu właściciela — nie zapisano koszyka diagnostycznego');
+      await call(owner,'PATCH',c.wholesale+'/payment-method',{body:{paymentMethodCode:payment.code}},[200,204]);
+      const delivery=await call(owner,'GET',c.checkout),raw=delivery.shippingMethods,methods=Array.isArray(raw)?raw:raw?.['hydra:member']??raw?.member;assert(methods?.length,'Brak dostawy');
+      const initial=await call(owner,'GET',c.root);await call(owner,'POST',c.checkout,{body:{orderTokenValue:initial.tokenValue,shippingMethodCode:methods[0].code,shippingAddress:config.scenario.shippingAddress,billingAddress:config.scenario.billingAddress}},[200,201,204]);
+      const before=accessSnapshot(await call(owner,'GET',c.root));assert(before.items.length,'Brak produktów');for(const item of before.items)assert.equal(item.rebatePercent,expected,'Niewłaściwy rabat przed próbą — nie zapisano');
+      const foreign=await intruder.request('GET',c.wholesale+'/payments'),afterForeign=accessSnapshot(await call(owner,'GET',c.root));
+      // Świadomy zapis diagnostyczny po pomiarze, także gdy izolacja zawiodła.
+      // Nie zastępuje zabezpieczenia cen w zwykłym runScenario.
+      let completed,completionError;
+      try{completed=await owner.request('PATCH',c.root+'/complete',{body:{}});}catch(error){completionError=error;}
+      const saved=accessSnapshot(await call(owner,'GET',c.root));
+      if(!saved.number)skip('ISO-006 / '+label+': numer zamówienia','GET po complete nie udostępnia numeru. Wycena jest porównana osobno; numer sprawdź w CMS po id koszyka.');
+      const isolationChanges=accessDifferences(before,afterForeign),savedChanges=accessDifferences(before,{...saved,number:before.number,state:before.state});
+      const amounts=o=>({itemsTotal:o.itemsTotal,total:o.total,totalNet:o.totalNet,rebatePercent:o.items[0]?.rebatePercent});
+      const evidence={cartId:before.id,isolation:{direction:label,method:'GET',status:foreign.status,expectedStatuses:[403,404],freshCart:true,changes:isolationChanges},completionComparison:{before:amounts(before),afterForeign:amounts(afterForeign),saved:amounts(saved),status:completed?.status??'NETWORK_ERROR',orderNumber:saved.number,changes:savedChanges,limit:'Kontrola API trzech stanów; nie potwierdza osobno CMS, e-maili ani transferu.'}};
+      const failures=[];
+      if(![403,404].includes(foreign.status))failures.push('obce żądanie: HTTP '+foreign.status);
+      if(isolationChanges.length)failures.push('podsumowanie zmienione po obcym żądaniu: '+isolationChanges.length+' pól');
+      if(completionError||![200,204].includes(completed?.status)||saved.state==='cart'||saved.id!==before.id)failures.push('zapis niepotwierdzony w odpowiedzi complete; wykonano odczyt bez ponowienia PATCH');
+      if(savedChanges.length)failures.push('zapis różni się od poprawnego stanu właściciela: '+savedChanges.length+' pól');
+      if(failures.length)throw Object.assign(new Error(failures.join('; ')+'. Poprawny zapis nie usuwa wcześniejszego błędu izolacji.'),{evidence});
+      return evidence;
+    });else skip('ISO-006 / '+label+': porównanie po finalizacji','Tylko wariant regresji z zapisem. Bez finalizacji nie wysyłamy diagnostycznego complete.');
   }
 }
 
-export function orderDifferences(before,after){
-  const changes=[];
-  function visit(a,b,field){
-    if(field==='tokenValue')return;
-    if(a&&b&&typeof a==='object'&&typeof b==='object')for(const key of new Set([...Object.keys(a),...Object.keys(b)]))visit(a[key],b[key],field?field+'.'+key:key);
-    else if(!Object.is(a,b))changes.push({field,before:a??null,after:b??null});
-  }
-  visit(before,after,'');return changes;
-}
+export {orderDifferences} from './regression-access.mjs';

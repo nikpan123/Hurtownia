@@ -30,20 +30,21 @@ test('Istniejący dziennik i obca zmiana CMS nie są nadpisywane',async()=>{
   const file=path.join(await temp(),'restore.json');let current=profile;
   await assert.rejects(()=>withShippingConfiguration({profile:{...profile,singlePackageWeight:1000},journalFile:file,adapter:{read:async()=>current,write:async p=>current=p,close:async()=>{}}},async()=>{current={...profile,singlePackageWeight:1234};throw new Error('awaria');}),/zmieniona poza testem/);assert.equal(current.singlePackageWeight,1234);await access(file);
 });
-function mock({badPackage=false,authInsteadOfValidation=false,emptyRead500=false}={}){
+function mock({badPackage=false,authInsteadOfValidation=false,emptyRead500=false,badAuthentication=false,allowInvalidJwt=false,twoPayments=false,badPaymentSwitch=false,forbiddenStatus=422,stockLimit=null}={}){
   let serial=0;const carts=new Map(),calls=[];
   const response=(b,status=200)=>new Response(JSON.stringify(b),{status,headers:{'content-type':'application/json'}});
   const fetchImpl=async(url,opts)=>{
     const endpoint=new URL(url).pathname.replace('/api/v2/','');const body=opts.body?JSON.parse(opts.body):null;calls.push({endpoint,method:opts.method});
-    if(endpoint==='shop/authentication-token')return response({token:'private-login-token'});
+    if(endpoint==='shop/authentication-token'){if(body.apiPassword.startsWith('qa-invalid-'))return badAuthentication?response({token:'private-issued-by-mistake'}):response({message:'Invalid credentials'},401);return response({token:'private-login-token'});}
+    if(opts.headers.Authorization!=='Bearer private-login-token'&&!allowInvalidJwt)return response({message:'JWT rejected'},401);
     if(endpoint==='shop/orders'){const token='private-cart-'+(++serial);carts.set(token,{id:serial,tokenValue:token,items:[],payment:null,shipping:null});return response({id:serial,tokenValue:token},201);}
     const token=endpoint.startsWith('wholesale/checkout-step-two/')?endpoint.split('/')[2]:endpoint.split('/')[2];const c=carts.get(token);assert(c,'Koszyk istnieje');
     const order=()=>{const items=c.items.map(i=>({...i,unitPrice:1050,unitPriceNet:1000,discountedUnitPriceNet:c.payment?900:1000,totalNetSalesAfterDiscount:(c.payment?900:1000)*i.quantity,total:(c.payment?945:1050)*i.quantity,rebatePercent:c.payment?10:0}));const weight=items.reduce((s,i)=>s+i.quantity*210,0),packages=c.shipping==='gls_wholesale'?Math.ceil(weight/8000):0,shippingTotalNet=packages*(weight<=8000?1500:1000);return {id:c.id,tokenValue:c.tokenValue,items,itemsTotal:items.reduce((s,i)=>s+i.total,0),total:items.reduce((s,i)=>s+i.total,0)+shippingTotalNet*1.05,totalNet:items.reduce((s,i)=>s+i.totalNetSalesAfterDiscount,0)+shippingTotalNet,shippingTotal:shippingTotalNet*1.05,shippingTotalNet,shipmentPackageQuantity:packages+(badPackage&&c.shipping==='gls_wholesale'?1:0),payments:c.payment?[{method:{code:c.payment}}]:[],shipments:c.shipping?[{method:{code:c.shipping}}]:[]};};
-    if(endpoint.endsWith('/payments'))return response([{code:'payment',name:'Test',rebatePercent:10,orderItemTotal:order().items.reduce((s,i)=>s+i.totalNetSalesAfterDiscount,0)}]);
-    if(endpoint.endsWith('/payment-method')){if(body.paymentMethodCode!=='payment')return response({},422);c.payment=body.paymentMethodCode;return response({});}
+    if(endpoint.endsWith('/payments'))return response((twoPayments?['payment','other-payment']:['payment']).map(code=>({code,name:'Test',rebatePercent:10,orderItemTotal:order().items.reduce((s,i)=>s+i.totalNetSalesAfterDiscount,0)})));
+    if(endpoint.endsWith('/payment-method')){if(!['payment',...(twoPayments?['other-payment']:[])].includes(body.paymentMethodCode))return response({},forbiddenStatus);if(!(badPaymentSwitch&&body.paymentMethodCode==='other-payment'))c.payment=body.paymentMethodCode;return response({});}
     if(endpoint.startsWith('wholesale/checkout-step-two/')){if(opts.method==='GET')return response({shippingMethods:[{code:'gls_wholesale'},{code:'pickup'}]});if(body.shippingAddress?.city===''||!['gls_wholesale','pickup'].includes(body.shippingMethodCode))return response({},422);c.shipping=body.shippingMethodCode;return response({});}
     if(endpoint.endsWith('/items/bulk')){if(body.items.some(i=>i.productVariant.startsWith('qa-nonexistent')))return response({},422);for(const i of body.items){const found=c.items.find(x=>x.product.code===i.productVariant);if(found)found.quantity+=i.quantity;else c.items.push({id:c.items.length+1,product:{code:i.productVariant},quantity:i.quantity});}return response({},201);}
-    if(endpoint.includes('/items/')){const id=Number(endpoint.split('/').at(-1));if(opts.method==='DELETE'){c.items=c.items.filter(i=>i.id!==id);return response({});}if(!Number.isInteger(body.quantity)||body.quantity<=0)return response({},authInsteadOfValidation?401:422);c.items.find(i=>i.id===id).quantity=body.quantity;return response({});}
+    if(endpoint.includes('/items/')){const id=Number(endpoint.split('/').at(-1));if(opts.method==='DELETE'){c.items=c.items.filter(i=>i.id!==id);return response({});}if(!Number.isInteger(body.quantity)||body.quantity<=0)return response({},authInsteadOfValidation?401:422);const item=c.items.find(i=>i.id===id);if(item.product.code==='low-stock'&&stockLimit!==null&&body.quantity>stockLimit)return response({},422);item.quantity=body.quantity;return response({});}
     if(endpoint.endsWith('/complete')&&c.items.length===0)return response({},422);
     if(opts.method==='GET'&&endpoint.startsWith('shop/orders/')&&c.items.length===0&&emptyRead500)return response({message:'Missing shipment'},500);
     return response(order());
@@ -67,4 +68,35 @@ test('Błąd GET pustego koszyka nie blokuje osobnej próby PATCH complete i nie
   assert.equal(read.status,'FAIL');assert.equal(rejection.status,'PASS',rejection.detail);
   assert(rejection.evidence.requests.some(q=>q.method==='PATCH'&&q.endpoint.endsWith('/complete')&&q.status===422));
   assert.equal(r.report.tests.find(t=>t.name==='Pusty koszyk: niezmienność po odrzuceniu').status,'SKIP');
+});
+
+test('Regresja wykonuje błędne logowanie i oba warianty JWT; sukces zamiast odmowy daje FAIL bez wycieku tokenu',async()=>{
+  for(const mode of [{},{badAuthentication:true},{allowInvalidJwt:true}]){
+    const r=await runOrderRegression(config,{email:'private-email',password:'private-password',testsToken:'private-tests-token'},{...mock(mode),settings,allowLocal:true,directory:await temp()});
+    const auth=r.report.tests.filter(t=>/^AUTH-00[23]:/.test(t.name));assert.equal(auth.length,7);
+    assert.equal(auth.every(t=>t.status==='PASS'),!mode.badAuthentication&&!mode.allowInvalidJwt);
+    assert(!JSON.stringify(r.report).includes('private-issued-by-mistake'));
+  }
+});
+
+test('Zmiana płatności sprawdza powrót do pierwszej i wykrywa niezapisaną metodę',async()=>{
+  for(const badPaymentSwitch of [false,true]){
+    const r=await runOrderRegression(config,{email:'e',password:'p',testsToken:'token'},{...mock({twoPayments:true,badPaymentSwitch}),settings:{...settings,maxCombinations:16},allowLocal:true,directory:await temp()});
+    const cases=r.report.tests.filter(t=>t.name.includes('powrót do pierwszej'));assert.equal(cases.length,2);assert(cases.every(t=>t.status===(badPaymentSwitch?'FAIL':'PASS')));
+  }
+});
+
+test('Niedostępna istniejąca płatność: 403 jest odmową, 401 błędem uwierzytelnienia',async()=>{
+  for(const forbiddenStatus of [403,401]){
+    const r=await runOrderRegression(config,{email:'e',password:'p',testsToken:'token'},{...mock({forbiddenStatus}),settings:{...settings,forbiddenPayments:[{code:'disabled-method',source:'CMS fixture'}]},allowLocal:true,directory:await temp()});
+    const checks=r.report.tests.filter(t=>t.name.includes('istniejąca niedostępna płatność disabled-method'));assert.equal(checks.length,2);assert(checks.every(t=>t.status===(forbiddenStatus===403?'PASS':'FAIL')));
+  }
+});
+
+test('Potwierdzony zapas: poprawna odmowa przechodzi, przyjęcie nadmiaru daje FAIL',async()=>{
+ for(const stockLimit of [10,null]){
+  const m=mock({stockLimit});const r=await runOrderRegression(config,{email:'e',password:'p',testsToken:'token'},{...m,settings:{...settings,stockFixture:{productVariant:'low-stock',availableQuantity:10,source:'CMS fixture without backorder'}},allowLocal:true,directory:await temp()});
+  const check=r.report.tests.find(t=>t.name==='Przekroczenie potwierdzonego zapasu');assert.equal(check.status,stockLimit===10?'PASS':'FAIL');
+  assert(!m.calls.some(c=>c.endpoint.endsWith('/complete')));
+ }
 });
