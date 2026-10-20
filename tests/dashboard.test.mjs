@@ -4,6 +4,20 @@ import {mkdtemp,mkdir,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import {createDashboardServer,safeReportPath} from '../dashboard/server.mjs';
+import {browserLaunchOptions} from '../api-tests/browser-options.mjs';
+
+test('Panel przekazuje podgląd do modułów tylko w wybranym przebiegu i odrzuca błędne tempo',async()=>{
+ const called=[],original=process.env.HURT_BROWSER_PREVIEW;
+ const server=createDashboardServer({runSuite:async(body,vars)=>{called.push(browserLaunchOptions(vars));return {report:{status:'PASS'},directory:'raporty-api/preview-mock'};}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
+ try{
+  const html=await(await fetch(base)).text(),token=html.match(/name="ui-token" content="([^"]+)"/)[1];
+  const post=body=>fetch(base+'/api/run',{method:'POST',headers:{origin:base,'x-ui-token':token,'content-type':'application/json'},body:JSON.stringify(body)});
+  const invalid=await post({suite:'descriptions-web',browserPreview:{enabled:true,slowMoMs:-1}});assert.equal(invalid.status,400);assert.equal(called.length,0);
+  const first=await post({suite:'descriptions-all',browserPreview:{enabled:true,slowMoMs:750}});assert.equal(first.status,202);const job=await first.json();assert.deepEqual(job.browserPreview,{enabled:true,slowMoMs:750});assert.deepEqual(called[0],{channel:process.env.BROWSER_CHANNEL??'msedge',headless:false,slowMo:750});
+  const second=await post({suite:'descriptions-web'});assert.equal(second.status,202);assert.equal(called[1].headless,true);assert.equal(called[1].slowMo,0);assert.equal(process.env.HURT_BROWSER_PREVIEW,original);
+ }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+});
 
 test('Nieudane przywracanie CMS pozostaje FAIL także po zatrzymaniu testu przez użytkownika',async()=>{
   let finish;const ended=new Promise(resolve=>finish=resolve);

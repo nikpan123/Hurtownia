@@ -1,3 +1,7 @@
+import {runCmsProductCreation as runProductCreation,cmsProductPreview} from '../api-tests/product-create-cms.mjs';
+import {runDescriptionRetailDocuments} from '../api-tests/description-retail-documents.mjs';
+import {publishBrowserStep} from '../api-tests/browser-presentation.mjs';
+import {validateBrowserPreview} from '../api-tests/browser-options.mjs';
 import {accountSummaries} from './account-summary.mjs';
 import http from 'node:http';
 import {readFile,readdir,realpath} from 'node:fs/promises';
@@ -13,8 +17,15 @@ import {runScenario} from '../api-tests/engine.mjs';
 import {runCatalog} from '../api-tests/catalog.mjs';
 import {ChoiceGate,validateSelection,availableProducts} from './wizard.mjs';
 import {redactText} from '../api-tests/config.mjs';
-import {runProductCreation,runRounding,runDescriptions,productPayload} from '../api-tests/features.mjs';
+import {runRounding,runDescriptions} from '../api-tests/features.mjs';
 import {runDescriptionCms} from '../api-tests/description-cms.mjs';
+import {runDescriptionWeb} from '../api-tests/description-web.mjs';
+import {runDescriptionDocuments} from '../api-tests/description-documents.mjs';
+import {runDescriptionMailRecheck} from '../api-tests/description-mail-recheck.mjs';
+import {runDescriptionNewProduct} from '../api-tests/description-new-product.mjs';
+import {runDescriptionRetailCart,runDescriptionRetailSummary} from '../api-tests/description-retail-cart.mjs';
+import {runDescriptionStock} from '../api-tests/description-stock.mjs';
+import {runDescriptionAll} from '../api-tests/description-all.mjs';
 import {runOrderRegression} from '../api-tests/order-regression.mjs';
 import {withShippingConfiguration,validateShippingProfile} from '../api-tests/shipping-cms.mjs';
 import {databaseVerifier,verifySavedReport} from '../api-tests/database.mjs';
@@ -41,10 +52,20 @@ const definitions={
   wizard:{name:'Zamówienie krok po kroku',script:'',args:[]},
   order:{name:'Pełne zamówienie',script:'api-tests/run.mjs',args:['--config','config/dev.local.json','--complete']},
   catalog:{name:'Katalog produktów',script:'api-tests/catalog-run.mjs',args:[]},
-  'product-create':{name:'Tworzenie produktu przez API',script:'',args:[]},
+  'product-create':{name:'Tworzenie książki przez formularz CMS',script:'',args:[]},
   rounding:{name:'Ceny netto / brutto — wzorzec starej hurtowni',script:'',args:[]},
   descriptions:{name:'Opisy produktów zależne od kanału — API',script:'',args:[]},
   'descriptions-cms':{name:'Opisy kanałowe — zapis i walidacje CMS',script:'',args:[]},
+  'descriptions-retail-documents':{name:'RETAIL — nowe zamówienie, PDF i e-mail',script:'',args:[]},
+  'descriptions-retail-summary':{name:'RETAIL — nazwa w podsumowaniu bez zapisu',script:'',args:[]},
+  'descriptions-web':{name:'Opisy kanałowe — CMS i frontend RETAIL',script:'',args:[]},
+  'descriptions-documents':{name:'Opisy kanałowe — nowe zamówienie WHOLESALE, PDF i e-mail',script:'',args:[]},
+  'descriptions-mail-recheck':{name:'Opisy kanałowe — ponowny odczyt e-maila istniejącego zamówienia',script:'',args:[]},
+  'descriptions-new-product':{name:'Opisy kanałowe — nowy produkt CMS i tłumaczenia w bazie',script:'',args:[]},
+  'descriptions-retail-cart':{name:'Opisy kanałowe — aplikacja i koszyk RETAIL',script:'',args:[]},
+  'descriptions-all':{name:'Opisy kanałowe — zestaw zbiorczy bez zapisu zamówienia',script:'',args:[]},
+  'descriptions-all-complete':{name:'Opisy kanałowe — zestaw zbiorczy z zamówieniem, PDF i pocztą',script:'',args:[]},
+  'descriptions-stock':{name:'Opisy kanałowe — powiadomienie RETAIL o dostępności QA',script:'',args:[]},
   login:{name:'Logowanie GitLab',script:'api-tests/login.mjs',args:[]}
 };
 let lastCustomProfile;
@@ -71,7 +92,7 @@ async function reports() {
     try{
       const data=JSON.parse(await readFile(path.join(reportRoot,entry.name,'raport.json'),'utf8'));
       const files=(await readdir(path.join(reportRoot,entry.name))).filter(f=>/\.(html|json|pdf)$/.test(f));
-      results.push({id:entry.name,date:data.generatedAt,status:data.status??'UNKNOWN',name:data.scenario??'Katalog produktów',kind:data.kind??(data.tests?'catalog':'cart'),finalization:data.finalization??null,orderId:data.orderId??data.snapshots?.[0]?.order?.id,error:data.error??null,counts:countResults(data),products:(data.products??[]).map(p=>p.productVariant??p.isbn),payment:data.selectedPayment,shipping:data.selectedShipping,files});
+      results.push({id:entry.name,date:data.generatedAt,status:data.status??'UNKNOWN',name:data.scenario??'Katalog produktów',kind:data.kind??(data.tests?'catalog':'cart'),mailRecheckReady:!!(data.completionAttempted&&data.finalization==='potwierdzona przez API'&&data.orderNumber&&data.mailBaseline?.notBefore&&data.reference?.expectedName),finalization:data.finalization??null,orderId:data.orderId??data.snapshots?.[0]?.order?.id,error:data.error??null,counts:countResults(data),products:(data.products??[]).map(p=>p.productVariant??p.isbn),payment:data.selectedPayment,shipping:data.selectedShipping,files});
     }catch{/* Pomijamy foldery bez zakończonego raportu. */}
   }
   return results.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
@@ -96,9 +117,9 @@ async function executeSuite(body,vars,options) {
     if(typeof body.reportId!=='string'||!/^[a-z0-9_-]+$/i.test(body.reportId))throw new Error('Wybierz raport zamówienia');
     const source=JSON.parse(await readFile(await safeReportPath(reportRoot,[body.reportId,'raport.json']),'utf8'));const report=await verifySavedReport(source,dbOptions);const directory=path.join(reportRoot,'database-'+new Date().toISOString().replace(/[:.]/g,'-')+'-'+randomUUID().slice(0,8));await saveFeatureReport(report,directory);return {report,directory};
   }
-  if(!credentials.testsToken||(body.suite!=='product-create'&&(!credentials.email||!credentials.password)))throw new Error('Uzupełnij wymagane dane API w .env.');
+  if(body.suite!=='product-create'&&(!credentials.testsToken||!credentials.email||!credentials.password))throw new Error('Uzupełnij wymagane dane API w .env.');
   if(body.suite==='redmine-37162')return runShipmentRegression(cartConfig,credentials,{...options,caseIds:body.caseIds});
-  if(body.suite==='redmine-36926')return runAddressRegression(cartConfig,credentials,{...options,caseIds:body.caseIds,otherRunning:async()=>false});
+  if(body.suite==='redmine-36926')return runAddressRegression(cartConfig,credentials,{...options,caseIds:body.caseIds,otherRunning:async()=>false,cmsDefaults:true,...dbOptions});
   if(['regression','regression-order','packages','packages-profile'].includes(body.suite)){
     const settings=JSON.parse(await readFile(path.join(workspace,'config/order-regression.local.json'),'utf8'));
     const run=()=>runOrderRegression(cartConfig,credentials,{...options,settings,secondAccount:secondAccountFromEnv(vars,credentials),complete:body.suite==='regression-order',packagesOnly:body.suite.startsWith('packages')});
@@ -108,10 +129,19 @@ async function executeSuite(body,vars,options) {
     }
     return run();
   }
-  if(body.suite==='product-create')return runProductCreation(cartConfig,credentials,{...options,input:body.input,adminEmail:vars.SYLIUS_ADMIN_EMAIL,adminPassword:vars.SYLIUS_ADMIN_PASSWORD});
+  if(body.suite==='product-create')return runProductCreation(cartConfig,credentials,{...options,input:body.input,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
   if(body.suite==='rounding')return runRounding(cartConfig,credentials,options);
   if(body.suite==='descriptions')return runDescriptions(cartConfig,credentials,options);
   if(body.suite==='descriptions-cms')return runDescriptionCms(cartConfig,credentials,{...options,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
+  if(body.suite==='descriptions-retail-documents')return runDescriptionRetailDocuments(cartConfig,credentials,{...options,vars,complete:true,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
+  if(body.suite==='descriptions-retail-summary')return runDescriptionRetailSummary(cartConfig,credentials,{...options,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
+  if(body.suite==='descriptions-web')return runDescriptionWeb(cartConfig,credentials,{...options,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
+  if(body.suite==='descriptions-documents')return runDescriptionDocuments(cartConfig,credentials,{...options,complete:true,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
+  if(body.suite==='descriptions-mail-recheck')return runDescriptionMailRecheck(cartConfig,credentials,{...options,sourceReportId:body.reportId,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
+  if(body.suite==='descriptions-new-product')return runDescriptionNewProduct(cartConfig,credentials,{...options,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
+  if(body.suite==='descriptions-retail-cart')return runDescriptionRetailCart(cartConfig,credentials,{...options,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
+  if(['descriptions-all','descriptions-all-complete'].includes(body.suite))return runDescriptionAll(cartConfig,credentials,{...options,complete:body.suite==='descriptions-all-complete',vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
+  if(body.suite==='descriptions-stock')return runDescriptionStock(cartConfig,credentials,{...options,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
   if(body.suite==='wizard') {
     cartConfig.scenario.products=validateSelection(body.items,await wizardProducts(body.account??'primary'));
     cartConfig.scenario.randomProducts={enabled:false};
@@ -134,6 +164,7 @@ async function launch(body,runner) {
   if(launching||definingUser||currentChild||currentController)throw Object.assign(new Error('Poczekaj na zakończenie aktualnego przebiegu lub odczytu użytkownika.'),{status:409});
   launching=true;
   try {
+  const browserPreview=validateBrowserPreview(body.browserPreview);
   const d=definitions[body.suite];if(!d)throw Object.assign(new Error('Nieznany zestaw testów.'),{status:400});
   if(body.caseIds!==undefined){
     const cases=body.suite==='redmine-37162'?shipmentCases:body.suite==='redmine-36926'?addressCases:null;
@@ -143,13 +174,13 @@ async function launch(body,runner) {
   if(!['login','database'].includes(body.suite)){
     try{await readFile(path.join(workspace,'.auth/shipping-restore.json'),'utf8');throw new Error('Najpierw przywróć konfigurację GLS: npm run packages:restore. Istnieje niedokończony dziennik zmian CMS.');}catch(e){if(e.code!=='ENOENT')throw e;}
   }
-  if(body.suite==='product-create')productPayload(body.input);
+  if(body.suite==='product-create')cmsProductPreview(body.input);
   if(body.suite==='packages-profile')validateShippingProfile(body.profile);
   if(body.account!==undefined&&(!['cart','order','wizard'].includes(body.suite)||!['primary','secondary','custom'].includes(body.account)))throw new Error('Wybór konta dotyczy koszyka, zamówienia i formularza.');
   const args=[d.script,...d.args];
   if(body.seed){if(!['cart','order'].includes(body.suite))throw new Error('Ziarno dotyczy koszyka i zamówienia.');if(typeof body.seed!=='string'||body.seed.length>128)throw new Error('Niepoprawne ziarno.');args.push('--seed',body.seed);}
-  const vars=await env();
-  const job={id:randomUUID(),suite:body.suite,name:d.name+(['cart','order','wizard'].includes(body.suite)?' — '+(body.account==='custom'?'Użytkownik zdefiniowany':body.account==='secondary'?'Konto 2':'Konto 1'):''),account:body.account??'primary',status:'RUNNING',startedAt:new Date().toISOString(),log:'',seed:body.seed??null,automatic:body.suite==='wizard'&&body.automatic===true};
+  const vars={...await env(),HURT_BROWSER_PREVIEW:String(browserPreview.enabled),HURT_BROWSER_SLOW_MO_MS:String(browserPreview.slowMoMs)};
+  const job={id:randomUUID(),suite:body.suite,name:d.name+(['cart','order','wizard'].includes(body.suite)?' — '+(body.account==='custom'?'Użytkownik zdefiniowany':body.account==='secondary'?'Konto 2':'Konto 1'):''),account:body.account??'primary',browserPreview,status:'RUNNING',startedAt:new Date().toISOString(),log:'',seed:body.seed??null,automatic:body.suite==='wizard'&&body.automatic===true};
   const sensitive=Object.fromEntries(Object.entries(vars).filter(([k])=>/PASSWORD|TOKEN|COOKIE|EMAIL|USERNAME/i.test(k)));
   if(body.caseIds){job.caseIds=body.caseIds;job.name+=' — wybrane przypadki ('+body.caseIds.length+')';}
   jobs.push(job);
@@ -163,7 +194,8 @@ async function launch(body,runner) {
       job.wizard={phase:'working'};
     }
     append('Rozpoczęto testy na dev.\n');
-    Promise.resolve().then(()=>runner(body,vars,{signal:controller.signal,onProgress:line=>append(line+'\n'),...interactive})).then(result=>{
+    if(browserPreview.enabled)append('Podgląd przeglądarki włączony. Opóźnienie akcji: '+browserPreview.slowMoMs+' ms. Okno pojawi się wyłącznie przy krokach przeglądarkowych; żądania API/HTTP pozostają w logu i raporcie. Okna zamykają się po zakończeniu modułu.\n');
+    Promise.resolve().then(()=>runner(body,vars,{signal:controller.signal,onProgress:line=>{append(line+'\n');publishBrowserStep(vars,scrub(line,sensitive));},...interactive})).then(result=>{
       job.status=result.report.restorationFailed?'FAIL':controller.signal.aborted?'CANCELLED':result.report.status;
       job.error=result.report.error??null;
       job.completionBlocked=result.report.completionBlocked??false;
@@ -247,7 +279,7 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
         }
         if(url.pathname==='/api/run')return send(202,await launch(body,runSuite));
         if(url.pathname==='/api/preview')return send(200,await preview(body));
-        if(url.pathname==='/api/product/preview')return send(200,productPayload(body.input));
+        if(url.pathname==='/api/product/preview')return send(200,cmsProductPreview(body.input));
         if(url.pathname==='/api/wizard/products')return send(200,{products:await wizardProducts(body.account??'primary')});
         if(url.pathname==='/api/wizard/choice'){
           const gate=gates.get(body.id);if(!gate)throw new Error('Brak aktywnego etapu zamówienia.');

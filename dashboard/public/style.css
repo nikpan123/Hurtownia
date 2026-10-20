@@ -246,3 +246,76 @@ html[data-theme=dark] .qa-app #toast{background:#293b55;color:#edf4ff;border-col
 
 html[data-theme=dark] .qa-app :is(.field>span,header p,.test-scope,.suite-card ul,.launch-options summary){color:var(--qa-muted)}
 html[data-theme=dark] .qa-app .suite-categories button span{background:#2b3c50;color:#c9d6e8}
+/* Katalog scenariuszy: powierzchnie i stany interakcji w ciemnym motywie. */
+html[data-theme=dark] .qa-warehouse :is(.scenario-summary>div,.scenario-item,.scenario-launch){background:var(--qa-surface);border-color:var(--qa-line);color:var(--qa-ink)}
+html[data-theme=dark] .qa-warehouse .scenario-summary strong{color:var(--qa-ink)}
+html[data-theme=dark] .qa-warehouse :is(.scenario-summary span,.scenario-item small,.scenario-index #scenario-count,.scenario-launch>p,.scenario-launch-option p){color:var(--qa-muted)}
+html[data-theme=dark] .qa-warehouse :is(.scenario-item:hover,.scenario-item:focus-visible){background:var(--qa-elevated);color:var(--qa-ink)}
+html[data-theme=dark] .qa-warehouse .scenario-item.selected{background:var(--qa-soft);border-color:var(--qa-accent);color:var(--qa-ink)}
+html[data-theme=dark] .qa-warehouse .scenario-item:focus-visible{outline-color:var(--qa-accent)}
+html[data-theme=dark] .qa-warehouse .scenario-launch{background:var(--qa-elevated)}
+html[data-theme=dark] .qa-warehouse :is(.scenario-notice,.scenario-expected){background:#173a34;border-color:#315e51;color:#b3e5d3}
+html[data-theme=dark] .qa-warehouse .scenario-notice p{color:inherit}
+html[data-theme=dark] .qa-warehouse .scenario-notice.scenario-evidence-fail{background:#412631;border-color:#734251;color:#ffabb9}
+html[data-theme=dark] .qa-warehouse .scenario-automation{border-color:var(--qa-line)}
+html[data-theme=dark] .qa-warehouse :is(.scenario-tags>span:not(.scenario-priority),.scenario-priority){background:#2b3c50;color:#c9d6e8}
+html[data-theme=dark] .qa-warehouse :is(.scenario-tags,.scenario-item-meta) .scenario-priority.P0{background:#412631;color:#ffabb9}
+html[data-theme=dark] .qa-warehouse :is(.scenario-tags,.scenario-item-meta) .scenario-priority.P1{background:#3d321f;color:#f1ce87}
+html[data-theme=dark] .qa-warehouse :is(.scenario-guide summary,.scenario-automation summary){color:var(--qa-muted)}
+
+/* QA_GUIDE_START */
+.qa-guide-intro{margin:18px 0 24px;background:var(--qa-surface,#fff);border:1px solid var(--qa-line,#d5dfe7);border-radius:12px;color:var(--qa-ink,#223248)}
+.layout>.qa-guide-intro{grid-column:1/-1;margin:0}
+.qa-guide-intro summary{padding:16px 20px;cursor:pointer;font-weight:650;color:inherit}
+.qa-guide-intro-body{padding:0 20px 18px;max-width:1000px}
+.qa-guide-intro li,.qa-guide-dialog li{margin:8px 0;white-space:pre-wrap}
+.qa-guide-intro p,.qa-guide-dialog p{line-height:1.7;white-space:pre-wrap}
+.qa-guide-dialog{box-sizing:border-box;width:min(880px,94vw);max-height:90vh;overflow:auto;background:var(--qa-surface,#fff);color:var(--qa-ink,#223248);border:1px solid var(--qa-line,#d5dfe7);border-radius:16px;padding:26px}
+.qa-guide-dialog::backdrop{background:#020611b8}
+.qa-guide-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;border-bottom:1px solid var(--qa-line,#d5dfe7);padding-bottom:16px}
+.qa-guide-head h2{font-size:23px;line-height:1.4;margin:8px 0}
+.qa-guide-head small{color:var(--qa-muted,#61758c)}
+.qa-guide-dialog section{padding:10px 0;border-bottom:1px solid var(--qa-line,#d5dfe7)}
+.qa-guide-dialog h3{font-size:16px;color:inherit}
+.qa-guide-legend{display:grid;grid-template-columns:minmax(140px,190px) minmax(0,1fr);gap:10px 18px;line-height:1.6}
+.qa-guide-legend dt{font-weight:650}.qa-guide-legend dd{margin:0}
+.qa-guide-effect{padding:12px 16px;border-left:3px solid var(--qa-accent,#2563a6);background:var(--qa-soft,#eaf2fc)}
+.qa-guide-foot{padding-top:16px}.qa-guide-foot p{color:var(--qa-muted,#61758c)}
+.qa-guide-button{margin-top:8px;max-width:100%;white-space:normal;font-size:12px;padding:7px 10px;min-height:36px;display:block}
+.qa-guide-action{display:inline-flex;flex-direction:column;align-items:flex-start;vertical-align:top;max-width:100%;margin:4px 8px 4px 0}
+html[data-theme=dark] :is(.qa-guide-dialog,.qa-guide-intro){--qa-surface:#172131;--qa-ink:#e4ebf5;--qa-muted:#a6b5c9;--qa-line:#34465e;background:var(--qa-surface);color:var(--qa-ink);border-color:var(--qa-line)}
+.qa-guide-before-run{font-size:12px;line-height:1.65;color:var(--qa-muted,#61758c);max-width:850px}
+.qa-app .qa-guide-dialog :is(p,li,dt,dd){color:var(--qa-ink,#223248)}
+@media(max-width:650px){.qa-guide-dialog{padding:16px}.qa-guide-head{flex-wrap:wrap}.qa-guide-legend{grid-template-columns:1fr;gap:5px}.qa-guide-legend dd{margin-bottom:12px}.qa-guide-intro summary{padding:14px}}
+
+/* QA_GUIDE_END */
+
+/* Log pozostaje pod ręką podczas przechodzenia między widokami. */
+.run-dock-controls{display:none}
+.qa-app .run-panel.run-docked{position:fixed;left:16px;bottom:16px;z-index:80;width:min(680px,calc(100vw - 32px));max-height:60vh;overflow:auto;margin:0;padding:16px;border:1px solid var(--qa-line);border-radius:12px;background:var(--qa-surface,#fff);box-shadow:0 12px 40px #0004}
+.run-docked .section-title{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.run-docked .section-title h2{font-size:16px;margin:0;margin-right:auto}
+.run-docked .section-title{cursor:grab;touch-action:none;user-select:none}
+.run-docked.is-dragging .section-title{cursor:grabbing}
+.run-docked .section-title button{cursor:pointer;touch-action:manipulation}
+.run-docked .section-title h2:focus-visible{outline:2px solid var(--qa-accent);outline-offset:4px}
+.run-docked .run-dock-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;font-size:11px;color:var(--qa-muted)}
+.run-dock-controls button{font-size:11px;padding:5px 9px;min-height:30px}
+.run-docked #job-log{height:220px;max-height:30vh;margin:10px 0;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.run-docked #job-heading{display:flex;flex-wrap:wrap;gap:7px;font-size:11px}
+.run-docked #job-heading strong{min-width:0;overflow-wrap:anywhere}
+.run-panel.run-docked.is-minimized{width:min(430px,calc(100vw - 32px))}
+.run-docked.is-minimized #job-content{display:none}
+.run-docked.is-minimized .section-title{margin-bottom:0}
+@media(max-width:650px){.qa-app .run-panel.run-docked{left:8px;bottom:8px;width:calc(100vw - 16px);max-height:55vh;padding:12px}.run-docked #job-log{height:160px;max-height:25vh}}
+
+/* Opcje podglądu przebiegu przeglądarkowego. */
+.qa-app .browser-preview-options{display:grid;grid-template-columns:minmax(240px,1fr) minmax(250px,320px);gap:12px 24px;align-items:center;padding:18px 20px;margin:0 0 16px;border:1px solid var(--line);border-radius:10px;background:var(--qa-surface,#fff)}
+.qa-app .browser-preview-options .browser-preview-toggle{display:flex;align-items:center;gap:10px;margin:0;font-size:14px;font-weight:600;color:var(--ink)}
+.qa-app .browser-preview-options input[type=checkbox]{width:20px;height:20px;min-width:20px;flex:none;margin:0;padding:0}
+.qa-app .browser-preview-options .browser-preview-tempo{display:grid;gap:5px;margin:0;font-size:12px;color:var(--muted)}
+.qa-app .browser-preview-options select{width:100%;min-width:0;margin:0;font-size:13px}
+.qa-app .browser-preview-options small{grid-column:1/-1;line-height:1.6;font-size:12px;color:var(--muted)}
+@media(max-width:760px){.qa-app .browser-preview-options{grid-template-columns:1fr}}
+
+#product-feedback{overflow-wrap:anywhere}#product-feedback.product-form-error{color:#db695b;font-weight:600}#product-form [aria-invalid="true"]{border-color:#db695b;outline:1px solid #db695b}

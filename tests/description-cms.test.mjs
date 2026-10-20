@@ -8,8 +8,10 @@ const empty={name:'',slug:'',description:'',shortDescription:''};
 const original={indices:{WHOLESALE:'0',EMPIK:'1'},main:{name:'Główna nazwa',slug:'qa-main',description:'',shortDescription:'Główny krótki'},channels:{WHOLESALE:{...empty},EMPIK:{...empty}}};
 const config={environment:'dev',enabled:true,baseUrl:'http://127.0.0.1:12345/api/v2'};
 async function harness({mutateApi=false,external=false,abort=false,shuffle=false,serverError=false}={}){
-  const root=await mkdtemp(path.join(os.tmpdir(),'hurt-cms-'));let state=structuredClone(original),writes=0;const controller=new AbortController();
-  const adapter={read:async()=>structuredClone(state),submit:async candidate=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),'hurt-cms-'));let state=structuredClone(original),writes=0,fresh,identicalWrites=0;const controller=new AbortController();
+  const adapter={read:async()=>fresh=structuredClone(state),submit:async(candidate,current)=>{
+    assert.equal(current,fresh,'Zapis i kontrola obcych zmian muszą korzystać z tego samego świeżego formularza');
+    if(JSON.stringify(candidate.channels)===JSON.stringify(state.channels))identicalWrites++;
     writes++;if(candidate.channels.WHOLESALE.name.length===1||candidate.channels.WHOLESALE.slug.length>255||['qa-peer','qa-main'].includes(candidate.channels.WHOLESALE.slug))return {status:200,hasErrors:true};
     state=structuredClone(candidate);if(shuffle)state.indices={WHOLESALE:String(writes%2),EMPIK:String(1-writes%2)};if(abort&&writes===1)controller.abort();return {status:serverError&&writes===1?500:302};
   },close:async()=>{}};
@@ -19,11 +21,12 @@ async function harness({mutateApi=false,external=false,abort=false,shuffle=false
     if(mutateApi)result.name='Błąd API';if(external)state.main.name='Zmiana zewnętrzna';return Response.json(result);
   };
   const result=await runDescriptionCms(config,{email:'qa@example.invalid',password:'private',testsToken:'private-tests'},{allowLocal:true,settings,adapter,fetchImpl,directory:path.join(root,'report'),journalFile:path.join(root,'journal.json'),signal:controller.signal});
-  return {...result,state,writes,root};
+  return {...result,state,writes,identicalWrites,root};
 }
 test('CMS wykonuje zapis, fallback pól, obie granice i kolizje; przywraca oryginał',async()=>{
   const r=await harness();assert.equal(r.report.status,'PASS',JSON.stringify(r.report.tests.filter(t=>t.status==='FAIL')));assert.deepEqual(r.state,original);
   assert(r.writes>15);assert.equal(r.report.tests.filter(t=>t.scenarioIds?.includes('DESC-004')).length,5);
+  assert.equal(r.identicalWrites,0,'Nie zapisujemy ponownie niezmienionego wzorca');assert.equal(r.report.preparation.skippedIdenticalWrites,2);
   for(const id of ['DESC-001','DESC-003','DESC-004','DESC-005','DESC-006','DESC-007','DESC-008','DESC-009'])assert(r.report.tests.some(t=>t.scenarioIds?.includes(id)&&t.status==='PASS'));
   assert.equal(JSON.parse(await readFile(path.join(r.directory,'description-cms-audit.json'))).status,'restored');await assert.rejects(access(path.join(r.root,'journal.json')));
 });

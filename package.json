@@ -14,6 +14,10 @@
     "prices": "node api-tests/features-run.mjs --suite rounding",
     "descriptions": "node api-tests/features-run.mjs --suite descriptions",
     "descriptions:cms": "node api-tests/description-cms-run.mjs",
+    "descriptions:web": "node api-tests/description-web-run.mjs",
+    "descriptions:retail-summary": "node api-tests/description-retail-summary-run.mjs",
+    "descriptions:retail-documents": "node api-tests/description-retail-documents-run.mjs --complete",
+    "descriptions:documents": "node api-tests/description-documents-run.mjs --complete",
     "descriptions:restore": "node api-tests/description-cms-run.mjs --restore",
     "setup": "node api-tests/setup.mjs",
     "regression": "node api-tests/order-regression-run.mjs",
@@ -22,7 +26,15 @@
     "database": "node api-tests/database-run.mjs",
     "reports:refresh": "node api-tests/refresh-reports.mjs",
     "redmine:37162": "node api-tests/redmine-37162-run.mjs",
-    "redmine:36926": "node api-tests/redmine-36926-run.mjs"
+    "redmine:36926": "node api-tests/redmine-36926-run.mjs",
+    "addresses:restore": "node api-tests/address-defaults-restore.mjs",
+    "descriptions:mail": "node api-tests/description-mail-recheck-run.mjs",
+    "descriptions:new-product": "node api-tests/description-new-product-run.mjs",
+    "descriptions:retail-cart": "node api-tests/description-retail-cart-run.mjs",
+    "descriptions:stock": "node api-tests/description-stock-run.mjs",
+    "descriptions:stock:restore": "node api-tests/description-stock-run.mjs --restore",
+    "descriptions:all": "node api-tests/description-all-run.mjs",
+    "descriptions:all:complete": "node api-tests/description-all-run.mjs --complete"
   },
   "engines": {
     "node": ">=22"

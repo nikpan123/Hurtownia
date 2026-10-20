@@ -1,3 +1,5 @@
+import {installBrowserPresentation} from './browser-presentation.mjs';
+import {browserLaunchOptions} from './browser-options.mjs';
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir,unlink} from 'node:fs/promises';
 import path from 'node:path';
@@ -21,9 +23,9 @@ export function richText(value){
 const plain=value=>value.replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').trim();
 export async function connectDescriptionCms({settings,vars=process.env,sessionFile='.auth/dev.json'}){
   validateDescriptionCmsSettings(settings);
-  const {chromium}=await import('playwright');const browser=await chromium.launch({channel:vars.BROWSER_CHANNEL??'msedge',headless:true});
+  const {chromium}=await import('playwright');const browser=await chromium.launch(browserLaunchOptions(vars));
   try{
-    const context=await browser.newContext({storageState:JSON.parse(await readFile(sessionFile,'utf8'))});const page=await context.newPage();page.setDefaultTimeout(20000);
+    const context=await browser.newContext({storageState:JSON.parse(await readFile(sessionFile,'utf8'))});const presentation=await installBrowserPresentation(context,{vars});const page=await context.newPage();page.setDefaultTimeout(20000);
     const url=origin+'/products/'+settings.productId+'/edit';
     await page.goto(url);
     assert.equal(new URL(page.url()).origin,origin,'Odśwież sesję GitLab przez Zaloguj-dev.cmd');
@@ -32,8 +34,11 @@ export async function connectDescriptionCms({settings,vars=process.env,sessionFi
       await page.locator('input[name="_username"]').fill(vars.SYLIUS_ADMIN_EMAIL);await page.locator('input[name="_password"]').fill(vars.SYLIUS_ADMIN_PASSWORD);
       await Promise.all([page.waitForURL(u=>u.pathname!=='/login'),page.locator('button[type="submit"]').click()]);
     }
+    let initialPageReady=page.url()===url,prepared;
     const read=async()=>{
-      await page.goto(url);assert.equal(new URL(page.url()).href,url,'CMS przekierował poza formularz produktu');
+      prepared=undefined;
+      if(!initialPageReady)await page.goto(url);initialPageReady=false;
+      assert.equal(new URL(page.url()).href,url,'CMS przekierował poza formularz produktu');
       assert.equal(await page.locator('#sylius_product_code').inputValue(),settings.code,'Niewłaściwy produkt QA');
       assert.equal(await page.locator('input[name="sylius_product[channels][]"][value="EMPIK"]').isChecked(),false,'Produkt QA nie może być włączony do sprzedaży w EMPIK podczas zmian opisów');
       const state=await page.locator('#sylius_product_code').evaluate(e=>{
@@ -50,21 +55,29 @@ export async function connectDescriptionCms({settings,vars=process.env,sessionFi
         return {main,channels,indices};
       });
       for(const value of [state.main,...Object.values(state.channels)])for(const key of fields)assert.equal(typeof value[key],'string','Brak pola '+key);
-      return state;
-    };
-    const submit=async(candidate)=>{
-      const current=await read();
-      assert.deepEqual(Object.keys(current.channels).sort(),Object.keys(candidate.channels).sort(),'Zmieniła się lista kanałów');
       const form=await page.locator('#sylius_product_code').evaluate(e=>({action:e.form.action,entries:[...new FormData(e.form).entries()].filter(([,v])=>typeof v==='string')}));
       assert.equal(form.action,url,'Nieoczekiwany adres formularza');
+      prepared={state,form};
+      await presentation.inspect(page,page.locator('#sylius_product_code'),'Odczyt zapisanych pól produktu QA');
+      return state;
+    };
+    const submit=async(candidate,current)=>{
+      current??=await read();
+      assert(prepared?.state===current,'Formularz nie pochodzi z ostatniego odczytu CMS lub został już wykorzystany');
+      assert.equal(page.url(),url,'Formularz CMS zmienił adres po odczycie');
+      assert.deepEqual(Object.keys(current.channels).sort(),Object.keys(candidate.channels).sort(),'Zmieniła się lista kanałów');
+      const {form}=prepared;prepared=undefined;
       const body=new URLSearchParams(form.entries);
       for(const [channel,values]of Object.entries(candidate.channels))for(const key of fields)body.set('sylius_product[channelTranslations]['+current.indices[channel]+']['+key+']',values[key]);
+      await presentation.form(page,body,'Zmiana opisów kanałowych — zapis HTTP');
       const response=await context.request.post(url,{data:body.toString(),headers:{'content-type':'application/x-www-form-urlencoded',referer:url,origin},maxRedirects:0});
       const status=response.status();const html=await response.text();
       const location=response.headers().location;if(location)assert.equal(new URL(location,url).origin,origin,'Zapis przekierował poza CMS');
       const messages=[...html.matchAll(/<(?:div|span|li|p)[^>]*class=["'][^"']*(?:error|negative|red pointing)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|span|li|p)>/gi)].map(m=>plain(m[1])).filter(Boolean).slice(0,8);
       const errorTitle=status>=500?plain(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]??'').slice(0,800):undefined;
-      return {status,hasErrors:/class=["'][^"']*(?:error|negative)/i.test(html),messages,...(errorTitle?{errorTitle}:{})};
+      const hasErrors=/class=["'][^"']*(?:error|negative)/i.test(html);
+      await presentation.result(page,status,status>=500?'Błąd serwera — szczegóły w raporcie.':hasErrors?'CMS odrzucił dane i zwrócił formularz z błędami walidacji. Test sprawdzi, czy takiego odrzucenia oczekiwano.':'Odpowiedź zapisu odebrana. Test potwierdzi dane ponownym odczytem CMS.');
+      return {status,hasErrors,messages,...(errorTitle?{errorTitle}:{})};
     };
     return {read,submit,screenshot:file=>page.screenshot({path:file}),close:()=>browser.close()};
   }catch(e){await browser.close();throw e;}
@@ -77,6 +90,7 @@ export async function runDescriptionCms(config,credentials,options={}){
   report.reference={productId:settings.productId,code:settings.code,peerWholesaleSlug:settings.peerWholesaleSlug};
   const journalFile=options.journalFile??path.resolve('.auth/description-cms-restore.json');await mkdir(path.dirname(journalFile),{recursive:true});
   let adapter,original,last,owns=false,journal,unsafe=false,writeBlocked=false;
+  report.preparation={skippedIdenticalWrites:0};
   const test=async(name,fn,ids)=>{
     if(unsafe||writeBlocked){c.skip(name,'Nie wykonano po błędzie zapisu CMS lub nieoczekiwanej zmianie danych. Nie ponawiamy zapisu testowego.',ids,'dependency');return false;}
     return c.test(name,fn,ids);
@@ -89,15 +103,17 @@ export async function runDescriptionCms(config,credentials,options={}){
     catch(e){if(e.code==='EEXIST')throw new Error('Istnieje dziennik niedokończonego testu CMS. Poczekaj na zakończenie albo użyj npm run descriptions:restore przed kolejnym zapisem.');throw e;}
     const attempt=async(candidate)=>{
       options.signal?.throwIfAborted();assert(!unsafe,'Dalszy zapis zablokowany po nieoczekiwanej zmianie produktu');
-      if(!sameState(await adapter.read(),last)){unsafe=true;throw new Error('Produkt QA zmieniono poza testem');}
+      const current=await adapter.read();
+      if(!sameState(current,last)){unsafe=true;throw new Error('Produkt QA zmieniono poza testem');}
       journal.allowed=[original,last,candidate];await writeFile(journalFile,JSON.stringify(journal,null,2));
-      const result=await adapter.submit(candidate);if(result.status>=500)writeBlocked=true;report.requests.push({method:'POST',endpoint:'/products/'+settings.productId+'/edit',status:result.status});
+      const result=await adapter.submit(candidate,current);if(result.status>=500)writeBlocked=true;report.requests.push({method:'POST',endpoint:'/products/'+settings.productId+'/edit',status:result.status});
       last=await adapter.read();if(!journal.allowed.some(s=>sameState(s,last))){unsafe=true;throw new Error('CMS zapisał nieoczekiwany stan. Dziennik pozostaje do uzgodnienia.');}return result;
     };
     const apply=async(candidate)=>{const result=await attempt(candidate);assert([302,303].includes(result.status),'Zapis CMS: '+JSON.stringify(result));assert(sameState(last,candidate),'Odczyt CMS po zapisie różni się od danych wysłanych');};
     const seed='qa-desc-'+crypto.randomUUID().slice(0,8),base=structuredClone(original);
     base.channels.WHOLESALE={name:'QA nazwa '+seed,slug:seed,description:JSON.stringify([{code:'monsieurbiz.html',data:{content:'<p>Pełny opis '+seed+'</p>'}}]),shortDescription:'Krótki opis '+seed};
     base.channels.EMPIK={name:'QA Empik '+seed,slug:seed+'-empik',description:JSON.stringify([{code:'monsieurbiz.html',data:{content:'<p>Opis Empik '+seed+'</p>'}}]),shortDescription:'Krótki Empik '+seed};
+    const prepareBase=async()=>{if(sameState(last,base)){report.preparation.skippedIdenticalWrites++;return;}await apply(base);};
     const apiCheck=async(state)=>{
       for(const channel of ['WHOLESALE','RETAIL','ACADEMY']){
         const values=Object.fromEntries(fields.map(key=>[key,channel==='WHOLESALE'?(state.channels.WHOLESALE[key]||state.main[key]):state.main[key]]));
@@ -110,10 +126,10 @@ export async function runDescriptionCms(config,credentials,options={}){
     await test('DESC-001: formularz zawiera cztery pola wyłącznie WHOLESALE/EMPIK',()=>assert.deepEqual(Object.keys(original.channels).sort(),['EMPIK','WHOLESALE']),['DESC-001']);
     await test('DESC-003: zapis czterech pól, ponowny odczyt CMS i API trzech kanałów',async()=>{await apply(base);await apiCheck(base);},['DESC-003']);
     for(const keys of [...fields.map(key=>[key]),fields])await test('DESC-004: puste '+keys.join(', ')+' — fallback CMS → API',async()=>{
-      await apply(base);const candidate=structuredClone(base);for(const key of keys)candidate.channels.WHOLESALE[key]='';await apply(candidate);await apiCheck(candidate);
+      await prepareBase();const candidate=structuredClone(base);for(const key of keys)candidate.channels.WHOLESALE[key]='';await apply(candidate);await apiCheck(candidate);
     },['DESC-004']);
     const reject=async(change)=>{
-      await apply(base);const candidate=structuredClone(base);Object.assign(candidate.channels.WHOLESALE,change);const result=await attempt(candidate);
+      await prepareBase();const candidate=structuredClone(base);Object.assign(candidate.channels.WHOLESALE,change);const result=await attempt(candidate);
       assert.equal(result.status,200,'Oczekiwano formularza z błędem walidacji');assert(result.hasErrors,'Brak komunikatu błędu formularza');assert(sameState(last,base),'Błędne dane zostały zapisane');
     };
     await test('DESC-005: odrzucenie slugu innego produktu WHOLESALE',()=>reject({slug:settings.peerWholesaleSlug}),['DESC-005']);
@@ -129,7 +145,7 @@ export async function runDescriptionCms(config,credentials,options={}){
       options.onProgress?.('CMS: przywracanie pierwotnych opisów produktu QA');
       const current=await adapter.read();assert(journal.allowed.some(s=>sameState(s,current)),'Wykryto zmianę zewnętrzną — dziennik zachowany, nie nadpisano danych');
       let restoreStatus=null;
-      if(!sameState(current,original)){const response=await adapter.submit(original);restoreStatus=response.status;report.requests.push({method:'POST',endpoint:'/products/'+settings.productId+'/edit',status:restoreStatus});}
+      if(!sameState(current,original)){const response=await adapter.submit(original,current);restoreStatus=response.status;report.requests.push({method:'POST',endpoint:'/products/'+settings.productId+'/edit',status:restoreStatus});}
       assert(sameState(await adapter.read(),original),'Przywrócenie niepotwierdzone');
       journal.status='restored';journal.restoredAt=new Date().toISOString();await mkdir(c.directory,{recursive:true});
       await writeFile(path.join(c.directory,'description-cms-audit.json'),JSON.stringify(journal,null,2));
@@ -140,6 +156,7 @@ export async function runDescriptionCms(config,credentials,options={}){
     }catch(e){report.restorationFailed=true;report.restoration={status:'FAIL',journalFile};report.tests.push({name:'CMS: przywrócenie pierwotnych pól kanałowych',status:'FAIL',detail:api.clean(e.message)+' Dziennik: '+journalFile});}
     if(adapter)await adapter.close();
   }
+  if(report.preparation.skippedIdenticalWrites)report.scopeNote+=' Pominięto '+report.preparation.skippedIdenticalWrites+' ponowne zapisy identycznego wzorca przygotowawczego. Każdy rzeczywisty zapis nadal ma świeżą kontrolę stanu i odczyt po operacji.';
   return c.finish();
 }
 
@@ -148,7 +165,7 @@ export async function restoreDescriptionCms(options={}){
   const adapter=options.adapter??await connectDescriptionCms({...options,settings:journal.settings});
   try{
     const current=await adapter.read();assert(journal.allowed.some(s=>sameState(s,current)),'Produkt zmieniono poza testem — uzgodnij ręcznie dane przed przywracaniem');
-    if(!sameState(current,journal.original)){const response=await adapter.submit(journal.original);assert([302,303].includes(response.status),'Nieudany zapis przywracania: '+JSON.stringify(response));}
+    if(!sameState(current,journal.original)){const response=await adapter.submit(journal.original,current);assert([302,303].includes(response.status),'Nieudany zapis przywracania: '+JSON.stringify(response));}
     assert(sameState(await adapter.read(),journal.original),'Nie potwierdzono przywrócenia');await unlink(file);
   }finally{await adapter.close();}
 }

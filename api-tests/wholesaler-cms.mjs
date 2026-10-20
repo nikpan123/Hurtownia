@@ -1,3 +1,5 @@
+import {installBrowserPresentation} from './browser-presentation.mjs';
+import {browserLaunchOptions} from './browser-options.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {validateCustomEmail} from '../dashboard/custom-user.mjs';
@@ -14,10 +16,10 @@ export function parseRebateFields(fields,id){
 }
 export async function readWholesalerRebates(email,{vars=process.env,sessionFile='.auth/dev.json',signal}={}){
   validateCustomEmail(email);const {chromium}=await import('playwright');let browser;
-  try{browser=await chromium.launch({channel:vars.BROWSER_CHANNEL??'msedge',headless:true});}catch(error){throw cmsBrowserLaunchError(error);}
+  try{browser=await chromium.launch(browserLaunchOptions(vars));}catch(error){throw cmsBrowserLaunchError(error);}
   const abort=()=>{browser.close().catch(()=>{});};signal?.addEventListener('abort',abort,{once:true});
   try{
-    signal?.throwIfAborted();const context=await browser.newContext({storageState:JSON.parse(await readFile(sessionFile,'utf8'))}),page=await context.newPage();page.setDefaultTimeout(20000);
+    signal?.throwIfAborted();const context=await browser.newContext({storageState:JSON.parse(await readFile(sessionFile,'utf8'))});const presentation=await installBrowserPresentation(context,{vars});const page=await context.newPage();page.setDefaultTimeout(20000);
     const list=base+'/wholesale/admin/wholesaler';await page.goto(list);
     assert.equal(new URL(page.url()).hostname,new URL(base).hostname,'Odśwież sesję GitLab.');
     if(new URL(page.url()).pathname==='/login'){
@@ -30,6 +32,7 @@ export async function readWholesalerRebates(email,{vars=process.env,sessionFile=
     const uid=await page.locator('table').evaluateAll(tables=>{for(const t of tables){const headers=Array.from(t.querySelectorAll('thead th')).map(e=>e.textContent.trim().toLowerCase()),index=headers.indexOf('uid');if(index>=0)return t.querySelector('tbody tr')?.querySelectorAll('td')[index]?.textContent.trim();}return null;});
     assert(typeof uid==='string'&&/^\d+$/.test(uid),'Nie odczytano poprawnego UID hurtownika z CMS.');
     const rebateLink=page.getByRole('link',{name:'Rabaty',exact:true});const href=await rebateLink.getAttribute('href');assert.equal(href,'/wholesale/admin/wholesaler/'+id+'/wholesaler-promotions','Nieoczekiwany adres rabatów.');await rebateLink.click();
+    await presentation.inspect(page,page.locator('input[id^="promotions_promotionList_wholesaler_"]').first(),'Odczytuję rabaty wybranego hurtownika — bez zapisu');
     const fields=await page.locator('input[id^="promotions_promotionList_wholesaler_"]').evaluateAll(inputs=>inputs.map(e=>({id:e.id,value:e.value})));
     return {id,uid,rebates:parseRebateFields(fields,id),source:'Sylius CMS — odczyt rabatów po dokładnym dopasowaniu e-maila',readAt:new Date().toISOString()};
   }finally{signal?.removeEventListener('abort',abort);await browser.close();}

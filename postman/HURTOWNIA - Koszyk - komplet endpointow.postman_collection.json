@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "1a7a4648-9ec9-4910-8bb7-175403fb257f",
+    "_postman_id": "2efb37d5-b6ce-4c02-9a88-482f71d69d55",
     "name": "HURTOWNIA — Koszyk — komplet endpointów i opisane testy",
     "description": "Kolekcja koszyka WHOLESALE na DEV, przygotowana na podstawie endpointów używanych w engine.mjs, order-regression.mjs i redmine-36926.mjs. Zastępuje starszą kolekcję „Koszyk - testy automatyczne”. Nie jest pełną kopią wszystkich scenariuszy regresji panelu.\n\n## Start\n1. W Variables uzupełnij lokalnie hurtownia_email, hurtownia_api_password i tests_token. Pozostałe hasła, JWT i dane sesji w dostarczonym pliku są puste. Zachowano nazwy podstawowych zmiennych z poprzedniej kolekcji.\n2. Zapewnij działającą sesję bramki GitLab w Postmanie. HTML lub przekierowanie zamiast JSON przerywa przebieg; samo zalogowanie w innej przeglądarce nie gwarantuje dostępu Postmana.\n3. Uruchom folder 01 od pierwszego żądania, jedną iteracją, bez automatycznego śledzenia przekierowań. Domyślnie tworzy i modyfikuje koszyk, ale nie finalizuje zamówienia.\n4. Do finalizacji ustaw enable_complete=true i uruchom cały folder 01. Complete jest wykonywane tylko raz na danym koszyku; po niepewnej odpowiedzi sprawdź zapis, nie ponawiaj PATCH. Dokumenty PDF pobierane są tylko po potwierdzonym zapisie, z hosta DEV.\n5. Pozostałe foldery wymagają wcześniejszego poprawnego logowania w 01 oraz jawnego włączenia odpowiedniej flagi. Flagi są opisane przy folderach. Nie uruchamiaj wielu Runnerów równolegle, bo runtime Variables są współdzielone.\n\n## Dane\nproduct_pool_json zawiera warianty (nie zawsze kody handlowe), z grupami adamada/pozostale. Wyłączony produkt nie jest losowany. Cały koszyk ma jedną grupę. Wylosowany plan zapisuje cartProductPlan; ilości i suma są sprawdzane niezależnym GET. Pula jest konfigurowalnym wzorcem — aktualną sprzedaż produktu potwierdza API.\nPłatność i dostawa są losowane wyłącznie z bieżących ofert koszyka; preferred_payment_code i preferred_shipping_code wymuszają dostępną metodę. Brak preferowanej metody jest błędem, nie cichym zastąpieniem.\nexpected_rebates_json to niezależne rabaty danego konta, np. {\"cash_on_delivery\":50,\"adamada\":10}; domyślnie {}. Brak wzorca daje pominięcie tej konkretnej kontroli, nie potwierdzenie rabatu. Kwoty API są w groszach. Jednostkowe netto i suma netto nie są porównywane przez odgadywanie reguł zaokrąglania.\ncarrierName jest wysyłany w shippingAddress. Użytkownik potwierdził 19.10.2026 jego zapis i prezentację w „Uwagi” w Syliusie w ręcznym przebiegu. Kolekcja sprawdza notes, jeśli GET je udostępnia; w przeciwnym razie pokazuje pominięcie odczytu i wskazówkę ręcznej kontroli. Nie oznacza to, że przewoźnik nie został zapisany.\n\n## Wyniki i zakres\nW Test Results są statusy, kontrola planu i kwot; przy GET koszyka Visualize pokazuje podsumowanie. Nazwy zawierają odniesienia do scenariuszy katalogu. Negatywne próby #36926 używają osobnych koszyków. HTTP 500 nie jest poprawną walidacją. Odmowa 403/404 w izolacji wymaga też niezmienionego stanu właściciela.\nKolekcja obejmuje wszystkie metody/ścieżki koszyka, adresów i dokumentów używane w tych testach; katalog produktów jest dodatkiem. Nie obejmuje admin API tworzenia produktów, zmian konfiguracji CMS, SQL/phpMyAdmin, kontroli e-maili ani treści PDF. Zmiana adresów domyślnych nie jest wykonywana.\nKońcowy zapis i negatywne żądania mogą uruchomić skutki w środowisku DEV; używaj dedykowanych kont. Wyeksportowana kolekcja po wykonaniu może zawierać runtime JWT i tokeny koszyków — do udostępniania używaj czystego pliku dostarczonego tutaj.\n\nZachowanie skipRequest: https://learning.postman.com/v11/docs/tests-and-scripts/write-scripts/postman-sandbox-reference/pm-execution",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -265,7 +265,7 @@
       "description": "Uruchom od 01.01. Domyślnie bez finalizacji; zapis wymaga enable_complete=true. Główna ścieżka zakupowa i dokumenty.",
       "item": [
         {
-          "id": "2d8d147f-4a0b-499e-82d0-e7ddf6c782e8",
+          "id": "0a3c7793-d8bc-4510-a2f6-8821259b95cf",
           "name": "01.01 — logowanie hurtownika A [AUTH-001]",
           "request": {
             "method": "POST",
@@ -337,7 +337,7 @@
           "response": []
         },
         {
-          "id": "743f4b40-e97a-4334-935a-769221111575",
+          "id": "7590d170-34d5-4da4-bef4-478677c5c120",
           "name": "01.02 — utworzenie koszyka",
           "request": {
             "method": "POST",
@@ -416,7 +416,7 @@
           "response": []
         },
         {
-          "id": "92ad3049-62aa-46f3-b285-8f00d7176fcf",
+          "id": "084e62ad-7de9-4a7c-8f6d-f12e38a575e7",
           "name": "01.03 — losowanie i dodanie produktów [CART-002/003/009]",
           "request": {
             "method": "POST",
@@ -498,7 +498,7 @@
           "response": []
         },
         {
-          "id": "48f215ea-5e08-49be-ac33-13523097135d",
+          "id": "7a1f0428-2bec-46ad-bf73-7ecbee992f7c",
           "name": "01.04 — odczyt i weryfikacja planu",
           "request": {
             "method": "GET",
@@ -565,7 +565,7 @@
           "response": []
         },
         {
-          "id": "b3e83c5e-c1a8-4076-bd9f-8113347c74b6",
+          "id": "bd745a46-8171-4761-9bbf-91fbe6a3d209",
           "name": "01.05 — edycja ilości [CART-005]",
           "request": {
             "method": "PATCH",
@@ -647,7 +647,7 @@
           "response": []
         },
         {
-          "id": "ed219dce-397b-437d-b71d-71a2959b188d",
+          "id": "199cdd3c-5c75-4790-9bfb-28842ba906c2",
           "name": "01.06 — kontrola zapisanej ilości",
           "request": {
             "method": "GET",
@@ -714,7 +714,7 @@
           "response": []
         },
         {
-          "id": "4b0ce431-f9b4-4d82-a898-8228fae56f9b",
+          "id": "2adfe5d9-e05d-4c2f-ba9f-37a9be085e9d",
           "name": "01.07 — dostępne płatności [PAY-001]",
           "request": {
             "method": "GET",
@@ -782,7 +782,7 @@
           "response": []
         },
         {
-          "id": "3b67957f-02c9-4dee-a178-47b29c10e156",
+          "id": "fad40dbc-a7fe-4d28-b973-5fc968d5d4da",
           "name": "01.08 — wybór płatności [PAY-002/003]",
           "request": {
             "method": "PATCH",
@@ -863,7 +863,7 @@
           "response": []
         },
         {
-          "id": "aebccd91-a25d-44ec-9c7f-bb22a14117ca",
+          "id": "63ad91d0-748b-4cd7-b043-3b3cf48864a9",
           "name": "01.09 — rabaty i kwoty po płatności",
           "request": {
             "method": "GET",
@@ -930,7 +930,7 @@
           "response": []
         },
         {
-          "id": "65ec7739-ea29-4ca7-a2d6-c2e1bcd19c0b",
+          "id": "5840fa30-7f7c-40e0-9575-e5502dde4f66",
           "name": "01.10 — dostępne dostawy [SHIP-001]",
           "request": {
             "method": "GET",
@@ -997,7 +997,7 @@
           "response": []
         },
         {
-          "id": "ad3675b3-dde4-4028-919c-2a42b3328936",
+          "id": "3c1a8bbf-2e08-43e0-bffc-2e51a2705e2c",
           "name": "01.11 — zapis dostawy i adresów [SHIP-002]",
           "request": {
             "method": "POST",
@@ -1066,7 +1066,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "(()=>{const h=(function helpers(pm){\n const c=pm.collectionVariables;\n const get=(key)=>c.get(key),set=(key,value)=>c.set(key,typeof value==='object'?JSON.stringify(value):String(value));\n const json=key=>{try{return JSON.parse(get(key));}catch{throw Error('Niepoprawny JSON zmiennej '+key);}};\n const need=(...keys)=>{for(const key of keys)if(!get(key))throw Error('Brak '+key+' — wykonaj wcześniejsze kroki lub uzupełnij Variables.');};\n const assert=(ok,message)=>{if(!ok)throw Error(message);};\n const check=(name,fn)=>pm.test(name,()=>{try{fn();}catch(error){set('collectionBlocked',true);pm.execution.setNextRequest(null);throw error;}});\n const data=()=>{const type=(pm.response.headers.get('Content-Type')||'').toLowerCase();assert(!type.includes('text/html')&&!(pm.response.code>=300&&pm.response.code<400),'Odpowiedź bramki GitLab. Odśwież sesję w Postmanie.');try{return pm.response.text().trim()?pm.response.json():null;}catch{throw Error('API nie zwróciło poprawnego JSON.');}};\n const status=(codes)=>pm.test('HTTP '+codes.join('/'),()=>assert(codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code));\n const ok=(codes=[200])=>{status(codes);assert(codes.includes(pm.response.code),'Przerwano po HTTP '+pm.response.code);return data();};\n const current=(kind='main')=>get(kind==='main'?'tokenValue':'workToken');\n const items=(o)=>{assert(o&&Array.isArray(o.items),'Brak items w odczycie koszyka');return o.items;};\n const normalized=o=>{\n  const address=a=>a&&typeof a==='object'?Object.fromEntries(Object.entries(a).filter(([k])=>!['@id','@type','id','createdAt','updatedAt'].includes(k)).sort(([a],[b])=>a.localeCompare(b))):a;\n  return {id:o.id,number:o.number,state:o.state,itemsTotal:o.itemsTotal,total:o.total,totalNet:o.totalNet,shippingTotal:o.shippingTotal,shippingTotalNet:o.shippingTotalNet,shipmentPackageQuantity:o.shipmentPackageQuantity,orderPromotionTotal:o.orderPromotionTotal,payment:o.payments?.[0]?.method?.code??o.payments?.[0]?.method,shipping:o.shipments?.[0]?.method?.code??o.shipments?.[0]?.method,shippingAddress:address(o.shippingAddress),billingAddress:address(o.billingAddress),items:items(o).map(i=>({id:i.id,code:i.product?.code,quantity:i.quantity,unitPrice:i.unitPrice,originalUnitPrice:i.originalUnitPrice,unitPriceNet:i.unitPriceNet,discountedUnitPriceNet:i.discountedUnitPriceNet,discountedUnitPrice:i.discountedUnitPrice,rebatePercent:i.rebatePercent,total:i.total,net:i.totalNetSalesAfterDiscount})).sort((a,b)=>String(a.id).localeCompare(String(b.id)))};\n };\n const unchanged=(before,after,label='Koszyk nie zmienił się')=>check(label,()=>assert(JSON.stringify(before)===JSON.stringify(after),label+' — wykryto zmianę stanu'));\n const saveOrder=(o,kind='main')=>{\n  items(o);assert(o.tokenValue===current(kind),'Odczytano inny token koszyka');\n  check('Sumy produktów i dostawy są spójne',()=>{for(const k of ['itemsTotal','total','shippingTotal'])assert(Number.isSafeInteger(o[k])&&o[k]>=0,'Nieprawidłowe '+k);assert(o.itemsTotal===o.items.reduce((s,i)=>s+i.total,0),'Suma pozycji różni się od itemsTotal');assert(o.total===o.itemsTotal+o.shippingTotal,'total różni się od produktów + dostawy');});\n  if(kind==='main'){\n   const first=o.items[0];if(first)set('itemId',first.id);set('ownerBaseline',normalized(o));\n   for(const k of ['itemsTotal','shippingTotal','total','shippingTotalNet','shipmentPackageQuantity'])if(o[k]!==undefined)set(k==='total'?'orderTotal':k,o[k]);\n   if(o.number)set('orderNumber',o.number);\n   for(const k of ['pdfSummary','paymentForm'])if(typeof o[k]==='string')set(k,o[k]);\n   const rows=o.items.map(i=>({code:i.product?.code,name:i.productName||i.product?.name||'',quantity:i.quantity,rebate:i.rebatePercent,gross:i.total,net:i.totalNetSalesAfterDiscount}));\n   pm.visualizer.set('<h2>Podsumowanie koszyka {{id}}</h2><p>Kwoty w groszach. Produkty: {{itemsTotal}}, dostawa: {{shippingTotal}}, do zapłaty: {{total}}.</p><table><tr><th>Kod</th><th>Produkt</th><th>Szt.</th><th>Rabat %</th><th>Brutto</th><th>Netto</th></tr>{{#each rows}}<tr><td>{{code}}</td><td>{{name}}</td><td>{{quantity}}</td><td>{{rebate}}</td><td>{{gross}}</td><td>{{net}}</td></tr>{{/each}}</table>',{id:o.id,itemsTotal:o.itemsTotal,shippingTotal:o.shippingTotal,total:o.total,rows});\n  }\n  return o;\n };\n const addresses=(marker='')=>{\n  const shipping=json('shipping_address_json'),billing=json('billing_address_json');\n  for(const a of [shipping,billing]){a.saveToAddressBook=false;a.isDefault=false;}\n  if(marker){shipping.company=marker+'-S';billing.company=marker+'-B';}\n  return {shippingAddress:shipping,billingAddress:billing};\n };\n const body=value=>pm.variables.set('requestBody',JSON.stringify(value));\n const shippingList=d=>{const x=d?.shippingMethods;const rows=Array.isArray(x)?x:x?.['hydra:member']??x?.member;assert(Array.isArray(rows)&&rows.length,'Brak dostępnych dostaw');return rows;};\n const choose=(rows,preferred)=>{assert(Array.isArray(rows)&&rows.length,'Brak dostępnych metod');const found=preferred?rows.find(r=>r.code===preferred):rows[Math.floor(Math.random()*rows.length)];assert(found,'Preferowana metoda nie jest aktualnie dostępna');return found;};\n return {c,get,set,json,need,assert,check,data,status,ok,current,items,normalized,unchanged,saveOrder,addresses,body,shippingList,choose};\n})(pm);if(h.get('collectionBlocked')==='true'){pm.execution.setNextRequest(null);return;}\n  \n  try{\n  ((pm,h)=>{const d=h.ok([201]);if(h.get('require_empty_checkout_body')==='true')h.check('Zgodnie z #36926 body jest całkowicie puste',()=>h.assert(d===null,'API zwróciło '+JSON.stringify(d)+' zamiast pustego body'));})(pm,h,undefined);\n  }catch(e){h.set('collectionBlocked',true);pm.execution.setNextRequest(null);throw e;}})();"
+                  "(()=>{const h=(function helpers(pm){\n const c=pm.collectionVariables;\n const get=(key)=>c.get(key),set=(key,value)=>c.set(key,typeof value==='object'?JSON.stringify(value):String(value));\n const json=key=>{try{return JSON.parse(get(key));}catch{throw Error('Niepoprawny JSON zmiennej '+key);}};\n const need=(...keys)=>{for(const key of keys)if(!get(key))throw Error('Brak '+key+' — wykonaj wcześniejsze kroki lub uzupełnij Variables.');};\n const assert=(ok,message)=>{if(!ok)throw Error(message);};\n const check=(name,fn)=>pm.test(name,()=>{try{fn();}catch(error){set('collectionBlocked',true);pm.execution.setNextRequest(null);throw error;}});\n const data=()=>{const type=(pm.response.headers.get('Content-Type')||'').toLowerCase();assert(!type.includes('text/html')&&!(pm.response.code>=300&&pm.response.code<400),'Odpowiedź bramki GitLab. Odśwież sesję w Postmanie.');try{return pm.response.text().trim()?pm.response.json():null;}catch{throw Error('API nie zwróciło poprawnego JSON.');}};\n const status=(codes)=>pm.test('HTTP '+codes.join('/'),()=>assert(codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code));\n const ok=(codes=[200])=>{status(codes);assert(codes.includes(pm.response.code),'Przerwano po HTTP '+pm.response.code);return data();};\n const current=(kind='main')=>get(kind==='main'?'tokenValue':'workToken');\n const items=(o)=>{assert(o&&Array.isArray(o.items),'Brak items w odczycie koszyka');return o.items;};\n const normalized=o=>{\n  const address=a=>a&&typeof a==='object'?Object.fromEntries(Object.entries(a).filter(([k])=>!['@id','@type','id','createdAt','updatedAt'].includes(k)).sort(([a],[b])=>a.localeCompare(b))):a;\n  return {id:o.id,number:o.number,state:o.state,itemsTotal:o.itemsTotal,total:o.total,totalNet:o.totalNet,shippingTotal:o.shippingTotal,shippingTotalNet:o.shippingTotalNet,shipmentPackageQuantity:o.shipmentPackageQuantity,orderPromotionTotal:o.orderPromotionTotal,payment:o.payments?.[0]?.method?.code??o.payments?.[0]?.method,shipping:o.shipments?.[0]?.method?.code??o.shipments?.[0]?.method,shippingAddress:address(o.shippingAddress),billingAddress:address(o.billingAddress),items:items(o).map(i=>({id:i.id,code:i.product?.code,quantity:i.quantity,unitPrice:i.unitPrice,originalUnitPrice:i.originalUnitPrice,unitPriceNet:i.unitPriceNet,discountedUnitPriceNet:i.discountedUnitPriceNet,discountedUnitPrice:i.discountedUnitPrice,rebatePercent:i.rebatePercent,total:i.total,net:i.totalNetSalesAfterDiscount})).sort((a,b)=>String(a.id).localeCompare(String(b.id)))};\n };\n const unchanged=(before,after,label='Koszyk nie zmienił się')=>check(label,()=>assert(JSON.stringify(before)===JSON.stringify(after),label+' — wykryto zmianę stanu'));\n const saveOrder=(o,kind='main')=>{\n  items(o);assert(o.tokenValue===current(kind),'Odczytano inny token koszyka');\n  check('Sumy produktów i dostawy są spójne',()=>{for(const k of ['itemsTotal','total','shippingTotal'])assert(Number.isSafeInteger(o[k])&&o[k]>=0,'Nieprawidłowe '+k);assert(o.itemsTotal===o.items.reduce((s,i)=>s+i.total,0),'Suma pozycji różni się od itemsTotal');assert(o.total===o.itemsTotal+o.shippingTotal,'total różni się od produktów + dostawy');});\n  if(kind==='main'){\n   const first=o.items[0];if(first)set('itemId',first.id);set('ownerBaseline',normalized(o));\n   for(const k of ['itemsTotal','shippingTotal','total','shippingTotalNet','shipmentPackageQuantity'])if(o[k]!==undefined)set(k==='total'?'orderTotal':k,o[k]);\n   if(o.number)set('orderNumber',o.number);\n   for(const k of ['pdfSummary','paymentForm'])if(typeof o[k]==='string')set(k,o[k]);\n   const rows=o.items.map(i=>({code:i.product?.code,name:i.productName||i.product?.name||'',quantity:i.quantity,rebate:i.rebatePercent,gross:i.total,net:i.totalNetSalesAfterDiscount}));\n   pm.visualizer.set('<h2>Podsumowanie koszyka {{id}}</h2><p>Kwoty w groszach. Produkty: {{itemsTotal}}, dostawa: {{shippingTotal}}, do zapłaty: {{total}}.</p><table><tr><th>Kod</th><th>Produkt</th><th>Szt.</th><th>Rabat %</th><th>Brutto</th><th>Netto</th></tr>{{#each rows}}<tr><td>{{code}}</td><td>{{name}}</td><td>{{quantity}}</td><td>{{rebate}}</td><td>{{gross}}</td><td>{{net}}</td></tr>{{/each}}</table>',{id:o.id,itemsTotal:o.itemsTotal,shippingTotal:o.shippingTotal,total:o.total,rows});\n  }\n  return o;\n };\n const addresses=(marker='')=>{\n  const shipping=json('shipping_address_json'),billing=json('billing_address_json');\n  for(const a of [shipping,billing]){a.saveToAddressBook=false;a.isDefault=false;}\n  if(marker){shipping.company=marker+'-S';billing.company=marker+'-B';}\n  return {shippingAddress:shipping,billingAddress:billing};\n };\n const body=value=>pm.variables.set('requestBody',JSON.stringify(value));\n const shippingList=d=>{const x=d?.shippingMethods;const rows=Array.isArray(x)?x:x?.['hydra:member']??x?.member;assert(Array.isArray(rows)&&rows.length,'Brak dostępnych dostaw');return rows;};\n const choose=(rows,preferred)=>{assert(Array.isArray(rows)&&rows.length,'Brak dostępnych metod');const found=preferred?rows.find(r=>r.code===preferred):rows[Math.floor(Math.random()*rows.length)];assert(found,'Preferowana metoda nie jest aktualnie dostępna');return found;};\n return {c,get,set,json,need,assert,check,data,status,ok,current,items,normalized,unchanged,saveOrder,addresses,body,shippingList,choose};\n})(pm);if(h.get('collectionBlocked')==='true'){pm.execution.setNextRequest(null);return;}\n  \n  try{\n  ((pm,h)=>{h.ok([204]);if(h.get('require_empty_checkout_body')==='true')h.check('Zgodnie z #36926 body jest całkowicie puste',()=>h.assert(pm.response.text()==='', 'API zwróciło treść zamiast pustego body'));})(pm,h,undefined);\n  }catch(e){h.set('collectionBlocked',true);pm.execution.setNextRequest(null);throw e;}})();"
                 ]
               }
             }
@@ -1077,7 +1077,7 @@
           "response": []
         },
         {
-          "id": "4f382db8-aa7a-47d4-8d7c-179eb80c8d8b",
+          "id": "b4516194-00b9-4c0d-80be-078ef4fcf0db",
           "name": "01.12 — podsumowanie i paczki [PACK/REPORT]",
           "request": {
             "method": "GET",
@@ -1144,7 +1144,7 @@
           "response": []
         },
         {
-          "id": "8f0a0a05-cdfe-4e95-bc73-c181dd414d95",
+          "id": "a1465cf2-58a5-433b-9364-1041fc276b07",
           "name": "01.13 — ZAPIS zamówienia [ORD-001]",
           "request": {
             "method": "PATCH",
@@ -1225,7 +1225,7 @@
           "response": []
         },
         {
-          "id": "6855e2ca-5dd5-4446-89f7-5226caf151cf",
+          "id": "68efec04-f6fa-40a2-be6a-1e15240788f4",
           "name": "01.14 — odczyt po zapisie",
           "request": {
             "method": "GET",
@@ -1292,7 +1292,7 @@
           "response": []
         },
         {
-          "id": "19c28fd6-77f5-48c7-b234-dc3e6eb1ead8",
+          "id": "4b24dcac-00ff-4ada-ba4b-4d3458316850",
           "name": "01.15 — PDF pdfSummary [ORD-005]",
           "request": {
             "method": "GET",
@@ -1349,7 +1349,7 @@
           "response": []
         },
         {
-          "id": "a28b33c3-9195-4ac5-b12a-90635604dce2",
+          "id": "b2df97ec-10b9-4517-adc1-d2558954a994",
           "name": "01.16 — PDF paymentForm [ORD-005]",
           "request": {
             "method": "GET",
@@ -1406,7 +1406,7 @@
           "response": []
         },
         {
-          "id": "00be77c1-8605-4b99-9414-2d4d05e64105",
+          "id": "4db407df-c7aa-4960-8dea-8a6919ad73ed",
           "name": "01.17 — druga jawna próba complete [ORD-004]",
           "request": {
             "method": "PATCH",
@@ -1487,7 +1487,7 @@
           "response": []
         },
         {
-          "id": "5a4950f9-a93a-44c2-a7a5-595b33005666",
+          "id": "c42062ef-4ca3-4eda-8ea6-14495fcda7ce",
           "name": "01.18 — kontrola po drugim complete",
           "request": {
             "method": "GET",
@@ -1560,7 +1560,7 @@
       "description": "Włącz run_mutations=true. Osobny koszyk; nie zmienia głównego zamówienia.",
       "item": [
         {
-          "id": "c3386275-1d58-40bb-956a-92e24c451882",
+          "id": "6a0a1ad4-2c03-4c4e-a66b-520e13d1f656",
           "name": "02.01 — osobny koszyk edycji",
           "request": {
             "method": "POST",
@@ -1639,7 +1639,7 @@
           "response": []
         },
         {
-          "id": "8e446841-733e-4390-99d6-65e61991edf0",
+          "id": "d356762b-cbc5-43f0-ac32-b3e275fa22cd",
           "name": "02.02 — pierwsze dodanie",
           "request": {
             "method": "POST",
@@ -1721,7 +1721,7 @@
           "response": []
         },
         {
-          "id": "697f1844-b4cd-46c6-9379-5d1aaff28a3b",
+          "id": "815fed42-db95-4dd4-80eb-22813b2b716b",
           "name": "02.03 — ponowne dodanie tego samego wariantu",
           "request": {
             "method": "POST",
@@ -1803,7 +1803,7 @@
           "response": []
         },
         {
-          "id": "75efcac2-5331-4c52-9ad5-65e421f58f34",
+          "id": "6ec46948-2563-446a-b516-64b9f5d715b9",
           "name": "02.04 — kontrola sumowania ilości",
           "request": {
             "method": "GET",
@@ -1870,7 +1870,7 @@
           "response": []
         },
         {
-          "id": "d2260c70-cbf1-4ddb-be4a-0e5e6dab8805",
+          "id": "9a8b992a-26d1-466a-9eb3-6d96da0f7c46",
           "name": "02.05 — usunięcie pozycji [CART-006]",
           "request": {
             "method": "DELETE",
@@ -1939,7 +1939,7 @@
           "response": []
         },
         {
-          "id": "30d68a95-2558-458d-bcfe-ee4899c634a0",
+          "id": "a57c12a7-4f5e-4902-a03c-f3e492b5b959",
           "name": "02.06 — kontrola usunięcia i pustego koszyka",
           "request": {
             "method": "GET",
@@ -2012,7 +2012,7 @@
       "description": "Włącz run_auth_tests=true. Wymaga wcześniejszego folderu 01. Jedna błędna próba logowania, sześć nieautoryzowanych odczytów, porównanie stanu.",
       "item": [
         {
-          "id": "157763dc-483e-4b4e-ad15-0f20b7be8443",
+          "id": "9e31d3d8-1c14-4c90-b182-0fd783540bea",
           "name": "03.01 — błędne hasło [AUTH-002]",
           "request": {
             "method": "POST",
@@ -2084,7 +2084,7 @@
           "response": []
         },
         {
-          "id": "2db2f765-598f-4aa9-ad10-fe78311fa533",
+          "id": "d1d3b522-3937-413b-8131-0819bad33fa1",
           "name": "03.02 — stan właściciela przed próbą JWT",
           "request": {
             "method": "GET",
@@ -2151,7 +2151,7 @@
           "response": []
         },
         {
-          "id": "6eebf4c9-88eb-43c2-a4b1-6ab6e9ebf759",
+          "id": "992e7e9b-2705-44c0-a476-b0a4ffd25ab0",
           "name": "03 — koszyk bez JWT [AUTH-003]",
           "request": {
             "method": "GET",
@@ -2211,7 +2211,7 @@
           "response": []
         },
         {
-          "id": "62bc6b1e-6d1b-47a4-968f-ac5e5f8943dd",
+          "id": "d125a5b5-1810-4944-b8a9-ba9d09f4a808",
           "name": "03 — koszyk z błędnym JWT [AUTH-003]",
           "request": {
             "method": "GET",
@@ -2271,7 +2271,7 @@
           "response": []
         },
         {
-          "id": "cff606dc-fe4d-4c2f-8d2c-22ea4fe6be80",
+          "id": "7e56ae02-faf5-4111-addc-cd8b7a243b00",
           "name": "03 — płatności bez JWT [AUTH-003]",
           "request": {
             "method": "GET",
@@ -2332,7 +2332,7 @@
           "response": []
         },
         {
-          "id": "ad69f20e-0d09-4521-92b4-b0b58577e4dd",
+          "id": "1109a7f6-af2b-41fb-815f-7e2edd3267da",
           "name": "03 — płatności z błędnym JWT [AUTH-003]",
           "request": {
             "method": "GET",
@@ -2393,7 +2393,7 @@
           "response": []
         },
         {
-          "id": "5435f49f-cc57-460f-b976-30c75eafc7fc",
+          "id": "ae891fa3-5131-4bc8-a7d5-88812c5da89c",
           "name": "03 — dostawy bez JWT [AUTH-003]",
           "request": {
             "method": "GET",
@@ -2453,7 +2453,7 @@
           "response": []
         },
         {
-          "id": "96995e53-afda-49fe-8b6a-11533bed185e",
+          "id": "ba301655-d4c8-4492-8477-1ac0071af60c",
           "name": "03 — dostawy z błędnym JWT [AUTH-003]",
           "request": {
             "method": "GET",
@@ -2513,7 +2513,7 @@
           "response": []
         },
         {
-          "id": "538b47e0-bcec-446d-bf99-fad676a7c170",
+          "id": "7c211f3b-538b-4f74-afe7-b50e36ddd2fd",
           "name": "03.09 — stan właściciela po próbach JWT",
           "request": {
             "method": "GET",
@@ -2590,7 +2590,7 @@
           "description": "run_address_validation=true. Nowy koszyk dla każdego wariantu; bez complete.",
           "item": [
             {
-              "id": "6de223b9-c9e3-4a93-b090-0f5389397958",
+              "id": "38c1db97-ed29-4e76-9c0a-896c77599f64",
               "name": "04.1a — nowy koszyk próby",
               "request": {
                 "method": "POST",
@@ -2669,7 +2669,7 @@
               "response": []
             },
             {
-              "id": "d27f9ce1-1f0a-4267-b3f4-4d7e869e3c50",
+              "id": "a43212cd-8034-4daf-8ebd-04a689a7728b",
               "name": "04.1b — produkt próby",
               "request": {
                 "method": "POST",
@@ -2751,7 +2751,7 @@
               "response": []
             },
             {
-              "id": "fc2b9466-1543-4054-85fa-18f177a07f24",
+              "id": "0fe139f8-d918-4d78-acbd-df7f5eb4f404",
               "name": "04.1c — płatności próby",
               "request": {
                 "method": "GET",
@@ -2819,7 +2819,7 @@
               "response": []
             },
             {
-              "id": "7491e5c0-44d4-4b9b-963c-b4229690ba4f",
+              "id": "7cb10f48-7dcd-4767-b57d-784d2c01a4c3",
               "name": "04.1d — wybór płatności próby",
               "request": {
                 "method": "PATCH",
@@ -2900,7 +2900,7 @@
               "response": []
             },
             {
-              "id": "721da858-7cee-4740-b421-d38a2981e825",
+              "id": "c48d7f75-680e-46eb-866b-24462c12b6b0",
               "name": "04.1e — dostawy próby",
               "request": {
                 "method": "GET",
@@ -2967,7 +2967,7 @@
               "response": []
             },
             {
-              "id": "b564728b-838e-4b96-aa98-22bde2c2c64f",
+              "id": "4f41fcc0-ecc0-4fac-8a9b-ccdeeaee8992",
               "name": "04.1f — stan przed próbą",
               "request": {
                 "method": "GET",
@@ -3034,7 +3034,7 @@
               "response": []
             },
             {
-              "id": "5a1dfe41-1777-4688-ab15-4ef753c19fa8",
+              "id": "002899e2-1db9-4574-b39b-1fc7a497d1f2",
               "name": "04.1g — negatywne POST checkout-step-two",
               "request": {
                 "method": "POST",
@@ -3114,7 +3114,7 @@
               "response": []
             },
             {
-              "id": "f496f800-f53e-42c4-94aa-c411094099f8",
+              "id": "a5a38514-f971-4c89-93f7-461dc67c9df3",
               "name": "04.1h — stan po odrzuceniu",
               "request": {
                 "method": "GET",
@@ -3187,7 +3187,7 @@
           "description": "run_address_validation=true. Nowy koszyk dla każdego wariantu; bez complete.",
           "item": [
             {
-              "id": "f086520f-aacc-444c-87ae-c70a20529f10",
+              "id": "106c1a58-4b5a-436f-b808-066cf9b13ce6",
               "name": "04.2a — nowy koszyk próby",
               "request": {
                 "method": "POST",
@@ -3266,7 +3266,7 @@
               "response": []
             },
             {
-              "id": "b7c4340d-4dca-465f-84f5-dff131494c29",
+              "id": "8e18cfaa-69d1-4b7f-9d65-1982094a577d",
               "name": "04.2b — produkt próby",
               "request": {
                 "method": "POST",
@@ -3348,7 +3348,7 @@
               "response": []
             },
             {
-              "id": "3495de0c-ab27-412a-9966-72e24fe6f3bd",
+              "id": "bfd634a8-219f-4513-98ed-592a61e1fa24",
               "name": "04.2c — płatności próby",
               "request": {
                 "method": "GET",
@@ -3416,7 +3416,7 @@
               "response": []
             },
             {
-              "id": "cb6f876a-3696-45ea-a777-f8d9ec6f4a92",
+              "id": "4cb1098e-6596-4d93-8a98-8e2d1283b02b",
               "name": "04.2d — wybór płatności próby",
               "request": {
                 "method": "PATCH",
@@ -3497,7 +3497,7 @@
               "response": []
             },
             {
-              "id": "12c0ba55-8402-4fc8-82b2-653f9db761e2",
+              "id": "ffd5f4b3-f393-4d30-b8fb-5039e6341e99",
               "name": "04.2e — dostawy próby",
               "request": {
                 "method": "GET",
@@ -3564,7 +3564,7 @@
               "response": []
             },
             {
-              "id": "bcfe56b3-efdb-47ac-98db-292122a36d1a",
+              "id": "550dd100-e9f0-4e79-a881-8b8fd53edcb3",
               "name": "04.2f — stan przed próbą",
               "request": {
                 "method": "GET",
@@ -3631,7 +3631,7 @@
               "response": []
             },
             {
-              "id": "63c45331-6f53-4310-845a-8aa2659c7309",
+              "id": "d35d3f84-a5f7-4901-8f7a-fbe5ad690b72",
               "name": "04.2g — negatywne POST checkout-step-two",
               "request": {
                 "method": "POST",
@@ -3711,7 +3711,7 @@
               "response": []
             },
             {
-              "id": "9e213afc-5e76-454c-81a0-e4569a0b1dc6",
+              "id": "5e6040c4-451e-48eb-a9de-815029a995f4",
               "name": "04.2h — stan po odrzuceniu",
               "request": {
                 "method": "GET",
@@ -3784,7 +3784,7 @@
           "description": "run_address_validation=true. Nowy koszyk dla każdego wariantu; bez complete.",
           "item": [
             {
-              "id": "f76b63d5-00d0-4884-b801-86780d6d1f37",
+              "id": "1c2de693-084a-4787-9c2f-12b6428c8536",
               "name": "04.3a — nowy koszyk próby",
               "request": {
                 "method": "POST",
@@ -3863,7 +3863,7 @@
               "response": []
             },
             {
-              "id": "440d71e2-9a07-47e9-942d-ae5d4f866005",
+              "id": "c1fd44a7-8528-451c-bc64-937a0f59b048",
               "name": "04.3b — produkt próby",
               "request": {
                 "method": "POST",
@@ -3945,7 +3945,7 @@
               "response": []
             },
             {
-              "id": "4191beb8-cf67-4b72-996b-be895eafd9bf",
+              "id": "ee83b442-b649-41e2-b1d4-b29aa6178e76",
               "name": "04.3c — płatności próby",
               "request": {
                 "method": "GET",
@@ -4013,7 +4013,7 @@
               "response": []
             },
             {
-              "id": "85d93c66-f52b-424a-bd97-f5acc74faf96",
+              "id": "f2b1c6b1-7c43-4ab8-9725-5cff956cc101",
               "name": "04.3d — wybór płatności próby",
               "request": {
                 "method": "PATCH",
@@ -4094,7 +4094,7 @@
               "response": []
             },
             {
-              "id": "db98c6b3-cb94-4beb-bf8c-323469d5f8ac",
+              "id": "6edc62e7-e33d-4356-8d7f-5278239e357a",
               "name": "04.3e — dostawy próby",
               "request": {
                 "method": "GET",
@@ -4161,7 +4161,7 @@
               "response": []
             },
             {
-              "id": "91d9aa1c-74a7-4b5a-a383-0852c48ae24f",
+              "id": "42423e60-865e-48fd-bff6-0acbe21fe221",
               "name": "04.3f — stan przed próbą",
               "request": {
                 "method": "GET",
@@ -4228,7 +4228,7 @@
               "response": []
             },
             {
-              "id": "1c9c25d4-4d99-4b83-9968-16aca50fba5d",
+              "id": "67bbfe48-1b54-4d3d-ad9b-6e1f83c96a16",
               "name": "04.3g — negatywne POST checkout-step-two",
               "request": {
                 "method": "POST",
@@ -4308,7 +4308,7 @@
               "response": []
             },
             {
-              "id": "5154a75a-4603-4aba-acc7-ba835fe47d50",
+              "id": "123e7d84-aff6-4e71-9a3c-bca2dcde966e",
               "name": "04.3h — stan po odrzuceniu",
               "request": {
                 "method": "GET",
@@ -4383,7 +4383,7 @@
       "description": "Włącz run_isolation=true i wpisz hurtownia_email_b. Jeden wariant obcej operacji, nie pełna macierz regresji izolacji panelu.",
       "item": [
         {
-          "id": "d3b142bf-82cd-420f-8c27-a78c0713cfbd",
+          "id": "20a6305e-b19d-4207-8677-0bc2c6b2ee19",
           "name": "05.01 — logowanie obcego konta B",
           "request": {
             "method": "POST",
@@ -4455,7 +4455,7 @@
           "response": []
         },
         {
-          "id": "a81edecb-95d5-4bf8-bc0e-3b582b9c44f3",
+          "id": "e92f49b6-92e1-4a26-a4ac-3b4ce5d2863b",
           "name": "05.02a — nowy koszyk próby",
           "request": {
             "method": "POST",
@@ -4534,7 +4534,7 @@
           "response": []
         },
         {
-          "id": "f3c48004-11c1-45ba-a0ee-667815bcfafb",
+          "id": "a7cef57c-0f8c-490e-99fa-2c31e6a0a026",
           "name": "05.02b — produkt próby",
           "request": {
             "method": "POST",
@@ -4616,7 +4616,7 @@
           "response": []
         },
         {
-          "id": "0bec3e64-06e2-45ac-8073-85872f4fc3e5",
+          "id": "277b1469-c9de-4317-96ec-386317590b2e",
           "name": "05.02c — płatności próby",
           "request": {
             "method": "GET",
@@ -4684,7 +4684,7 @@
           "response": []
         },
         {
-          "id": "4b5054f4-5b1a-4975-9371-cbe1257ce280",
+          "id": "ed76e841-bc07-40fe-8213-256c2c7824c2",
           "name": "05.02d — wybór płatności próby",
           "request": {
             "method": "PATCH",
@@ -4765,7 +4765,7 @@
           "response": []
         },
         {
-          "id": "76ab9fad-29c4-40bf-b557-b0da841fadf1",
+          "id": "ea836a93-0c5e-4115-a601-1736049a0415",
           "name": "05.02e — dostawy próby",
           "request": {
             "method": "GET",
@@ -4832,7 +4832,7 @@
           "response": []
         },
         {
-          "id": "f8ccb2ab-518a-4ab2-b011-309e4da2ddc5",
+          "id": "50a45ab8-00f4-4898-986d-5297c19def7d",
           "name": "05.03 — adresy właściciela A",
           "request": {
             "method": "POST",
@@ -4901,7 +4901,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "(()=>{const h=(function helpers(pm){\n const c=pm.collectionVariables;\n const get=(key)=>c.get(key),set=(key,value)=>c.set(key,typeof value==='object'?JSON.stringify(value):String(value));\n const json=key=>{try{return JSON.parse(get(key));}catch{throw Error('Niepoprawny JSON zmiennej '+key);}};\n const need=(...keys)=>{for(const key of keys)if(!get(key))throw Error('Brak '+key+' — wykonaj wcześniejsze kroki lub uzupełnij Variables.');};\n const assert=(ok,message)=>{if(!ok)throw Error(message);};\n const check=(name,fn)=>pm.test(name,()=>{try{fn();}catch(error){set('collectionBlocked',true);pm.execution.setNextRequest(null);throw error;}});\n const data=()=>{const type=(pm.response.headers.get('Content-Type')||'').toLowerCase();assert(!type.includes('text/html')&&!(pm.response.code>=300&&pm.response.code<400),'Odpowiedź bramki GitLab. Odśwież sesję w Postmanie.');try{return pm.response.text().trim()?pm.response.json():null;}catch{throw Error('API nie zwróciło poprawnego JSON.');}};\n const status=(codes)=>pm.test('HTTP '+codes.join('/'),()=>assert(codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code));\n const ok=(codes=[200])=>{status(codes);assert(codes.includes(pm.response.code),'Przerwano po HTTP '+pm.response.code);return data();};\n const current=(kind='main')=>get(kind==='main'?'tokenValue':'workToken');\n const items=(o)=>{assert(o&&Array.isArray(o.items),'Brak items w odczycie koszyka');return o.items;};\n const normalized=o=>{\n  const address=a=>a&&typeof a==='object'?Object.fromEntries(Object.entries(a).filter(([k])=>!['@id','@type','id','createdAt','updatedAt'].includes(k)).sort(([a],[b])=>a.localeCompare(b))):a;\n  return {id:o.id,number:o.number,state:o.state,itemsTotal:o.itemsTotal,total:o.total,totalNet:o.totalNet,shippingTotal:o.shippingTotal,shippingTotalNet:o.shippingTotalNet,shipmentPackageQuantity:o.shipmentPackageQuantity,orderPromotionTotal:o.orderPromotionTotal,payment:o.payments?.[0]?.method?.code??o.payments?.[0]?.method,shipping:o.shipments?.[0]?.method?.code??o.shipments?.[0]?.method,shippingAddress:address(o.shippingAddress),billingAddress:address(o.billingAddress),items:items(o).map(i=>({id:i.id,code:i.product?.code,quantity:i.quantity,unitPrice:i.unitPrice,originalUnitPrice:i.originalUnitPrice,unitPriceNet:i.unitPriceNet,discountedUnitPriceNet:i.discountedUnitPriceNet,discountedUnitPrice:i.discountedUnitPrice,rebatePercent:i.rebatePercent,total:i.total,net:i.totalNetSalesAfterDiscount})).sort((a,b)=>String(a.id).localeCompare(String(b.id)))};\n };\n const unchanged=(before,after,label='Koszyk nie zmienił się')=>check(label,()=>assert(JSON.stringify(before)===JSON.stringify(after),label+' — wykryto zmianę stanu'));\n const saveOrder=(o,kind='main')=>{\n  items(o);assert(o.tokenValue===current(kind),'Odczytano inny token koszyka');\n  check('Sumy produktów i dostawy są spójne',()=>{for(const k of ['itemsTotal','total','shippingTotal'])assert(Number.isSafeInteger(o[k])&&o[k]>=0,'Nieprawidłowe '+k);assert(o.itemsTotal===o.items.reduce((s,i)=>s+i.total,0),'Suma pozycji różni się od itemsTotal');assert(o.total===o.itemsTotal+o.shippingTotal,'total różni się od produktów + dostawy');});\n  if(kind==='main'){\n   const first=o.items[0];if(first)set('itemId',first.id);set('ownerBaseline',normalized(o));\n   for(const k of ['itemsTotal','shippingTotal','total','shippingTotalNet','shipmentPackageQuantity'])if(o[k]!==undefined)set(k==='total'?'orderTotal':k,o[k]);\n   if(o.number)set('orderNumber',o.number);\n   for(const k of ['pdfSummary','paymentForm'])if(typeof o[k]==='string')set(k,o[k]);\n   const rows=o.items.map(i=>({code:i.product?.code,name:i.productName||i.product?.name||'',quantity:i.quantity,rebate:i.rebatePercent,gross:i.total,net:i.totalNetSalesAfterDiscount}));\n   pm.visualizer.set('<h2>Podsumowanie koszyka {{id}}</h2><p>Kwoty w groszach. Produkty: {{itemsTotal}}, dostawa: {{shippingTotal}}, do zapłaty: {{total}}.</p><table><tr><th>Kod</th><th>Produkt</th><th>Szt.</th><th>Rabat %</th><th>Brutto</th><th>Netto</th></tr>{{#each rows}}<tr><td>{{code}}</td><td>{{name}}</td><td>{{quantity}}</td><td>{{rebate}}</td><td>{{gross}}</td><td>{{net}}</td></tr>{{/each}}</table>',{id:o.id,itemsTotal:o.itemsTotal,shippingTotal:o.shippingTotal,total:o.total,rows});\n  }\n  return o;\n };\n const addresses=(marker='')=>{\n  const shipping=json('shipping_address_json'),billing=json('billing_address_json');\n  for(const a of [shipping,billing]){a.saveToAddressBook=false;a.isDefault=false;}\n  if(marker){shipping.company=marker+'-S';billing.company=marker+'-B';}\n  return {shippingAddress:shipping,billingAddress:billing};\n };\n const body=value=>pm.variables.set('requestBody',JSON.stringify(value));\n const shippingList=d=>{const x=d?.shippingMethods;const rows=Array.isArray(x)?x:x?.['hydra:member']??x?.member;assert(Array.isArray(rows)&&rows.length,'Brak dostępnych dostaw');return rows;};\n const choose=(rows,preferred)=>{assert(Array.isArray(rows)&&rows.length,'Brak dostępnych metod');const found=preferred?rows.find(r=>r.code===preferred):rows[Math.floor(Math.random()*rows.length)];assert(found,'Preferowana metoda nie jest aktualnie dostępna');return found;};\n return {c,get,set,json,need,assert,check,data,status,ok,current,items,normalized,unchanged,saveOrder,addresses,body,shippingList,choose};\n})(pm);if(h.get('collectionBlocked')==='true'){pm.execution.setNextRequest(null);return;}\n  if(!(h.get(\"run_isolation\")==='true')){return;}\n  try{\n  ((pm,h)=>h.ok([201]))(pm,h,undefined);\n  }catch(e){h.set('collectionBlocked',true);pm.execution.setNextRequest(null);throw e;}})();"
+                  "(()=>{const h=(function helpers(pm){\n const c=pm.collectionVariables;\n const get=(key)=>c.get(key),set=(key,value)=>c.set(key,typeof value==='object'?JSON.stringify(value):String(value));\n const json=key=>{try{return JSON.parse(get(key));}catch{throw Error('Niepoprawny JSON zmiennej '+key);}};\n const need=(...keys)=>{for(const key of keys)if(!get(key))throw Error('Brak '+key+' — wykonaj wcześniejsze kroki lub uzupełnij Variables.');};\n const assert=(ok,message)=>{if(!ok)throw Error(message);};\n const check=(name,fn)=>pm.test(name,()=>{try{fn();}catch(error){set('collectionBlocked',true);pm.execution.setNextRequest(null);throw error;}});\n const data=()=>{const type=(pm.response.headers.get('Content-Type')||'').toLowerCase();assert(!type.includes('text/html')&&!(pm.response.code>=300&&pm.response.code<400),'Odpowiedź bramki GitLab. Odśwież sesję w Postmanie.');try{return pm.response.text().trim()?pm.response.json():null;}catch{throw Error('API nie zwróciło poprawnego JSON.');}};\n const status=(codes)=>pm.test('HTTP '+codes.join('/'),()=>assert(codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code));\n const ok=(codes=[200])=>{status(codes);assert(codes.includes(pm.response.code),'Przerwano po HTTP '+pm.response.code);return data();};\n const current=(kind='main')=>get(kind==='main'?'tokenValue':'workToken');\n const items=(o)=>{assert(o&&Array.isArray(o.items),'Brak items w odczycie koszyka');return o.items;};\n const normalized=o=>{\n  const address=a=>a&&typeof a==='object'?Object.fromEntries(Object.entries(a).filter(([k])=>!['@id','@type','id','createdAt','updatedAt'].includes(k)).sort(([a],[b])=>a.localeCompare(b))):a;\n  return {id:o.id,number:o.number,state:o.state,itemsTotal:o.itemsTotal,total:o.total,totalNet:o.totalNet,shippingTotal:o.shippingTotal,shippingTotalNet:o.shippingTotalNet,shipmentPackageQuantity:o.shipmentPackageQuantity,orderPromotionTotal:o.orderPromotionTotal,payment:o.payments?.[0]?.method?.code??o.payments?.[0]?.method,shipping:o.shipments?.[0]?.method?.code??o.shipments?.[0]?.method,shippingAddress:address(o.shippingAddress),billingAddress:address(o.billingAddress),items:items(o).map(i=>({id:i.id,code:i.product?.code,quantity:i.quantity,unitPrice:i.unitPrice,originalUnitPrice:i.originalUnitPrice,unitPriceNet:i.unitPriceNet,discountedUnitPriceNet:i.discountedUnitPriceNet,discountedUnitPrice:i.discountedUnitPrice,rebatePercent:i.rebatePercent,total:i.total,net:i.totalNetSalesAfterDiscount})).sort((a,b)=>String(a.id).localeCompare(String(b.id)))};\n };\n const unchanged=(before,after,label='Koszyk nie zmienił się')=>check(label,()=>assert(JSON.stringify(before)===JSON.stringify(after),label+' — wykryto zmianę stanu'));\n const saveOrder=(o,kind='main')=>{\n  items(o);assert(o.tokenValue===current(kind),'Odczytano inny token koszyka');\n  check('Sumy produktów i dostawy są spójne',()=>{for(const k of ['itemsTotal','total','shippingTotal'])assert(Number.isSafeInteger(o[k])&&o[k]>=0,'Nieprawidłowe '+k);assert(o.itemsTotal===o.items.reduce((s,i)=>s+i.total,0),'Suma pozycji różni się od itemsTotal');assert(o.total===o.itemsTotal+o.shippingTotal,'total różni się od produktów + dostawy');});\n  if(kind==='main'){\n   const first=o.items[0];if(first)set('itemId',first.id);set('ownerBaseline',normalized(o));\n   for(const k of ['itemsTotal','shippingTotal','total','shippingTotalNet','shipmentPackageQuantity'])if(o[k]!==undefined)set(k==='total'?'orderTotal':k,o[k]);\n   if(o.number)set('orderNumber',o.number);\n   for(const k of ['pdfSummary','paymentForm'])if(typeof o[k]==='string')set(k,o[k]);\n   const rows=o.items.map(i=>({code:i.product?.code,name:i.productName||i.product?.name||'',quantity:i.quantity,rebate:i.rebatePercent,gross:i.total,net:i.totalNetSalesAfterDiscount}));\n   pm.visualizer.set('<h2>Podsumowanie koszyka {{id}}</h2><p>Kwoty w groszach. Produkty: {{itemsTotal}}, dostawa: {{shippingTotal}}, do zapłaty: {{total}}.</p><table><tr><th>Kod</th><th>Produkt</th><th>Szt.</th><th>Rabat %</th><th>Brutto</th><th>Netto</th></tr>{{#each rows}}<tr><td>{{code}}</td><td>{{name}}</td><td>{{quantity}}</td><td>{{rebate}}</td><td>{{gross}}</td><td>{{net}}</td></tr>{{/each}}</table>',{id:o.id,itemsTotal:o.itemsTotal,shippingTotal:o.shippingTotal,total:o.total,rows});\n  }\n  return o;\n };\n const addresses=(marker='')=>{\n  const shipping=json('shipping_address_json'),billing=json('billing_address_json');\n  for(const a of [shipping,billing]){a.saveToAddressBook=false;a.isDefault=false;}\n  if(marker){shipping.company=marker+'-S';billing.company=marker+'-B';}\n  return {shippingAddress:shipping,billingAddress:billing};\n };\n const body=value=>pm.variables.set('requestBody',JSON.stringify(value));\n const shippingList=d=>{const x=d?.shippingMethods;const rows=Array.isArray(x)?x:x?.['hydra:member']??x?.member;assert(Array.isArray(rows)&&rows.length,'Brak dostępnych dostaw');return rows;};\n const choose=(rows,preferred)=>{assert(Array.isArray(rows)&&rows.length,'Brak dostępnych metod');const found=preferred?rows.find(r=>r.code===preferred):rows[Math.floor(Math.random()*rows.length)];assert(found,'Preferowana metoda nie jest aktualnie dostępna');return found;};\n return {c,get,set,json,need,assert,check,data,status,ok,current,items,normalized,unchanged,saveOrder,addresses,body,shippingList,choose};\n})(pm);if(h.get('collectionBlocked')==='true'){pm.execution.setNextRequest(null);return;}\n  if(!(h.get(\"run_isolation\")==='true')){return;}\n  try{\n  ((pm,h)=>h.ok([204]))(pm,h,undefined);\n  }catch(e){h.set('collectionBlocked',true);pm.execution.setNextRequest(null);throw e;}})();"
                 ]
               }
             }
@@ -4912,7 +4912,7 @@
           "response": []
         },
         {
-          "id": "70030cf8-7a4f-464e-9320-652431b7452f",
+          "id": "59b9b871-fe7c-4adb-acfd-08fca246d21f",
           "name": "05.04 — stan A przed obcym żądaniem",
           "request": {
             "method": "GET",
@@ -4979,7 +4979,7 @@
           "response": []
         },
         {
-          "id": "46b55f6a-17a4-4176-9346-d358b5642f34",
+          "id": "6b4a296b-7971-4a33-ba00-f36c26db3860",
           "name": "05.05 — B odczytuje płatności koszyka A [ISO-003]",
           "request": {
             "method": "GET",
@@ -5047,7 +5047,7 @@
           "response": []
         },
         {
-          "id": "b0acca3e-34a7-4c89-bf05-8e65b7d7645f",
+          "id": "498f158e-90e3-4330-9071-970580cbb69e",
           "name": "05.06 — A odczytuje stan po obcym żądaniu",
           "request": {
             "method": "GET",
@@ -5120,7 +5120,7 @@
       "description": "Włącz run_address_book=true. Zapis i DELETE wyłącznie nowych adresów QA, bez zmiany domyślnych adresów. Nie uruchamiaj równolegle; po przerwaniu sprawdź pozostałe rekordy.",
       "item": [
         {
-          "id": "9e35cd94-9617-4aa8-badd-d954b37f5415",
+          "id": "d367af01-d733-418f-9b47-3c07cd7c53a2",
           "name": "06.01 — książka adresowa przed próbą",
           "request": {
             "method": "GET",
@@ -5196,7 +5196,7 @@
           "response": []
         },
         {
-          "id": "c79f1140-1854-4ea7-89fd-41f7291a082c",
+          "id": "e83b9f89-4ff9-47b3-ba9c-cb649639b6d1",
           "name": "06.02a — nowy koszyk próby",
           "request": {
             "method": "POST",
@@ -5275,7 +5275,7 @@
           "response": []
         },
         {
-          "id": "1b142c4b-be1e-40a7-a064-2df31e4aca82",
+          "id": "756688a6-fc07-4a7f-a95e-ffdfb38f9238",
           "name": "06.02b — produkt próby",
           "request": {
             "method": "POST",
@@ -5357,7 +5357,7 @@
           "response": []
         },
         {
-          "id": "5effcaeb-2c02-4a42-a405-9a1c2332ca6d",
+          "id": "f3cfa654-8dee-4b4b-871f-8723e1806ba5",
           "name": "06.02c — płatności próby",
           "request": {
             "method": "GET",
@@ -5425,7 +5425,7 @@
           "response": []
         },
         {
-          "id": "120349f5-75be-4ca3-bdaa-d7d353b0eeae",
+          "id": "d7a695b7-ca03-457a-a05e-9a794fee7803",
           "name": "06.02d — wybór płatności próby",
           "request": {
             "method": "PATCH",
@@ -5506,7 +5506,7 @@
           "response": []
         },
         {
-          "id": "a233d5a9-6295-481b-99a8-33a9c4e2ada9",
+          "id": "08f676df-3a70-4080-90aa-98210f4c5b7f",
           "name": "06.02e — dostawy próby",
           "request": {
             "method": "GET",
@@ -5573,7 +5573,7 @@
           "response": []
         },
         {
-          "id": "167ca1b2-f1e7-467f-a229-bfa441e61dab",
+          "id": "25f10f9b-3bda-4a19-ac6c-7232b327b02b",
           "name": "06.03 — zapis dwóch nowych adresów QA",
           "request": {
             "method": "POST",
@@ -5642,7 +5642,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "(()=>{const h=(function helpers(pm){\n const c=pm.collectionVariables;\n const get=(key)=>c.get(key),set=(key,value)=>c.set(key,typeof value==='object'?JSON.stringify(value):String(value));\n const json=key=>{try{return JSON.parse(get(key));}catch{throw Error('Niepoprawny JSON zmiennej '+key);}};\n const need=(...keys)=>{for(const key of keys)if(!get(key))throw Error('Brak '+key+' — wykonaj wcześniejsze kroki lub uzupełnij Variables.');};\n const assert=(ok,message)=>{if(!ok)throw Error(message);};\n const check=(name,fn)=>pm.test(name,()=>{try{fn();}catch(error){set('collectionBlocked',true);pm.execution.setNextRequest(null);throw error;}});\n const data=()=>{const type=(pm.response.headers.get('Content-Type')||'').toLowerCase();assert(!type.includes('text/html')&&!(pm.response.code>=300&&pm.response.code<400),'Odpowiedź bramki GitLab. Odśwież sesję w Postmanie.');try{return pm.response.text().trim()?pm.response.json():null;}catch{throw Error('API nie zwróciło poprawnego JSON.');}};\n const status=(codes)=>pm.test('HTTP '+codes.join('/'),()=>assert(codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code));\n const ok=(codes=[200])=>{status(codes);assert(codes.includes(pm.response.code),'Przerwano po HTTP '+pm.response.code);return data();};\n const current=(kind='main')=>get(kind==='main'?'tokenValue':'workToken');\n const items=(o)=>{assert(o&&Array.isArray(o.items),'Brak items w odczycie koszyka');return o.items;};\n const normalized=o=>{\n  const address=a=>a&&typeof a==='object'?Object.fromEntries(Object.entries(a).filter(([k])=>!['@id','@type','id','createdAt','updatedAt'].includes(k)).sort(([a],[b])=>a.localeCompare(b))):a;\n  return {id:o.id,number:o.number,state:o.state,itemsTotal:o.itemsTotal,total:o.total,totalNet:o.totalNet,shippingTotal:o.shippingTotal,shippingTotalNet:o.shippingTotalNet,shipmentPackageQuantity:o.shipmentPackageQuantity,orderPromotionTotal:o.orderPromotionTotal,payment:o.payments?.[0]?.method?.code??o.payments?.[0]?.method,shipping:o.shipments?.[0]?.method?.code??o.shipments?.[0]?.method,shippingAddress:address(o.shippingAddress),billingAddress:address(o.billingAddress),items:items(o).map(i=>({id:i.id,code:i.product?.code,quantity:i.quantity,unitPrice:i.unitPrice,originalUnitPrice:i.originalUnitPrice,unitPriceNet:i.unitPriceNet,discountedUnitPriceNet:i.discountedUnitPriceNet,discountedUnitPrice:i.discountedUnitPrice,rebatePercent:i.rebatePercent,total:i.total,net:i.totalNetSalesAfterDiscount})).sort((a,b)=>String(a.id).localeCompare(String(b.id)))};\n };\n const unchanged=(before,after,label='Koszyk nie zmienił się')=>check(label,()=>assert(JSON.stringify(before)===JSON.stringify(after),label+' — wykryto zmianę stanu'));\n const saveOrder=(o,kind='main')=>{\n  items(o);assert(o.tokenValue===current(kind),'Odczytano inny token koszyka');\n  check('Sumy produktów i dostawy są spójne',()=>{for(const k of ['itemsTotal','total','shippingTotal'])assert(Number.isSafeInteger(o[k])&&o[k]>=0,'Nieprawidłowe '+k);assert(o.itemsTotal===o.items.reduce((s,i)=>s+i.total,0),'Suma pozycji różni się od itemsTotal');assert(o.total===o.itemsTotal+o.shippingTotal,'total różni się od produktów + dostawy');});\n  if(kind==='main'){\n   const first=o.items[0];if(first)set('itemId',first.id);set('ownerBaseline',normalized(o));\n   for(const k of ['itemsTotal','shippingTotal','total','shippingTotalNet','shipmentPackageQuantity'])if(o[k]!==undefined)set(k==='total'?'orderTotal':k,o[k]);\n   if(o.number)set('orderNumber',o.number);\n   for(const k of ['pdfSummary','paymentForm'])if(typeof o[k]==='string')set(k,o[k]);\n   const rows=o.items.map(i=>({code:i.product?.code,name:i.productName||i.product?.name||'',quantity:i.quantity,rebate:i.rebatePercent,gross:i.total,net:i.totalNetSalesAfterDiscount}));\n   pm.visualizer.set('<h2>Podsumowanie koszyka {{id}}</h2><p>Kwoty w groszach. Produkty: {{itemsTotal}}, dostawa: {{shippingTotal}}, do zapłaty: {{total}}.</p><table><tr><th>Kod</th><th>Produkt</th><th>Szt.</th><th>Rabat %</th><th>Brutto</th><th>Netto</th></tr>{{#each rows}}<tr><td>{{code}}</td><td>{{name}}</td><td>{{quantity}}</td><td>{{rebate}}</td><td>{{gross}}</td><td>{{net}}</td></tr>{{/each}}</table>',{id:o.id,itemsTotal:o.itemsTotal,shippingTotal:o.shippingTotal,total:o.total,rows});\n  }\n  return o;\n };\n const addresses=(marker='')=>{\n  const shipping=json('shipping_address_json'),billing=json('billing_address_json');\n  for(const a of [shipping,billing]){a.saveToAddressBook=false;a.isDefault=false;}\n  if(marker){shipping.company=marker+'-S';billing.company=marker+'-B';}\n  return {shippingAddress:shipping,billingAddress:billing};\n };\n const body=value=>pm.variables.set('requestBody',JSON.stringify(value));\n const shippingList=d=>{const x=d?.shippingMethods;const rows=Array.isArray(x)?x:x?.['hydra:member']??x?.member;assert(Array.isArray(rows)&&rows.length,'Brak dostępnych dostaw');return rows;};\n const choose=(rows,preferred)=>{assert(Array.isArray(rows)&&rows.length,'Brak dostępnych metod');const found=preferred?rows.find(r=>r.code===preferred):rows[Math.floor(Math.random()*rows.length)];assert(found,'Preferowana metoda nie jest aktualnie dostępna');return found;};\n return {c,get,set,json,need,assert,check,data,status,ok,current,items,normalized,unchanged,saveOrder,addresses,body,shippingList,choose};\n})(pm);if(h.get('collectionBlocked')==='true'){pm.execution.setNextRequest(null);return;}\n  if(!(h.get(\"run_address_book\")==='true')){return;}\n  try{\n  ((pm,h)=>h.ok([201]))(pm,h,undefined);\n  }catch(e){h.set('collectionBlocked',true);pm.execution.setNextRequest(null);throw e;}})();"
+                  "(()=>{const h=(function helpers(pm){\n const c=pm.collectionVariables;\n const get=(key)=>c.get(key),set=(key,value)=>c.set(key,typeof value==='object'?JSON.stringify(value):String(value));\n const json=key=>{try{return JSON.parse(get(key));}catch{throw Error('Niepoprawny JSON zmiennej '+key);}};\n const need=(...keys)=>{for(const key of keys)if(!get(key))throw Error('Brak '+key+' — wykonaj wcześniejsze kroki lub uzupełnij Variables.');};\n const assert=(ok,message)=>{if(!ok)throw Error(message);};\n const check=(name,fn)=>pm.test(name,()=>{try{fn();}catch(error){set('collectionBlocked',true);pm.execution.setNextRequest(null);throw error;}});\n const data=()=>{const type=(pm.response.headers.get('Content-Type')||'').toLowerCase();assert(!type.includes('text/html')&&!(pm.response.code>=300&&pm.response.code<400),'Odpowiedź bramki GitLab. Odśwież sesję w Postmanie.');try{return pm.response.text().trim()?pm.response.json():null;}catch{throw Error('API nie zwróciło poprawnego JSON.');}};\n const status=(codes)=>pm.test('HTTP '+codes.join('/'),()=>assert(codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code));\n const ok=(codes=[200])=>{status(codes);assert(codes.includes(pm.response.code),'Przerwano po HTTP '+pm.response.code);return data();};\n const current=(kind='main')=>get(kind==='main'?'tokenValue':'workToken');\n const items=(o)=>{assert(o&&Array.isArray(o.items),'Brak items w odczycie koszyka');return o.items;};\n const normalized=o=>{\n  const address=a=>a&&typeof a==='object'?Object.fromEntries(Object.entries(a).filter(([k])=>!['@id','@type','id','createdAt','updatedAt'].includes(k)).sort(([a],[b])=>a.localeCompare(b))):a;\n  return {id:o.id,number:o.number,state:o.state,itemsTotal:o.itemsTotal,total:o.total,totalNet:o.totalNet,shippingTotal:o.shippingTotal,shippingTotalNet:o.shippingTotalNet,shipmentPackageQuantity:o.shipmentPackageQuantity,orderPromotionTotal:o.orderPromotionTotal,payment:o.payments?.[0]?.method?.code??o.payments?.[0]?.method,shipping:o.shipments?.[0]?.method?.code??o.shipments?.[0]?.method,shippingAddress:address(o.shippingAddress),billingAddress:address(o.billingAddress),items:items(o).map(i=>({id:i.id,code:i.product?.code,quantity:i.quantity,unitPrice:i.unitPrice,originalUnitPrice:i.originalUnitPrice,unitPriceNet:i.unitPriceNet,discountedUnitPriceNet:i.discountedUnitPriceNet,discountedUnitPrice:i.discountedUnitPrice,rebatePercent:i.rebatePercent,total:i.total,net:i.totalNetSalesAfterDiscount})).sort((a,b)=>String(a.id).localeCompare(String(b.id)))};\n };\n const unchanged=(before,after,label='Koszyk nie zmienił się')=>check(label,()=>assert(JSON.stringify(before)===JSON.stringify(after),label+' — wykryto zmianę stanu'));\n const saveOrder=(o,kind='main')=>{\n  items(o);assert(o.tokenValue===current(kind),'Odczytano inny token koszyka');\n  check('Sumy produktów i dostawy są spójne',()=>{for(const k of ['itemsTotal','total','shippingTotal'])assert(Number.isSafeInteger(o[k])&&o[k]>=0,'Nieprawidłowe '+k);assert(o.itemsTotal===o.items.reduce((s,i)=>s+i.total,0),'Suma pozycji różni się od itemsTotal');assert(o.total===o.itemsTotal+o.shippingTotal,'total różni się od produktów + dostawy');});\n  if(kind==='main'){\n   const first=o.items[0];if(first)set('itemId',first.id);set('ownerBaseline',normalized(o));\n   for(const k of ['itemsTotal','shippingTotal','total','shippingTotalNet','shipmentPackageQuantity'])if(o[k]!==undefined)set(k==='total'?'orderTotal':k,o[k]);\n   if(o.number)set('orderNumber',o.number);\n   for(const k of ['pdfSummary','paymentForm'])if(typeof o[k]==='string')set(k,o[k]);\n   const rows=o.items.map(i=>({code:i.product?.code,name:i.productName||i.product?.name||'',quantity:i.quantity,rebate:i.rebatePercent,gross:i.total,net:i.totalNetSalesAfterDiscount}));\n   pm.visualizer.set('<h2>Podsumowanie koszyka {{id}}</h2><p>Kwoty w groszach. Produkty: {{itemsTotal}}, dostawa: {{shippingTotal}}, do zapłaty: {{total}}.</p><table><tr><th>Kod</th><th>Produkt</th><th>Szt.</th><th>Rabat %</th><th>Brutto</th><th>Netto</th></tr>{{#each rows}}<tr><td>{{code}}</td><td>{{name}}</td><td>{{quantity}}</td><td>{{rebate}}</td><td>{{gross}}</td><td>{{net}}</td></tr>{{/each}}</table>',{id:o.id,itemsTotal:o.itemsTotal,shippingTotal:o.shippingTotal,total:o.total,rows});\n  }\n  return o;\n };\n const addresses=(marker='')=>{\n  const shipping=json('shipping_address_json'),billing=json('billing_address_json');\n  for(const a of [shipping,billing]){a.saveToAddressBook=false;a.isDefault=false;}\n  if(marker){shipping.company=marker+'-S';billing.company=marker+'-B';}\n  return {shippingAddress:shipping,billingAddress:billing};\n };\n const body=value=>pm.variables.set('requestBody',JSON.stringify(value));\n const shippingList=d=>{const x=d?.shippingMethods;const rows=Array.isArray(x)?x:x?.['hydra:member']??x?.member;assert(Array.isArray(rows)&&rows.length,'Brak dostępnych dostaw');return rows;};\n const choose=(rows,preferred)=>{assert(Array.isArray(rows)&&rows.length,'Brak dostępnych metod');const found=preferred?rows.find(r=>r.code===preferred):rows[Math.floor(Math.random()*rows.length)];assert(found,'Preferowana metoda nie jest aktualnie dostępna');return found;};\n return {c,get,set,json,need,assert,check,data,status,ok,current,items,normalized,unchanged,saveOrder,addresses,body,shippingList,choose};\n})(pm);if(h.get('collectionBlocked')==='true'){pm.execution.setNextRequest(null);return;}\n  if(!(h.get(\"run_address_book\")==='true')){return;}\n  try{\n  ((pm,h)=>h.ok([204]))(pm,h,undefined);\n  }catch(e){h.set('collectionBlocked',true);pm.execution.setNextRequest(null);throw e;}})();"
                 ]
               }
             }
@@ -5653,7 +5653,7 @@
           "response": []
         },
         {
-          "id": "1972669e-abcd-45f1-bb4b-4e3457387e56",
+          "id": "0bf5ce91-6d69-41b2-b31f-44da960005c5",
           "name": "06.04 — identyfikacja nowych ID",
           "request": {
             "method": "GET",
@@ -5729,7 +5729,7 @@
           "response": []
         },
         {
-          "id": "f41766a5-7509-4fb3-b198-7d562088c456",
+          "id": "0d22571e-8f62-48b6-bd61-65539fe3b71f",
           "name": "06.05 — odłączenie adresów książki od koszyka",
           "request": {
             "method": "POST",
@@ -5798,7 +5798,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "(()=>{const h=(function helpers(pm){\n const c=pm.collectionVariables;\n const get=(key)=>c.get(key),set=(key,value)=>c.set(key,typeof value==='object'?JSON.stringify(value):String(value));\n const json=key=>{try{return JSON.parse(get(key));}catch{throw Error('Niepoprawny JSON zmiennej '+key);}};\n const need=(...keys)=>{for(const key of keys)if(!get(key))throw Error('Brak '+key+' — wykonaj wcześniejsze kroki lub uzupełnij Variables.');};\n const assert=(ok,message)=>{if(!ok)throw Error(message);};\n const check=(name,fn)=>pm.test(name,()=>{try{fn();}catch(error){set('collectionBlocked',true);pm.execution.setNextRequest(null);throw error;}});\n const data=()=>{const type=(pm.response.headers.get('Content-Type')||'').toLowerCase();assert(!type.includes('text/html')&&!(pm.response.code>=300&&pm.response.code<400),'Odpowiedź bramki GitLab. Odśwież sesję w Postmanie.');try{return pm.response.text().trim()?pm.response.json():null;}catch{throw Error('API nie zwróciło poprawnego JSON.');}};\n const status=(codes)=>pm.test('HTTP '+codes.join('/'),()=>assert(codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code));\n const ok=(codes=[200])=>{status(codes);assert(codes.includes(pm.response.code),'Przerwano po HTTP '+pm.response.code);return data();};\n const current=(kind='main')=>get(kind==='main'?'tokenValue':'workToken');\n const items=(o)=>{assert(o&&Array.isArray(o.items),'Brak items w odczycie koszyka');return o.items;};\n const normalized=o=>{\n  const address=a=>a&&typeof a==='object'?Object.fromEntries(Object.entries(a).filter(([k])=>!['@id','@type','id','createdAt','updatedAt'].includes(k)).sort(([a],[b])=>a.localeCompare(b))):a;\n  return {id:o.id,number:o.number,state:o.state,itemsTotal:o.itemsTotal,total:o.total,totalNet:o.totalNet,shippingTotal:o.shippingTotal,shippingTotalNet:o.shippingTotalNet,shipmentPackageQuantity:o.shipmentPackageQuantity,orderPromotionTotal:o.orderPromotionTotal,payment:o.payments?.[0]?.method?.code??o.payments?.[0]?.method,shipping:o.shipments?.[0]?.method?.code??o.shipments?.[0]?.method,shippingAddress:address(o.shippingAddress),billingAddress:address(o.billingAddress),items:items(o).map(i=>({id:i.id,code:i.product?.code,quantity:i.quantity,unitPrice:i.unitPrice,originalUnitPrice:i.originalUnitPrice,unitPriceNet:i.unitPriceNet,discountedUnitPriceNet:i.discountedUnitPriceNet,discountedUnitPrice:i.discountedUnitPrice,rebatePercent:i.rebatePercent,total:i.total,net:i.totalNetSalesAfterDiscount})).sort((a,b)=>String(a.id).localeCompare(String(b.id)))};\n };\n const unchanged=(before,after,label='Koszyk nie zmienił się')=>check(label,()=>assert(JSON.stringify(before)===JSON.stringify(after),label+' — wykryto zmianę stanu'));\n const saveOrder=(o,kind='main')=>{\n  items(o);assert(o.tokenValue===current(kind),'Odczytano inny token koszyka');\n  check('Sumy produktów i dostawy są spójne',()=>{for(const k of ['itemsTotal','total','shippingTotal'])assert(Number.isSafeInteger(o[k])&&o[k]>=0,'Nieprawidłowe '+k);assert(o.itemsTotal===o.items.reduce((s,i)=>s+i.total,0),'Suma pozycji różni się od itemsTotal');assert(o.total===o.itemsTotal+o.shippingTotal,'total różni się od produktów + dostawy');});\n  if(kind==='main'){\n   const first=o.items[0];if(first)set('itemId',first.id);set('ownerBaseline',normalized(o));\n   for(const k of ['itemsTotal','shippingTotal','total','shippingTotalNet','shipmentPackageQuantity'])if(o[k]!==undefined)set(k==='total'?'orderTotal':k,o[k]);\n   if(o.number)set('orderNumber',o.number);\n   for(const k of ['pdfSummary','paymentForm'])if(typeof o[k]==='string')set(k,o[k]);\n   const rows=o.items.map(i=>({code:i.product?.code,name:i.productName||i.product?.name||'',quantity:i.quantity,rebate:i.rebatePercent,gross:i.total,net:i.totalNetSalesAfterDiscount}));\n   pm.visualizer.set('<h2>Podsumowanie koszyka {{id}}</h2><p>Kwoty w groszach. Produkty: {{itemsTotal}}, dostawa: {{shippingTotal}}, do zapłaty: {{total}}.</p><table><tr><th>Kod</th><th>Produkt</th><th>Szt.</th><th>Rabat %</th><th>Brutto</th><th>Netto</th></tr>{{#each rows}}<tr><td>{{code}}</td><td>{{name}}</td><td>{{quantity}}</td><td>{{rebate}}</td><td>{{gross}}</td><td>{{net}}</td></tr>{{/each}}</table>',{id:o.id,itemsTotal:o.itemsTotal,shippingTotal:o.shippingTotal,total:o.total,rows});\n  }\n  return o;\n };\n const addresses=(marker='')=>{\n  const shipping=json('shipping_address_json'),billing=json('billing_address_json');\n  for(const a of [shipping,billing]){a.saveToAddressBook=false;a.isDefault=false;}\n  if(marker){shipping.company=marker+'-S';billing.company=marker+'-B';}\n  return {shippingAddress:shipping,billingAddress:billing};\n };\n const body=value=>pm.variables.set('requestBody',JSON.stringify(value));\n const shippingList=d=>{const x=d?.shippingMethods;const rows=Array.isArray(x)?x:x?.['hydra:member']??x?.member;assert(Array.isArray(rows)&&rows.length,'Brak dostępnych dostaw');return rows;};\n const choose=(rows,preferred)=>{assert(Array.isArray(rows)&&rows.length,'Brak dostępnych metod');const found=preferred?rows.find(r=>r.code===preferred):rows[Math.floor(Math.random()*rows.length)];assert(found,'Preferowana metoda nie jest aktualnie dostępna');return found;};\n return {c,get,set,json,need,assert,check,data,status,ok,current,items,normalized,unchanged,saveOrder,addresses,body,shippingList,choose};\n})(pm);if(h.get('collectionBlocked')==='true'){pm.execution.setNextRequest(null);return;}\n  if(!(h.get(\"run_address_book\")==='true')){return;}\n  try{\n  ((pm,h)=>h.ok([201]))(pm,h,undefined);\n  }catch(e){h.set('collectionBlocked',true);pm.execution.setNextRequest(null);throw e;}})();"
+                  "(()=>{const h=(function helpers(pm){\n const c=pm.collectionVariables;\n const get=(key)=>c.get(key),set=(key,value)=>c.set(key,typeof value==='object'?JSON.stringify(value):String(value));\n const json=key=>{try{return JSON.parse(get(key));}catch{throw Error('Niepoprawny JSON zmiennej '+key);}};\n const need=(...keys)=>{for(const key of keys)if(!get(key))throw Error('Brak '+key+' — wykonaj wcześniejsze kroki lub uzupełnij Variables.');};\n const assert=(ok,message)=>{if(!ok)throw Error(message);};\n const check=(name,fn)=>pm.test(name,()=>{try{fn();}catch(error){set('collectionBlocked',true);pm.execution.setNextRequest(null);throw error;}});\n const data=()=>{const type=(pm.response.headers.get('Content-Type')||'').toLowerCase();assert(!type.includes('text/html')&&!(pm.response.code>=300&&pm.response.code<400),'Odpowiedź bramki GitLab. Odśwież sesję w Postmanie.');try{return pm.response.text().trim()?pm.response.json():null;}catch{throw Error('API nie zwróciło poprawnego JSON.');}};\n const status=(codes)=>pm.test('HTTP '+codes.join('/'),()=>assert(codes.includes(pm.response.code),'Otrzymano HTTP '+pm.response.code));\n const ok=(codes=[200])=>{status(codes);assert(codes.includes(pm.response.code),'Przerwano po HTTP '+pm.response.code);return data();};\n const current=(kind='main')=>get(kind==='main'?'tokenValue':'workToken');\n const items=(o)=>{assert(o&&Array.isArray(o.items),'Brak items w odczycie koszyka');return o.items;};\n const normalized=o=>{\n  const address=a=>a&&typeof a==='object'?Object.fromEntries(Object.entries(a).filter(([k])=>!['@id','@type','id','createdAt','updatedAt'].includes(k)).sort(([a],[b])=>a.localeCompare(b))):a;\n  return {id:o.id,number:o.number,state:o.state,itemsTotal:o.itemsTotal,total:o.total,totalNet:o.totalNet,shippingTotal:o.shippingTotal,shippingTotalNet:o.shippingTotalNet,shipmentPackageQuantity:o.shipmentPackageQuantity,orderPromotionTotal:o.orderPromotionTotal,payment:o.payments?.[0]?.method?.code??o.payments?.[0]?.method,shipping:o.shipments?.[0]?.method?.code??o.shipments?.[0]?.method,shippingAddress:address(o.shippingAddress),billingAddress:address(o.billingAddress),items:items(o).map(i=>({id:i.id,code:i.product?.code,quantity:i.quantity,unitPrice:i.unitPrice,originalUnitPrice:i.originalUnitPrice,unitPriceNet:i.unitPriceNet,discountedUnitPriceNet:i.discountedUnitPriceNet,discountedUnitPrice:i.discountedUnitPrice,rebatePercent:i.rebatePercent,total:i.total,net:i.totalNetSalesAfterDiscount})).sort((a,b)=>String(a.id).localeCompare(String(b.id)))};\n };\n const unchanged=(before,after,label='Koszyk nie zmienił się')=>check(label,()=>assert(JSON.stringify(before)===JSON.stringify(after),label+' — wykryto zmianę stanu'));\n const saveOrder=(o,kind='main')=>{\n  items(o);assert(o.tokenValue===current(kind),'Odczytano inny token koszyka');\n  check('Sumy produktów i dostawy są spójne',()=>{for(const k of ['itemsTotal','total','shippingTotal'])assert(Number.isSafeInteger(o[k])&&o[k]>=0,'Nieprawidłowe '+k);assert(o.itemsTotal===o.items.reduce((s,i)=>s+i.total,0),'Suma pozycji różni się od itemsTotal');assert(o.total===o.itemsTotal+o.shippingTotal,'total różni się od produktów + dostawy');});\n  if(kind==='main'){\n   const first=o.items[0];if(first)set('itemId',first.id);set('ownerBaseline',normalized(o));\n   for(const k of ['itemsTotal','shippingTotal','total','shippingTotalNet','shipmentPackageQuantity'])if(o[k]!==undefined)set(k==='total'?'orderTotal':k,o[k]);\n   if(o.number)set('orderNumber',o.number);\n   for(const k of ['pdfSummary','paymentForm'])if(typeof o[k]==='string')set(k,o[k]);\n   const rows=o.items.map(i=>({code:i.product?.code,name:i.productName||i.product?.name||'',quantity:i.quantity,rebate:i.rebatePercent,gross:i.total,net:i.totalNetSalesAfterDiscount}));\n   pm.visualizer.set('<h2>Podsumowanie koszyka {{id}}</h2><p>Kwoty w groszach. Produkty: {{itemsTotal}}, dostawa: {{shippingTotal}}, do zapłaty: {{total}}.</p><table><tr><th>Kod</th><th>Produkt</th><th>Szt.</th><th>Rabat %</th><th>Brutto</th><th>Netto</th></tr>{{#each rows}}<tr><td>{{code}}</td><td>{{name}}</td><td>{{quantity}}</td><td>{{rebate}}</td><td>{{gross}}</td><td>{{net}}</td></tr>{{/each}}</table>',{id:o.id,itemsTotal:o.itemsTotal,shippingTotal:o.shippingTotal,total:o.total,rows});\n  }\n  return o;\n };\n const addresses=(marker='')=>{\n  const shipping=json('shipping_address_json'),billing=json('billing_address_json');\n  for(const a of [shipping,billing]){a.saveToAddressBook=false;a.isDefault=false;}\n  if(marker){shipping.company=marker+'-S';billing.company=marker+'-B';}\n  return {shippingAddress:shipping,billingAddress:billing};\n };\n const body=value=>pm.variables.set('requestBody',JSON.stringify(value));\n const shippingList=d=>{const x=d?.shippingMethods;const rows=Array.isArray(x)?x:x?.['hydra:member']??x?.member;assert(Array.isArray(rows)&&rows.length,'Brak dostępnych dostaw');return rows;};\n const choose=(rows,preferred)=>{assert(Array.isArray(rows)&&rows.length,'Brak dostępnych metod');const found=preferred?rows.find(r=>r.code===preferred):rows[Math.floor(Math.random()*rows.length)];assert(found,'Preferowana metoda nie jest aktualnie dostępna');return found;};\n return {c,get,set,json,need,assert,check,data,status,ok,current,items,normalized,unchanged,saveOrder,addresses,body,shippingList,choose};\n})(pm);if(h.get('collectionBlocked')==='true'){pm.execution.setNextRequest(null);return;}\n  if(!(h.get(\"run_address_book\")==='true')){return;}\n  try{\n  ((pm,h)=>h.ok([204]))(pm,h,undefined);\n  }catch(e){h.set('collectionBlocked',true);pm.execution.setNextRequest(null);throw e;}})();"
                 ]
               }
             }
@@ -5809,7 +5809,7 @@
           "response": []
         },
         {
-          "id": "d7eacf5b-67db-4b38-8880-aaad29612172",
+          "id": "743d469c-ce37-4088-8aa4-81984b106a27",
           "name": "06.06 — kontrola odłączenia",
           "request": {
             "method": "GET",
@@ -5876,7 +5876,7 @@
           "response": []
         },
         {
-          "id": "3b31748f-9bcb-49ef-8dd3-64c4d8a716f7",
+          "id": "5c25c0b4-d294-4e5f-879b-666b328a954f",
           "name": "06.07 — usunięcie nowego adresu QA",
           "request": {
             "method": "DELETE",
@@ -5943,7 +5943,7 @@
           "response": []
         },
         {
-          "id": "d4120768-7f96-46bc-9ab3-1d855f72da1b",
+          "id": "b982eeb3-13fe-4fc2-9e35-9fa38b8c9b25",
           "name": "06.08 — kontrola sprzątnięcia",
           "request": {
             "method": "GET",
@@ -6025,7 +6025,7 @@
       "description": "Włącz run_catalog=true. Odczyt listy i produktu po slugu, bez admin API.",
       "item": [
         {
-          "id": "87fb826f-9a83-4bb7-ba70-e7f49c05635f",
+          "id": "33462cc8-dbb5-4f49-b014-5893843d98af",
           "name": "07.01 — lista produktów DTO",
           "request": {
             "method": "GET",
@@ -6109,7 +6109,7 @@
           "response": []
         },
         {
-          "id": "468fc486-231d-41ee-818e-94ad46d019c5",
+          "id": "ae7002d8-63d4-42df-9159-30c9d8b979f2",
           "name": "07.02 — produkt DTO po slugu",
           "request": {
             "method": "GET",

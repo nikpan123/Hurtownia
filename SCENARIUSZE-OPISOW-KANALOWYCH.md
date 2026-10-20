@@ -1,6 +1,6 @@
 # Scenariusze opisów produktów w kanałach sprzedaży
 
-Aktualizacja: 2026-10-19
+Aktualizacja: 2026-10-20
 
 Pełna lista obszarów z przekazanej ściągawki: CMS, API, frontend, dokumenty, URL i integracje. Kodem pokryto część API; katalog nie oznacza wykonania wszystkich przypadków.
 
@@ -24,6 +24,11 @@ Pełna lista obszarów z przekazanej ściągawki: CMS, API, frontend, dokumenty,
 - Kursy ACADEMY: courses.closed i courses.paid. Puste expected daje SKIP; itemsPath/identityPath/titlePath/slugPath i query należy potwierdzić na rzeczywistej odpowiedzi. Przykład konfiguracji: config/catalog-fixtures.example.json.
 - Zestaw descriptions-cms ma osobną konfigurację description-cms.local.json i plik awaryjnego przywracania .auth/description-cms-restore.json. Nie edytuj równocześnie produktu QA.
 - 19.10.2026: zestaw formularza CMS wykonał 15 kontroli PASS, łącznie z potwierdzeniem przywrócenia pól QA. Nazwy obu wariantów QA są zdefiniowane; brak variantName w odpowiedzi API koszyka daje FAIL, a nie SKIP.
+- 20.10.2026: użytkownik wskazał ofertę CMS /admin/special-offers/7/edit i stronę /product/test321321, produkty 10202/testhurtA i 10203/testhurtB do testów oraz MailHog https://mailhog.gwodev.pl/. Domyślne fixture zestawu web zawierają te dane. Konto RETAIL: wskazane przez użytkownika konto podstawowe; hasła nie są zapisywane w katalogu.
+- MailHog ładuje dane asynchronicznie. Początkowe Inbox (0) nie jest dowodem pustej skrzynki. Test wiadomości musi czekać na odpowiedź/dostarczenie i identyfikować nową próbę po odbiorcy oraz unikalnym zamówieniu/znaczniku. Nie usuwać wspólnej skrzynki ani nie zaliczać testu na starej wiadomości.
+- Dokumenty i poczta: npm run descriptions:documents zapisuje jedno zamówienie QA WHOLESALE. Wymaga konta podstawowego, poprawnych adresów QA, sesji MailHog oraz ekstraktora pypdf. PDF pozostaje w raporcie, zamówienie na DEV. Nie ponawiaj complete po nieustalonym wyniku. Obsługa MailHoga oparta na oficjalnym GET /api/v2/search (kind=to), z paginacją i dokładnym sprawdzeniem odbiorcy.
+- Potwierdzenie zamówienia nie musi zawierać numeru ani nazw produktów w samym body. Dla zweryfikowanego szablonu dane są w MIME podsumowanie.pdf. Odczytuj pełny MIME (także korzeń message.MIME), porównaj numer zamówienia i nazwę w tekście załącznika. Nie uznawaj bezskutecznego wyszukania numeru w body za brak wysyłki.
+- Aplikacja referencyjna: Matlandia. Klasa 4, CMS 129, slug matlandia-klasa-4, osobna sesja RETAIL. Produkt AplikacjaQA 10215 zwrócił HTTP 500 w szablonie teacher-packet; nie zastępuje sprawnego wzorca.
 
 ## Legenda
 
@@ -43,8 +48,8 @@ Pełna lista obszarów z przekazanej ściągawki: CMS, API, frontend, dokumenty,
 
 | ID | Scenariusz | Priorytet | Automatyzacja |
 | --- | --- | --- | --- |
-| DESC-001 | Zakładka kanałowa i dostępne EMPIK/WHOLESALE | P1 | Częściowo obsługiwane |
-| DESC-002 | Ukrycie zakładki dla ofert i szkoleń | P1 | Do automatyzacji |
+| DESC-001 | Zakładka kanałowa i dostępne EMPIK/WHOLESALE | P1 | Obsługiwane przez automat |
+| DESC-002 | Ukrycie zakładki dla ofert i szkoleń | P1 | Obsługiwane przez automat |
 | DESC-003 | Edycja i trwały zapis czterech pól kanałowych | P1 | Częściowo obsługiwane |
 | DESC-004 | Puste pola i fallback każdego pola osobno | P1 | Częściowo obsługiwane |
 | DESC-005 | Kolizja slugu w tym samym kanale | P1 | Częściowo obsługiwane |
@@ -52,7 +57,7 @@ Pełna lista obszarów z przekazanej ściągawki: CMS, API, frontend, dokumenty,
 | DESC-007 | Ten sam slug w EMPIK i WHOLESALE | P1 | Częściowo obsługiwane |
 | DESC-008 | Minimalna długość nazwy kanałowej | P1 | Częściowo obsługiwane |
 | DESC-009 | Maksymalna długość slugu kanałowego | P1 | Częściowo obsługiwane |
-| DESC-010 | Nowy produkt bez tłumaczeń i ich późniejsze dodanie | P1 | Do automatyzacji |
+| DESC-010 | Nowy produkt bez tłumaczeń i ich późniejsze dodanie | P1 | Obsługiwane przez automat |
 | DESC-011 | WHOLESALE — nazwa i slug na liście, nadpisanie i fallback | P0 | Obsługiwane przez automat |
 | DESC-012 | WHOLESALE — cztery pola szczegółów, nadpisanie i fallback | P0 | Obsługiwane przez automat |
 | DESC-013 | RETAIL — główne tłumaczenia w API | P0 | Obsługiwane przez automat |
@@ -62,26 +67,26 @@ Pełna lista obszarów z przekazanej ściągawki: CMS, API, frontend, dokumenty,
 | DESC-017 | Nazwa wariantu w pozycjach API | P1 | Częściowo obsługiwane |
 | DESC-018 | ACADEMY — closed-courses | P1 | Częściowo obsługiwane |
 | DESC-019 | ACADEMY — paid-courses | P1 | Częściowo obsługiwane |
-| DESC-020 | RETAIL — strona, listy, wyszukiwanie i paginacja | P1 | Do automatyzacji |
+| DESC-020 | RETAIL — strona, listy, wyszukiwanie i paginacja | P1 | Częściowo obsługiwane |
 | DESC-021 | RETAIL — koszyk, podsumowanie i zapis nazwy | P1 | Częściowo obsługiwane |
-| DESC-022 | RETAIL — opis SpecialOffer | P1 | Do automatyzacji |
-| DESC-023 | RETAIL — opis Application i liczby dostępów | P1 | Do automatyzacji |
-| DESC-024 | Nazwy produktów w treści PDF | P1 | Do automatyzacji |
-| DESC-025 | Nazwy w e-mailach i powiadomieniach | P1 | Do automatyzacji |
-| DESC-026 | Generowanie URL dla wszystkich kanałów | P1 | Do automatyzacji |
-| DESC-027 | Tłumaczenia produktów dołączonych do oferty | P1 | Do automatyzacji |
+| DESC-022 | RETAIL — opis SpecialOffer | P1 | Obsługiwane przez automat |
+| DESC-023 | RETAIL — opis Application i liczby dostępów | P1 | Częściowo obsługiwane |
+| DESC-024 | Nazwy produktów w treści PDF | P1 | Częściowo obsługiwane |
+| DESC-025 | Nazwy w e-mailach i powiadomieniach | P1 | Częściowo obsługiwane |
+| DESC-026 | Generowanie URL dla wszystkich kanałów | P1 | Częściowo obsługiwane |
+| DESC-027 | Tłumaczenia produktów dołączonych do oferty | P1 | Częściowo obsługiwane |
 | DESC-028 | EMPIK — dane oferty przekazane przez OfferUpdater | P1 | Do automatyzacji |
-| DESC-029 | OutOfStockSubscriber — nazwa w RETAIL | P1 | Do automatyzacji |
+| DESC-029 | OutOfStockSubscriber — nazwa w RETAIL | P1 | Częściowo obsługiwane |
 
 ## Opisy kanałowe — CMS
 
 ### DESC-001 — Zakładka kanałowa i dostępne EMPIK/WHOLESALE
 
-**P1 · Częściowo obsługiwane · Zmiana danych CMS**
+**P1 · Obsługiwane przez automat · Zmiana danych CMS**
 
 **Wymaganie:** 1.1 — widoczność zakładki i kanałów
 
-**Dowód historyczny:** Zapisany przebieg DEV z 19.10.2026: 1 PASS, 0 FAIL w kontrolach przypisanych do DESC-001. Cztery pola WHOLESALE i EMPIK sprawdzono po zapisie. Pierwotne pola kanałowe QA przywrócono i potwierdzono odczytem CMS. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-19T07-44-12-194Z-b2b5f4a8/raport.html)
+**Dowód historyczny:** 20.10.2026: wykonane kontrole WWW przeszły. Zestaw: 13 PASS, 7 SKIP i brak FAIL. Ukrycie sekcji dla oferty i szkoleń, widoczność dla zwykłego produktu, strony A/B, wyszukiwarka Matlandii, dwie strony listy i linki. Zakresy częściowe nie oznaczają zaliczenia całego wymagania. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T08-10-50-576Z-4d7bb556/raport.html)
 
 **Warunki wstępne**
 
@@ -109,16 +114,21 @@ Opisy kanałowe — zapis i walidacje formularza CMS
 
 **Sprawdź zapis i walidacje CMS:** Oddzielny zestaw: tymczasowo zmienia pola WHOLESALE i EMPIK dedykowanego produktu QA; sprawdza formularz przez HTTP, odczyt CMS i API, a na końcu przywraca pola. Bez complete i bez OfferUpdater. JavaScript edytora pozostaje poza zakresem. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
+**Sprawdź CMS i frontend RETAIL:** Odczyt formularzy oferty i szkoleń oraz frontendu RETAIL: nazwy, slugi, pełne opisy A/B i Matlandii, wyszukiwarka, paginacja, kategoria Matematyka i niepusty krótki opis Matlandii. Wzorzec z głównych pól CMS. Bez zmian produktów, koszyków i finalizacji. Wymaga config/description-web.local.json. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
 - `api-tests/description-cms.mjs`
 - `tests/description-cms.test.mjs`
+- `api-tests/description-web.mjs`
 
-**Ograniczenia:** Automat formularza CMS z aktualnym CSRF i ponownym odczytem. Wymaga config/description-cms.local.json, sesji GitLab i administratora CMS. Zapis wyłącznie pól kanałowych QA; dziennik przywracania i odmowa nadpisania zmiany zewnętrznej. Nie testuje interakcji JavaScript edytora. Dla DESC-001 sprawdza strukturę pól formularza; widoczność zakładki w interfejsie wymaga osobnego testu UI.
+**Ograniczenia:** Odczytowy automat WWW potwierdza widoczną sekcję zwykłego produktu oraz pola EMPIK/WHOLESALE. Osobny zestaw CMS sprawdza zapis i walidacje. Nie testuje każdego widgetu JavaScript.
 
 ### DESC-002 — Ukrycie zakładki dla ofert i szkoleń
 
-**P1 · Do automatyzacji · Zmiana danych CMS**
+**P1 · Obsługiwane przez automat · Zmiana danych CMS**
 
 **Wymaganie:** 1.1 — SpecialOffer, szkolenia rad i nauczycieli
+
+**Dowód historyczny:** 20.10.2026: wykonane kontrole WWW przeszły. Zestaw: 13 PASS, 7 SKIP i brak FAIL. Ukrycie sekcji dla oferty i szkoleń, widoczność dla zwykłego produktu, strony A/B, wyszukiwarka Matlandii, dwie strony listy i linki. Zakresy częściowe nie oznaczają zaliczenia całego wymagania. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T08-10-50-576Z-4d7bb556/raport.html)
 
 **Warunki wstępne**
 
@@ -140,11 +150,14 @@ Po jednym produkcie każdego wymienionego typu.
 
 **Odpowiadający test**
 
-Test ręczny / do automatyzacji
+Opisy kanałowe — CMS i frontend RETAIL
 
-- `docs/product-channel-scenarios.json`
+**Sprawdź CMS i frontend RETAIL:** Odczyt formularzy oferty i szkoleń oraz frontendu RETAIL: nazwy, slugi, pełne opisy A/B i Matlandii, wyszukiwarka, paginacja, kategoria Matematyka i niepusty krótki opis Matlandii. Wzorzec z głównych pól CMS. Bez zmian produktów, koszyków i finalizacji. Wymaga config/description-web.local.json. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Obecny zestaw „Opisy per kanał” wykonuje wyłącznie API sklepu. Ten warunek nie jest przez niego automatycznie potwierdzany. Wymagane fixture specjalnych typów.
+- `api-tests/description-web.mjs`
+- `config/description-web.example.json`
+
+**Ograniczenia:** Automat potwierdza tożsamość formularza i brak zakładki/pól channelTranslations dla oferty 7, szkolenia dla nauczycieli 347 i szkolenia dla rad 6614. Nie edytuje tych obiektów.
 
 ### DESC-003 — Edycja i trwały zapis czterech pól kanałowych
 
@@ -416,9 +429,11 @@ Opisy kanałowe — zapis i walidacje formularza CMS
 
 ### DESC-010 — Nowy produkt bez tłumaczeń i ich późniejsze dodanie
 
-**P1 · Do automatyzacji · Zmiana danych CMS**
+**P1 · Obsługiwane przez automat · Zmiana danych CMS**
 
 **Wymaganie:** 1.2 — nowy produkt i ProductChannelTranslation
+
+**Dowód historyczny:** 20.10.2026: 4 PASS. Utworzono ukryty produkt 10216; SELECT potwierdził 0 rekordów kanałowych przed dodaniem i 2 po dodaniu, z dokładną zgodnością czterech pól każdego kanału. Produkt nieaktywny, niewidoczny i bez sprzedaży EMPIK. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T08-03-32-948Z-fdc1cc88/raport.html)
 
 **Warunki wstępne**
 
@@ -441,11 +456,15 @@ Nowy produkt z głównymi danymi, bez wypełniania pól kanałowych.
 
 **Odpowiadający test**
 
-Test ręczny / do automatyzacji
+Utwórz ukryty produkt QA i sprawdź tłumaczenia
 
-- `docs/product-channel-scenarios.json`
+**Utwórz ukryty produkt QA i sprawdź tłumaczenia:** Jeden nowy nieaktywny produkt BOOK. Puste pola i zero rekordów kanałowych, potem zapis czterech pól obu kanałów oraz CMS i SELECT. Produkt pozostaje na DEV. Bez publikacji i zamówień. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Sam formularz „Nowy produkt API” tworzy produkt i wariant; nie potwierdza tego kryterium CMS ani braku rekordów kanałowych w bazie.
+- `api-tests/description-new-product.mjs`
+- `api-tests/description-web.mjs`
+- `tests/description-new-product.test.mjs`
+
+**Ograniczenia:** Tworzy nowy ukryty BOOK; puste pola i zero rekordów w bazie, dodanie czterech pól WHOLESALE/EMPIK oraz CMS i SELECT. Tylko DEV; produkt pozostaje nieaktywny i niewidoczny.
 
 ## Opisy kanałowe — API
 
@@ -806,9 +825,11 @@ Opisy per kanał — kontrola kursów ACADEMY
 
 ### DESC-020 — RETAIL — strona, listy, wyszukiwanie i paginacja
 
-**P1 · Do automatyzacji · Odczyt**
+**P1 · Częściowo obsługiwane · Odczyt**
 
 **Wymaganie:** 2.1/2.2 — rzeczywisty frontend RETAIL
+
+**Dowód historyczny:** 20.10.2026, nowy odczyt CMS i frontendu RETAIL: 17 PASS, 0 FAIL, 6 SKIP innych modułów. Pełne opisy A/B i aplikacji oraz nazwa, slug i niepusty krótki opis Matlandii w kategorii Matematyka. Bez zmian produktów i bez finalizacji. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T09-49-29-061Z-4198cb30/raport.html)
 
 **Warunki wstępne**
 
@@ -832,11 +853,14 @@ ProductTranslation i adres strony produktu.
 
 **Odpowiadający test**
 
-Test ręczny / do automatyzacji
+Opisy kanałowe — CMS i frontend RETAIL
 
-- `docs/product-channel-scenarios.json`
+**Sprawdź CMS i frontend RETAIL:** Odczyt formularzy oferty i szkoleń oraz frontendu RETAIL: nazwy, slugi, pełne opisy A/B i Matlandii, wyszukiwarka, paginacja, kategoria Matematyka i niepusty krótki opis Matlandii. Wzorzec z głównych pól CMS. Bez zmian produktów, koszyków i finalizacji. Wymaga config/description-web.local.json. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Odczyt RETAIL przez API nie potwierdza renderowania szablonów.
+- `api-tests/description-web.mjs`
+- `config/description-web.example.json`
+
+**Ograniczenia:** Pełne teksty opisów A/B (również pusty) i niepusty opis Matlandii; nazwa i slug A/B; wyszukiwarka Matlandii; dwie kolejne strony listy (10 + 10, bez duplikatów); rzeczywisty filtr Matematyka, wszystkie strony wyniku do limitu 8 oraz nazwa, slug i cały niepusty krótki opis Matlandii względem CMS. Inne produkty kategorii nie są niezależnie porównywane z CMS. Brak kontrolowanej zmiany WHOLESALE w tym odczytowym module; nie potwierdza izolacji po nowej mutacji. Podsumowanie, zapis Order i dokumenty mają osobny zakres.
 
 ### DESC-021 — RETAIL — koszyk, podsumowanie i zapis nazwy
 
@@ -844,12 +868,13 @@ Test ręczny / do automatyzacji
 
 **Wymaganie:** 2.3 — koszyk i zatwierdzone zamówienie RETAIL
 
-**Dowód historyczny:** Zapisany przebieg DEV z 19.10.2026: 2 PASS, 0 FAIL w kontrolach przypisanych do DESC-021. Wynik dotyczy tylko danych i zakresu tego przebiegu; nie oznacza pełnego pokrycia wymagania. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-19T07-41-22-238Z-05d08f9e/raport.html)
+**Dowód historyczny:** 20.10.2026, próba wspomagana z logowaniem użytkownika: RETAIL #30001631, 57,34 zł, Matlandia — 1 dostęp nauczycielski i 11 uczniowskich. Cztery kontrole PASS: poprawna nazwa wariantu w podsumowaniu, zapis CMS, potwierdzenie PDF i nowy e-mail z takim samym tekstem załącznika. Nie jest to dowód pełnego automatycznego logowania, faktur ani innych wariantów/kanałów. Automat samego podsumowania również przeszedł (20.10.2026), z logowaniem przed utworzeniem i potwierdzonym usunięciem własnej pozycji QA. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T10-02-46-041Z-f35d6c21/raport.html)
 
 **Warunki wstępne**
 
 - Dwa niezależne wzorce QA: bez tłumaczenia kanałowego i z odmiennym WHOLESALE.
 - Potwierdzone w CMS name, slug, description/descriptionContains i shortDescription; aktywne kanały.
+- W wariancie tworzącym RETAIL: pusty koszyk oraz brak równoległych logowań na to konto.
 
 **Dane**
 
@@ -864,6 +889,7 @@ Nazwa główna i wariant QA w RETAIL.
 **Oczekiwany wynik**
 
 - RETAIL korzysta z ProductTranslation w koszyku, widoku i zapisie.
+- Dla aplikacji w podsumowaniu poprawna jest nazwa wybranego wariantu zgodna z jawnym wzorcem; nie wymagamy dodatkowej nazwy produktu w tej kolumnie.
 
 **Odpowiadający test**
 
@@ -871,17 +897,28 @@ Opisy per kanał — zestaw API
 
 **Uruchom test opisów per kanał:** Cały zestaw API dla WHOLESALE, RETAIL i ACADEMY. Tworzy koszyki na koncie skonfigurowanym w scenariuszu; bez complete, zmian CMS i wysyłek. Nie testuje frontendów ani Empika. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
+**Sprawdź opisy aplikacji i oferty w koszykach RETAIL:** Dwie odrębne sesje i koszyki: Matlandia 129 (1 dostęp nauczycielski + 11 uczniowskich), oferta 7 (2 A + 2 B). Czeka na przeliczenia konfiguratora. Bez complete i wysyłek. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Sprawdź nazwę w podsumowaniu RETAIL:** Loguje Moje GWO przed dodaniem QA i wymaga pustego koszyka. Tworzy Matlandię: 1 dostęp nauczycielski i 11 uczniowskich, sprawdza nazwę wariantu w podsumowaniu. Bez regulaminu i finalizacji. Po próbie usuwa własną pozycję po dokładnym ID i potwierdza pusty koszyk. Wymaga RETAIL_LOGIN_EMAIL i RETAIL_LOGIN_PASSWORD w .env. Etap danych przygotowuje aktualnym formularzem HTTP; nie testuje przycisku przejścia z koszyka. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Zapisz RETAIL i sprawdź PDF oraz e-mail:** Tworzy jedno zamówienie Matlandii RETAIL, akceptuje regulamin na DEV i wybiera przelew bankowy (bez zapłaty). Wymaga osobnych danych RETAIL_LOGIN_EMAIL / RETAIL_LOGIN_PASSWORD w .env. Sprawdza podsumowanie, zapis CMS, PDF i załącznik nowego e-maila. Nie ponawia utraconego zapisu; nie usuwa istniejących pozycji. Nie jest uruchamiany przez zestaw zbiorczy WHOLESALE. Logowanie następuje przed dodaniem QA; wymaga pustego koszyka i braku równoległego używania konta. Przed finalizacją sprząta własną pozycję po błędzie; po nieustalonym wyniku zapisu niczego nie usuwa. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
 - `api-tests/features.mjs`
 - `api-tests/description-scenarios.mjs`
 - `tests/features.test.mjs`
+- `api-tests/description-retail-cart.mjs`
+- `api-tests/description-retail-cart.mjs`
+- `api-tests/description-retail-documents.mjs`
 
-**Ograniczenia:** Automat sprawdza tylko productName w koszyku API, bez complete. Frontend i utrwalony Order nie są potwierdzone.
+**Ograniczenia:** API sprawdza productName w koszyku. Dodatkowy automat frontendu sprawdza koszyk Matlandii oraz opis dostępów 1 + 11. Podsumowanie i zapis Order RETAIL nadal wymagają osobnego testu. Podsumowanie aplikacji może poprawnie pokazywać samą nazwę wariantu: Matlandia — Dostęp nauczycielski 2 lata (ustalenie użytkownika 20.10.2026). Automat podsumowania wymaga oddzielnego logowania RETAIL w .env; ten przebieg nie finalizuje. Osobny wariant RETAIL: Matlandia, wzorzec nazwy wariantu, 11 dostępów uczniowskich, jedno zamówienie i potwierdzenie PDF/nowego e-maila. Nie obejmuje faktur i innych wariantów.
 
 ### DESC-022 — RETAIL — opis SpecialOffer
 
-**P1 · Do automatyzacji · Odczyt**
+**P1 · Obsługiwane przez automat · Odczyt**
 
 **Wymaganie:** 2.4 — shortDescription oferty specjalnej
+
+**Dowód historyczny:** 20.10.2026: 2 PASS w dwóch osobnych koszykach RETAIL. Matlandia: główna nazwa i opis 1 + 11. Oferta: opis 2 x A i 2 x B z głównymi nazwami CMS. Bez podsumowania i zapisu zamówienia. Przyciski oferty są sprawdzane po zakończeniu przeliczenia. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T08-10-15-175Z-487849e9/raport.html)
 
 **Warunki wstępne**
 
@@ -904,15 +941,21 @@ SpecialOffer i oczekiwany wygenerowany krótki opis.
 
 Test ręczny / do automatyzacji
 
-- `docs/product-channel-scenarios.json`
+**Sprawdź opisy aplikacji i oferty w koszykach RETAIL:** Dwie odrębne sesje i koszyki: Matlandia 129 (1 dostęp nauczycielski + 11 uczniowskich), oferta 7 (2 A + 2 B). Czeka na przeliczenia konfiguratora. Bez complete i wysyłek. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Wymagana fixture oferty; zwykły produkt BOOK nie zastępuje tej kontroli.
+- `docs/product-channel-scenarios.json`
+- `api-tests/description-retail-cart.mjs`
+- `tests/description-retail-cart.test.mjs`
+
+**Ograniczenia:** Potwierdzono wygenerowany opis oferty 7 w koszyku RETAIL: 2 A + 2 B, dokładne główne nazwy i ilości. Oczekiwanie na gotowy komponent i odpowiedzi przeliczeń. Inne oferty i kanały poza zakresem.
 
 ### DESC-023 — RETAIL — opis Application i liczby dostępów
 
-**P1 · Do automatyzacji · Odczyt**
+**P1 · Częściowo obsługiwane · Zmiana koszyka**
 
 **Wymaganie:** 2.4 — aplikacje
+
+**Dowód historyczny:** 20.10.2026: 2 PASS w dwóch osobnych koszykach RETAIL. Matlandia: główna nazwa i opis 1 + 11. Oferta: opis 2 x A i 2 x B z głównymi nazwami CMS. Bez podsumowania i zapisu zamówienia. Przyciski oferty są sprawdzane po zakończeniu przeliczenia. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T08-10-15-175Z-487849e9/raport.html)
 
 **Warunki wstępne**
 
@@ -933,21 +976,28 @@ Niezależne liczby X/Y oraz oczekiwany opis zamówienia.
 
 **Odpowiadający test**
 
-Test ręczny / do automatyzacji
+Sprawdź opis aplikacji w koszyku RETAIL
 
-- `docs/product-channel-scenarios.json`
+**Sprawdź opisy aplikacji i oferty w koszykach RETAIL:** Dwie odrębne sesje i koszyki: Matlandia 129 (1 dostęp nauczycielski + 11 uczniowskich), oferta 7 (2 A + 2 B). Czeka na przeliczenia konfiguratora. Bez complete i wysyłek. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Brak fixture aplikacji i automatu tego mechanizmu.
+- `api-tests/description-retail-cart.mjs`
+- `api-tests/description-web.mjs`
+- `tests/description-retail-cart.test.mjs`
+
+**Ograniczenia:** Potwierdzono główną nazwę Matlandii 129 i wygenerowany opis w koszyku RETAIL: 1 dostęp nauczycielski, 11 uczniowskich. Bez podsumowania i zapisu Order; inne warianty/pakiety nieprzetestowane.
 
 ### DESC-024 — Nazwy produktów w treści PDF
 
-**P1 · Do automatyzacji · Odczyt**
+**P1 · Częściowo obsługiwane · Zapis zamówienia QA i wiadomość do konta testowego**
 
 **Wymaganie:** 5.1 — dokumenty RETAIL/WHOLESALE/ACADEMY
+
+**Dowód historyczny:** 20.10.2026, próba wspomagana z logowaniem użytkownika: RETAIL #30001631, 57,34 zł, Matlandia — 1 dostęp nauczycielski i 11 uczniowskich. Cztery kontrole PASS: poprawna nazwa wariantu w podsumowaniu, zapis CMS, potwierdzenie PDF i nowy e-mail z takim samym tekstem załącznika. Nie jest to dowód pełnego automatycznego logowania, faktur ani innych wariantów/kanałów. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T10-02-46-041Z-f35d6c21/raport.html)
 
 **Warunki wstępne**
 
 - Dedykowane zapisane zamówienia i ekstraktor tekstu PDF.
+- W wariancie tworzącym RETAIL: pusty koszyk oraz brak równoległych logowań na to konto.
 
 **Dane**
 
@@ -965,21 +1015,31 @@ Główne nazwy dla RETAIL/ACADEMY; nadpisanie i fallback WHOLESALE.
 
 **Odpowiadający test**
 
-Test ręczny / do automatyzacji
+Opisy kanałowe — zapis WHOLESALE, treść PDF i nowego e-maila
 
-- `docs/product-channel-scenarios.json`
+**Zapisz QA i sprawdź PDF oraz nowy e-mail:** Tworzy jedno zamówienie WHOLESALE na koncie podstawowym z produktu A (1 szt.). Wysyła complete najwyżej raz; zamówienie pozostaje na DEV i może wysłać e-mail. Migawka MailHoga przed operacją, potem dokładny odbiorca, nowe ID/czas i numer zamówienia. Porównuje tekst PDF i wiadomości z niezależną nazwą CMS. Nie testuje RETAIL, ACADEMY ani faktury. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Obecny silnik pobiera plik i sprawdza sygnaturę PDF; nie sprawdza jego treści.
+**Zapisz RETAIL i sprawdź PDF oraz e-mail:** Tworzy jedno zamówienie Matlandii RETAIL, akceptuje regulamin na DEV i wybiera przelew bankowy (bez zapłaty). Wymaga osobnych danych RETAIL_LOGIN_EMAIL / RETAIL_LOGIN_PASSWORD w .env. Sprawdza podsumowanie, zapis CMS, PDF i załącznik nowego e-maila. Nie ponawia utraconego zapisu; nie usuwa istniejących pozycji. Nie jest uruchamiany przez zestaw zbiorczy WHOLESALE. Logowanie następuje przed dodaniem QA; wymaga pustego koszyka i braku równoległego używania konta. Przed finalizacją sprząta własną pozycję po błędzie; po nieustalonym wyniku zapisu niczego nie usuwa. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/description-documents.mjs`
+- `api-tests/pdf-text.py`
+- `api-tests/mailhog.mjs`
+- `api-tests/description-retail-documents.mjs`
+
+**Ograniczenia:** Automat sprawdza numer zamówienia i nazwę WHOLESALE/fallback w tekście nowego PDF potwierdzenia. Nie sprawdza faktury ani pozostałych kanałów. Prawidłowa sygnatura PDF nie wystarcza. Wymaga Python z pypdf (HURT_PDF_PYTHON albo runtime Codex). Osobny wariant RETAIL: Matlandia, wzorzec nazwy wariantu, 11 dostępów uczniowskich, jedno zamówienie i potwierdzenie PDF/nowego e-maila. Nie obejmuje faktur i innych wariantów.
 
 ### DESC-025 — Nazwy w e-mailach i powiadomieniach
 
-**P1 · Do automatyzacji · Odczyt**
+**P1 · Częściowo obsługiwane · Zapis zamówienia QA i wiadomość do konta testowego**
 
 **Wymaganie:** 5 — RETAIL, WHOLESALE, ACADEMY
+
+**Dowód historyczny:** 20.10.2026, próba wspomagana z logowaniem użytkownika: RETAIL #30001631, 57,34 zł, Matlandia — 1 dostęp nauczycielski i 11 uczniowskich. Cztery kontrole PASS: poprawna nazwa wariantu w podsumowaniu, zapis CMS, potwierdzenie PDF i nowy e-mail z takim samym tekstem załącznika. Nie jest to dowód pełnego automatycznego logowania, faktur ani innych wariantów/kanałów. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T10-02-46-041Z-f35d6c21/raport.html)
 
 **Warunki wstępne**
 
 - Kontrolowana skrzynka testowa i powiązanie wiadomości z konkretnym zamówieniem.
+- W wariancie tworzącym RETAIL: pusty koszyk oraz brak równoległych logowań na to konto.
 
 **Dane**
 
@@ -996,17 +1056,31 @@ Wzorce nazw dla trzech kanałów, z nadpisaniem i fallbackiem WHOLESALE.
 
 **Odpowiadający test**
 
-Test ręczny / do automatyzacji
+Opisy kanałowe — zapis WHOLESALE, treść PDF i nowego e-maila
 
-- `docs/product-channel-scenarios.json`
+**Zapisz QA i sprawdź PDF oraz nowy e-mail:** Tworzy jedno zamówienie WHOLESALE na koncie podstawowym z produktu A (1 szt.). Wysyła complete najwyżej raz; zamówienie pozostaje na DEV i może wysłać e-mail. Migawka MailHoga przed operacją, potem dokładny odbiorca, nowe ID/czas i numer zamówienia. Porównuje tekst PDF i wiadomości z niezależną nazwą CMS. Nie testuje RETAIL, ACADEMY ani faktury. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Brak integracji ze skrzynką/transportem; samo complete nie potwierdza treści ani doręczenia.
+**Sprawdź powiadomienie o dostępności nowego QA:** Nowy produkt QA i jeden odbiorca konta podstawowego. Tymczasowy zapas 0→1, własna subskrypcja, nowy e-mail, na końcu przywrócenie stanu/ukrycia. Może wysłać testową wiadomość; nie zmienia wspólnych produktów. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Zapisz RETAIL i sprawdź PDF oraz e-mail:** Tworzy jedno zamówienie Matlandii RETAIL, akceptuje regulamin na DEV i wybiera przelew bankowy (bez zapłaty). Wymaga osobnych danych RETAIL_LOGIN_EMAIL / RETAIL_LOGIN_PASSWORD w .env. Sprawdza podsumowanie, zapis CMS, PDF i załącznik nowego e-maila. Nie ponawia utraconego zapisu; nie usuwa istniejących pozycji. Nie jest uruchamiany przez zestaw zbiorczy WHOLESALE. Logowanie następuje przed dodaniem QA; wymaga pustego koszyka i braku równoległego używania konta. Przed finalizacją sprząta własną pozycję po błędzie; po nieustalonym wyniku zapisu niczego nie usuwa. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/description-documents.mjs`
+- `api-tests/pdf-text.py`
+- `api-tests/mailhog.mjs`
+- `api-tests/mail-pdf.mjs`
+- `api-tests/description-mail-recheck.mjs`
+- `api-tests/description-stock.mjs`
+- `api-tests/description-retail-documents.mjs`
+
+**Ograniczenia:** Potwierdzenie zamówienia ma ogólne body; numer i nazwę porównujemy w dołączonym podsumowanie.pdf, także gdy MIME ma application/octet-stream. Lista API może nie zawierać MIME: wtedy odczyt pełnej wiadomości po tym samym ID. Tylko wiadomość właściwego odbiorcy po rozpoczęciu próby; odrzucamy stare ID. Inne kanały, faktury i powiadomienia poza tym testem. Osobny wariant RETAIL: Matlandia, wzorzec nazwy wariantu, 11 dostępów uczniowskich, jedno zamówienie i potwierdzenie PDF/nowego e-maila. Nie obejmuje faktur i innych wariantów.
 
 ### DESC-026 — Generowanie URL dla wszystkich kanałów
 
-**P1 · Do automatyzacji · Odczyt**
+**P1 · Częściowo obsługiwane · Odczyt**
 
 **Wymaganie:** 6.1 — GenerateProductUrlByChannel
+
+**Dowód historyczny:** 20.10.2026: wykonane kontrole WWW przeszły. Zestaw: 13 PASS, 7 SKIP i brak FAIL. Ukrycie sekcji dla oferty i szkoleń, widoczność dla zwykłego produktu, strony A/B, wyszukiwarka Matlandii, dwie strony listy i linki. Zakresy częściowe nie oznaczają zaliczenia całego wymagania. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T08-10-50-576Z-4d7bb556/raport.html)
 
 **Warunki wstępne**
 
@@ -1028,17 +1102,22 @@ RETAIL/ACADEMY: slug główny; WHOLESALE/EMPIK: kanałowy lub fallback.
 
 **Odpowiadający test**
 
-Test ręczny / do automatyzacji
+Opisy kanałowe — CMS i frontend RETAIL
 
-- `docs/product-channel-scenarios.json`
+**Sprawdź CMS i frontend RETAIL:** Odczyt formularzy oferty i szkoleń oraz frontendu RETAIL: nazwy, slugi, pełne opisy A/B i Matlandii, wyszukiwarka, paginacja, kategoria Matematyka i niepusty krótki opis Matlandii. Wzorzec z głównych pól CMS. Bez zmian produktów, koszyków i finalizacji. Wymaga config/description-web.local.json. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Poprawny GET API po podanym slugu nie dowodzi poprawności generatora URL.
+- `api-tests/description-web.mjs`
+- `config/description-web.example.json`
+
+**Ograniczenia:** Automat sprawdza rzeczywisty link Pokaż produkt na stronie sklepu z formularza oferty i odpowiadający mu widok RETAIL. Nie potwierdza generatora dla pozostałych kanałów i typów produktów.
 
 ### DESC-027 — Tłumaczenia produktów dołączonych do oferty
 
-**P1 · Do automatyzacji · Odczyt**
+**P1 · Częściowo obsługiwane · Odczyt**
 
 **Wymaganie:** 7.1 — SpecialOffer i produkty składowe
+
+**Dowód historyczny:** 20.10.2026: 2 PASS w dwóch osobnych koszykach RETAIL. Matlandia: główna nazwa i opis 1 + 11. Oferta: opis 2 x A i 2 x B z głównymi nazwami CMS. Bez podsumowania i zapisu zamówienia. Przyciski oferty są sprawdzane po zakończeniu przeliczenia. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T08-10-15-175Z-487849e9/raport.html)
 
 **Warunki wstępne**
 
@@ -1060,11 +1139,18 @@ Różne nazwy i slugi główne i WHOLESALE dołączonych produktów.
 
 **Odpowiadający test**
 
-Test ręczny / do automatyzacji
+Opisy kanałowe — CMS i frontend RETAIL
 
-- `docs/product-channel-scenarios.json`
+**Sprawdź CMS i frontend RETAIL:** Odczyt formularzy oferty i szkoleń oraz frontendu RETAIL: nazwy, slugi, pełne opisy A/B i Matlandii, wyszukiwarka, paginacja, kategoria Matematyka i niepusty krótki opis Matlandii. Wzorzec z głównych pól CMS. Bez zmian produktów, koszyków i finalizacji. Wymaga config/description-web.local.json. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Brak fixture SpecialOffer; zwykłe DTO pojedynczego produktu nie pokrywa mechanizmu oferty.
+**Sprawdź opisy aplikacji i oferty w koszykach RETAIL:** Dwie odrębne sesje i koszyki: Matlandia 129 (1 dostęp nauczycielski + 11 uczniowskich), oferta 7 (2 A + 2 B). Czeka na przeliczenia konfiguratora. Bez complete i wysyłek. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/description-web.mjs`
+- `config/description-web.example.json`
+- `api-tests/description-retail-cart.mjs`
+- `tests/description-retail-cart.test.mjs`
+
+**Ograniczenia:** Automat porównuje dokładne główne nazwy oraz slugi dwóch dołączonych produktów w ofercie RETAIL. WHOLESALE, fallback i wygenerowany shortDescription oferty wymagają osobnych kontroli.
 
 ### DESC-028 — EMPIK — dane oferty przekazane przez OfferUpdater
 
@@ -1099,9 +1185,11 @@ Test ręczny / do automatyzacji
 
 ### DESC-029 — OutOfStockSubscriber — nazwa w RETAIL
 
-**P1 · Do automatyzacji · Odczyt**
+**P1 · Częściowo obsługiwane · Zapis zamówienia QA i wiadomość do konta testowego**
 
 **Wymaganie:** 8.1 — powiadomienie o dostępności
+
+**Dowód historyczny:** 20.10.2026: 5 PASS. Nowy produkt QA stock, zero wcześniejszych subskrypcji, dokładnie 1 własny odbiorca, zapas 0→1, nowy e-mail z główną nazwą RETAIL oraz przywrócenie stanu/ukrycia. Kontrola dotyczy powrotu dostępności; wywołanie OutOfStockSubscriber przy braku towaru pozostaje osobną kontrolą. [Otwórz raport](http://127.0.0.1:18767/reports/descriptions-2026-10-20T08-17-48-824Z-ec91401a/raport.html)
 
 **Warunki wstępne**
 
@@ -1122,11 +1210,16 @@ Główna nazwa RETAIL przy odmiennym WHOLESALE.
 
 **Odpowiadający test**
 
-Test ręczny / do automatyzacji
+Powiadomienie RETAIL o dostępności nowego QA
 
-- `docs/product-channel-scenarios.json`
+**Sprawdź powiadomienie o dostępności nowego QA:** Nowy produkt QA i jeden odbiorca konta podstawowego. Tymczasowy zapas 0→1, własna subskrypcja, nowy e-mail, na końcu przywrócenie stanu/ukrycia. Może wysłać testową wiadomość; nie zmienia wspólnych produktów. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-**Ograniczenia:** Brak izolowanego testu subscriber i odbiornika wiadomości; nie zmieniamy zapasów współdzielonych produktów.
+- `api-tests/description-stock.mjs`
+- `api-tests/description-web.mjs`
+- `api-tests/mailhog.mjs`
+- `tests/description-stock.test.mjs`
+
+**Ograniczenia:** Automat tworzy własny produkt, kontroluje 0 subskrypcji przed próbą i dokładnie 1 własną przed zmianą zapasu. Wymaga MailHoga i phpMyAdmina. Sprawdza nową wiadomość i nazwę RETAIL przy odmiennej WHOLESALE. Dziennik .auth/description-stock-restore.json; po przerwaniu descriptions:stock:restore. Wynik rzeczywistego wykonania wymaga raportu. Migawka obejmuje ostatnie 50 ID i czas przed utworzeniem unikalnego produktu; dopasowanie wymaga dokładnego odbiorcy, czasu oraz nazwy nowej próby. Poczta MIME jest dekodowana po ID, więc polska nazwa nie jest szukana tylko w surowym kodowaniu. Wywołanie OutOfStockSubscriber przy braku towaru wymaga osobnego potwierdzenia.
 
 ## Endpointy
 

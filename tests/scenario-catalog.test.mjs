@@ -37,7 +37,9 @@ test('Przyciski scenariuszy pokazują zakres, blokują start w trakcie testu i k
   context.state.jobs=[{status:'RUNNING'}];assert(render('CART-007').includes('disabled'));
   nodes.get('scenario-detail').listener({target:{closest:()=>({dataset:{scenarioView:'start',scenarioTarget:'package-profile'}})}});
   assert.equal(view,'start');assert(details.open);assert(scrolled);assert(reset,'Filtr biblioteki nie może ukrywać formularza paczek');
-  const allowed=new Set(['cart','regression','regression-order','order','packages','rounding','redmine-36926','descriptions','descriptions-cms']);
+  assert(render('DESC-002').includes('data-suite="descriptions-web"'));assert(render('DESC-020').includes('data-suite="descriptions-web"'));
+  assert(render('DESC-024').includes('data-suite="descriptions-documents"'));assert(render('DESC-025').includes('data-suite="descriptions-documents"'));
+  const allowed=new Set(['cart','regression','regression-order','order','packages','rounding','redmine-36926','descriptions','descriptions-cms','descriptions-web','descriptions-documents','descriptions-new-product','descriptions-retail-cart','descriptions-retail-summary','descriptions-retail-documents','descriptions-stock']);
   for(const action of Object.values(c.actions))if(action.suite)assert(allowed.has(action.suite));
 });
 

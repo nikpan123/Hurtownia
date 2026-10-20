@@ -10,7 +10,11 @@ W szczegółach scenariusza znajdują się przyciski powiązanych testów. Każd
 
 [Pełna kolekcja koszyka do Postmana](postman/HURTOWNIA%20-%20Koszyk%20-%20komplet%20endpointow.postman_collection.json) obejmuje 81 żądań w siedmiu folderach oraz wszystkie endpointy koszyka, książki adresowej i dokumentów używane przez testy. Domyślnie nie finalizuje zamówienia; dodatkowe próby wymagają jawnego włączenia flag. Zawiera też pomocniczy odczyt katalogu. [Instrukcja i spis endpointów](postman/KOSZYK-INSTRUKCJA.md) opisują konfigurację, zakres i ograniczenia. Dane dostępowe w dostarczonym JSON są puste.
 
-[Redmine #36926 — adresy w drugim kroku koszyka](REDMINE-36926.md): 38 przypadków API obejmujących zapis i walidację. Domyślne adresy są jawnie pomijane do zapewnienia pełnego przywrócenia stanu; pozostałe luki są opisane w raporcie. Uruchomienie: `Testuj-Redmine-36926-dev.cmd`.
+[Redmine #36926 — adresy w drugim kroku koszyka](REDMINE-36926.md): 38 przypadków API obejmujących zapis i walidację. Przypadek 38 sprawdza `isDefault=true`, porównuje oba adresy domyślne w CMS i nowym koszyku, a następnie przywraca oryginalne ID przyciskami **„Ustaw”** w kolumnach **„Adres płatności”** i **„Adres dostawy”**. Wymaga sesji i uprawnień CMS oraz istniejących adresów domyślnych. Dziennik przywracania blokuje nadpisanie niedokończonej próby; awaryjnie użyj `npm run addresses:restore`. Pozostałe luki są opisane w raporcie. Uruchomienie: `Testuj-Redmine-36926-dev.cmd`.
+
+Aktualizacja kontraktu #36926 potwierdzona komentarzem developera przekazanym 20.10.2026: poprawny `POST /wholesale/checkout-step-two/{token}` zwraca **204 No Content i puste body**, zamiast wcześniejszego 201. Regresja i kolekcja Postmana uwzględniają tę zmianę. Sprzątanie nowych adresów QA potwierdza ich odłączenie od koszyka przed DELETE, także po nieudanym sprawdzeniu. Dawne raporty zachowują swoje oczekiwanie 201 i wyniki; zmianę ocenia nowe wykonanie.
+
+Kontrola `carrierName` (#36926-06) na DEV uwzględnia ręczne potwierdzenie użytkownika z 19.10.2026, zaakceptowane 20.10.2026. Gdy GET nie zwraca `order.notes`, wynik ma opis **PASS — potwierdzone ręcznie**, datę, źródło i ograniczenie; raport oddziela takie zaliczenie od bieżących kontroli automatycznych. Nie oznacza to ponownego automatycznego odczytu notatki nowego koszyka. Błędna odpowiedź POST lub niezgodna zwrócona notatka nadal daje FAIL.
 
 Regresja [Redmine #37162 — ShipmentInterface: Got NULL](REDMINE-37162.md) jest dostępna w panelu jako **Sprawdź #37162** lub przez `Testuj-Redmine-37162-dev.cmd`. Obejmuje sześć scenariuszy, osiem nowych koszyków i raport HTML/JSON. Kod został sprawdzony na atrapach API; nie wykonano jeszcze tych testów na DEV/TEST.
 
@@ -28,7 +32,7 @@ Testy API wykonuje **Node.js i `fetch`**. Playwright służy do logowania przez 
 - [Konfiguracja testów](#konfiguracja-testów)
 - [Kontrole cen i rabatów](#kontrole-cen-i-rabatów)
 - [Tłumaczenia produktów per kanał](#tłumaczenia-produktów-per-kanał)
-- [Tworzenie produktu przez API](#tworzenie-produktu-przez-api)
+- [Tworzenie książki przez CMS](#tworzenie-książki-przez-formularz-cms)
 - [Wszystkie endpointy używane przez scenariusze](#wszystkie-endpointy-używane-przez-scenariusze)
 - [Endpointy lokalnego panelu](#endpointy-lokalnego-panelu)
 - [Raporty i interpretacja wyników](#raporty-i-interpretacja-wyników)
@@ -112,7 +116,7 @@ Logowanie GitLab zapisuje sesję w `.auth/dev.json` (lub ścieżce `sessionFile`
 
 Logowanie w CMS nie przekazuje automatycznie uprawnień do JSON admin API. Odpowiedź `403` po udanym logowaniu administratora oznacza odmowę wykonania operacji, a nie konieczność ponownego wpisania hasła hurtownika.
 
-Po odmowie `403` przy tworzeniu formularz wykonuje dodatkowy odczyt `GET admin/products` w wybranym kanale. Raport pokazuje osobno wynik odczytu i zapisu, bez zapisywania tokenu i listy produktów. Jeżeli oba żądania zwracają `403`, backend musi sprawdzić reguły dostępu do admin API oraz obsługę ról administratora. Nie jest to potwierdzenie błędnego body produktu. Test nie ponawia zapisu i nie tworzy wariantu po odmowie.
+Historyczny test admin API po odmowie `403` przy tworzeniu wykonuje dodatkowy odczyt `GET admin/products` w wybranym kanale. Raport pokazuje osobno wynik odczytu i zapisu, bez zapisywania tokenu i listy produktów. Jeżeli oba żądania zwracają `403`, backend musi sprawdzić reguły dostępu do admin API oraz obsługę ról administratora. Nie jest to potwierdzenie błędnego body produktu. Test nie ponawia zapisu i nie tworzy wariantu po odmowie.
 
 ## Panel i dostępne scenariusze
 
@@ -162,7 +166,7 @@ W nagłówku panelu ustaw **Konto do koszyka / zamówienia**: Konto 1 (HURT_EMAI
 3. Dla konta 2 rabat Adamady i rabaty według metod pochodzą z HURT_SECOND_REBATE_*; dla konta 1 rabaty metod z order-regression.local.json i pozostałe oczekiwania z konfiguracji koszyka. Przy zmianie na konto 2 nie używamy kwot, ofert, zabronionych metod ani list dostępności zapisanych jako szczególne oczekiwania konta 1; pozostają kontrole ogólne i niezależne rabaty konta 2.
 4. Zmiana konta w formularzu usuwa dotychczasowy wybór produktów. Pobierz je ponownie dla nowego konta. W trakcie przebiegu wybór konta jest zablokowany.
 
-Wspólne pozostają adresy QA z konfiguracji, pula produktów i sesja bramki GitLab. Wybór nie zmienia danych w .env. Regresja nadal korzysta z obu kont, jeśli zostały skonfigurowane; paczki, katalog, opisy i ceny używają pierwszego konta. Tworzenie produktu korzysta z administratora API.
+Wspólne pozostają adresy QA z konfiguracji, pula produktów i sesja bramki GitLab. Wybór nie zmienia danych w .env. Regresja nadal korzysta z obu kont, jeśli zostały skonfigurowane; paczki, katalog, opisy i ceny używają pierwszego konta. Tworzenie książki korzysta z sesji administratora CMS.
 
 ### Koszyk — jeden przebieg bez finalizacji
 
@@ -259,16 +263,15 @@ Karta automatu musi pozostać otwarta. Zamknięcie lub zatrzymanie nie cofa oper
 
 Przycisk katalogu służy do odczytu; tworzenie produktu ma osobny formularz.
 
-### Nowy produkt API — formularz tworzenia
+### Nowa książka CMS — formularz tworzenia
 
-1. Wpisz nowe kody qa-, nazwę, slug, kanał cennika, cenę, oryginalną cenę i minimum price.
-2. Sprawdź dane lokalnie: format kodów i slugu, długości i ceny; minimum price nie może przekraczać ceny. Pokaż dwa planowane JSON-y.
-3. Po kliknięciu tworzenia zaloguj administratora do API, uzyskując osobny token administratora.
-4. Wyślij POST admin/products i oczekuj HTTP 201 oraz zgodnego kodu produktu.
-5. Dopiero po sukcesie wyślij POST admin/product-variants z powiązaniem produktu i cennikiem. Sprawdź HTTP 201, kod wariantu oraz zwrócone ceny.
-6. Zapisz wynik obu etapów i raport. Błąd drugiego etapu może pozostawić sam produkt; nie ma automatycznego wycofania pierwszego POST.
+1. Wpisz nowy kod QA, kod handlowy, nazwę, slug, kanał i ceny.
+2. Kliknij „Sprawdź i pokaż dane”. Dla WHOLESALE cena i oryginalna cena muszą być identyczne, a minimum price wynosić 0 zł.
+3. Kliknij „Utwórz książkę w CMS”. Test pobiera formularz z aktualnym CSRF i wysyła jeden POST `/products/new/simple/BOOK`.
+4. Potwierdza ID z przekierowania, następnie odczytuje zapisane pola oraz ceny w edycji produktu.
+5. Otwórz raport. Produkt pozostaje nieaktywny i ukryty na DEV. W razie nieustalonego wyniku sprawdź jego kod w CMS przed kolejną próbą; test nie ponawia POST.
 
-Produkt pozostaje na dev. Dostęp do CMS w przeglądarce nie zastępuje uprawnień JWT do admin API. HTTP 401 oznacza problem uwierzytelnienia, 403 odmowę dostępu. Ten kontrakt nie ustawia opisów kanałowych, typu, aktywacji i wszystkich powiązań potrzebnych do sprzedaży. Sukces zapisu cennika nie potwierdza widoczności w katalogu ani gotowości do zamówienia.
+Wymagana jest zapisana sesja administratora CMS. Nie są potrzebne dane JWT admin API. Dotychczasowe 403 w admin API pozostają wynikiem osobnej, historycznej ścieżki.
 
 ### Zaokrąglenia cen — wzorzec starej hurtowni
 
@@ -335,7 +338,7 @@ Osobny przycisk **Opisy kanałowe — CMS** w grupie Produkty uruchamia zestaw `
 7. Sprawdza odrzucenie slugu innego produktu w WHOLESALE i slugu równego głównemu; akceptację takiego samego slugu w WHOLESALE i EMPIK; nazwy 1/2 znaki oraz slugi 256/255 znaków.
 8. W bloku końcowym przywraca pierwotne pola także po błędzie lub przerwaniu i potwierdza je odczytem. Raport zawiera wynik przywracania, `description-cms-audit.json` i `cms-restored.png`.
 
-Nie testuje interakcji JavaScript edytora treści, pełnego frontendu, generowania URL ani wysyłki do Empiku. Obsługuje opisy z elementami HTML edytora; inne rodzaje bloków wymagają rozszerzenia adaptera. Nie finalizuje zamówień. Przypadki ukrywania zakładki dla specjalnych typów i tworzenia nowego produktu nadal wymagają osobnych danych i automatów.
+Nie testuje interakcji JavaScript edytora treści, pełnego frontendu, generowania URL ani wysyłki do Empiku. Obsługuje opisy z elementami HTML edytora; inne rodzaje bloków wymagają rozszerzenia adaptera. Nie finalizuje zamówień. Ukrywanie sekcji dla specjalnych typów sprawdza osobny zestaw WWW, a tworzenie produktu i rekordy tłumaczeń — zestaw „Nowy produkt i tłumaczenia”.
 
 Nie edytuj równocześnie produktu QA. Przy wykryciu zmiany zewnętrznej automat blokuje dalszy zapis i zachowuje dziennik zamiast nadpisywać cudze dane. Po zabiciu procesu użyj `npm run descriptions:restore`; polecenie porównuje aktualne pola z zapisanymi stanami i odmawia zapisu przy konflikcie. Przywracanie pól nie usuwa historii zmian CMS ani ewentualnych wewnętrznych rekordów utworzonych przez backend. Sam test API opisów blokuje się, jeśli dziennik CMS wskazuje niedokończoną zmianę.
 
@@ -553,20 +556,22 @@ Sprawdzane: nazwa i slug na liście, nazwa/slug/opis/krótki opis w szczegółac
 
 Nie należy utożsamiać wyniku tego zestawu z pełną akceptacją zadania. Oddzielne przypadki SKIP wskazują brak pokrycia walidacji CMS, długości i unikalności slugów, specjalnych typów produktów, kursów, generowania URL, e-maili, powiadomień, treści PDF oraz integracji Empik. W szczególności brak testowego serwera Empik nie jest wynikiem PASS.
 
-## Tworzenie produktu przez API
+## Tworzenie książki przez formularz CMS
 
-Mini formularz ma pola: kod produktu, kod wariantu, nazwa, slug, kanał cennika, cena, oryginalna cena i minimum price. Kody muszą zaczynać się od `qa-`. Przycisk generowania nadaje unikalne kody, a przed wysłaniem trzeba wyświetlić i sprawdzić JSON.
+Formularz w panelu tworzy książkę przez `POST https://cms-ksiegarnia.gwodev.pl/products/new/simple/BOOK`. Jest to zapis formularza CMS z sesją administratora i aktualnym CSRF, w formacie `application/x-www-form-urlencoded`. Nie używa admin API ani bezpośredniego zapisu do bazy.
 
-Przebieg obejmuje tylko:
+Pola panelu: kod produktu QA, kod handlowy (wcześniej podpisany „kod wariantu”), nazwa, slug, kanał i trzy ceny. Przed zapisem panel pokazuje podgląd danych; tokeny i pola sesji nie są wyświetlane. Wymagane atrybuty książki (autor, liczba stron, ISBN) test uzupełnia wartościami QA. Produkt powstaje jako nieaktywny i niewidoczny; pozostaje w CMS.
 
-1. Logowanie administratora.
-2. `POST /admin/products` z kodem i tłumaczeniem `pl_PL` nazwy/slugu.
-3. Po potwierdzeniu produktu: `POST /admin/product-variants` z kodem wariantu, IRI produktu i cennikiem.
-4. Porównanie kodów i cen zwróconych przez API, zapis osobnego raportu.
+Każda zmiana pola usuwa poprzedni podgląd i blokuje tworzenie do ponownego sprawdzenia. Błąd walidacji jest widoczny przy podglądzie, a błędne pole zostaje zaznaczone. Kod QA nie jest nazwą produktu: np. `qa-testowa-ksiazka` wpisuje się jako kod, a dowolny tytuł w pole nazwy. Spóźnione odpowiedzi nie nadpisują nowszych danych.
 
-Nie uruchamia testów ogólnego katalogu. Jeśli pierwszy POST zostanie odrzucony, wariant nie jest tworzony. Jeśli produkt powstał, ale zapis wariantu się nie udał, raport zachowuje kod i stan częściowego utworzenia — program nie usuwa rekordu i nie powtarza sam tworzenia.
+1. Pobranie świeżego formularza w sesji zapisanej w `.auth/dev.json`.
+2. Jeden POST nowej książki i potwierdzenie przekierowania do ID produktu.
+3. Ponowny odczyt formularza edycji: kod, nazwa, slug, kod handlowy, kanał, trzy ceny i ukrycie.
+4. Osobny raport z oczekiwaniami, pomiarami i faktycznym HTTP. Przy timeout zapis nie jest ponawiany; przed kolejną próbą należy sprawdzić kod z `creation-intent.json` w CMS.
 
-Udokumentowany kontrakt tworzenia **nie udostępnia** zapisu opisów, tłumaczeń kanałowych, typu produktu ani aktywacji/przypisania kanałów produktu. Sam cennik wariantu nie gwarantuje widoczności w sklepie. Nieobsługiwane pola nie są wysyłane ani po cichu ignorowane. Obserwowana odmowa `403 Access Denied` pozostaje kwestią uprawnień/konfiguracji admin API; formularz jej nie omija i nie przełącza zapisu na CMS.
+Z terminala: `npm run catalog:create -- --input config/product-create.local.json`. Dotychczasowy format wejścia pozostaje zgodny; `variantCode` oznacza teraz **kod handlowy formularza CMS**, a nie osobny kod wariantu admin API. Ten endpoint obsługuje wyłącznie typ BOOK. Dla WHOLESALE cena i oryginalna cena muszą być identyczne, a minimum price wynosić 0 zł; podgląd odrzuca inne wartości przed zapisem.
+
+Historyczne testy `POST /api/v2/admin/products` oraz `/admin/product-variants` i ich wyniki 403 pozostają dowodem tamtej ścieżki. Funkcja `runProductCreation` w `features.mjs` zachowuje stary test API; panel i CLI `product-create` używają teraz `runCmsProductCreation`. Sukces CMS nie oznacza naprawy uprawnień API.
 
 ## Wszystkie endpointy używane przez scenariusze
 
@@ -968,3 +973,119 @@ W wariancie z zapisem kontrola pustego koszyka rozdziela odczyt, próbę zatwier
 Sekcja **Najważniejsze ustalenia regresji** grupuje podobne objawy i wskazuje żądania zwracające HTTP 500. Odpowiedź 500 dla nieprawidłowej ilości lub nieistniejącej metody nie jest poprawną walidacją; oczekiwane statusy 4xx pozostają wymagane. Testy nie poprawiają kodu badanego backendu. Porównanie oferty płatności z netto koszyka jest informacyjne, dopóki nie potwierdzono wspólnej reguły zaokrągleń i nie włączono ścisłego wymagania `enforcePaymentQuoteTotal`.
 
 Kolekcja Postmana resetuje poprzednią blokadę przy kroku 01 według nazwy żądania, ponieważ identyfikatory mogą zmienić się po imporcie. Nie zmieniaj nazwy pierwszego kroku. Powód zatrzymania jest zapisany w zmiennej iso_setup_error; ponowna próba od 01 czyści poprzedni błąd. Sama flaga iso_setup_blocked=true nie wyjaśnia przyczyny pierwotnego zatrzymania.
+
+## Opisy kanałowe: oferta, RETAIL, PDF i e-mail (#33388)
+
+W kategorii **Produkty** są dwa dodatkowe zestawy:
+
+- **CMS i frontend RETAIL** — odczytuje trzy formularze CMS (oferta, szkolenie płatne i zamknięte), sprawdza ukrycie zakładki opisów kanałowych, porównuje nazwy i główne adresy dwóch produktów z CMS ze stronami RETAIL oraz nazwy i linki produktów dołączonych do oferty. Nie zapisuje produktów. Pozostałe widoki mają osobne SKIP, a nie domyślne PASS.
+- **Nazwy w PDF i e-mailu** — tworzy i zapisuje jedno nowe zamówienie QA WHOLESALE z jedną sztuką testhurtA. Oczekiwaną nazwę odczytuje niezależnie z CMS. Sprawdza nazwę w koszyku, zapisanym zamówieniu, potwierdzeniu PDF i załączniku wiadomości. Wysyłka jest automatyczna. Adresy mają saveToAddressBook=false i isDefault=false. Nie ponawia complete po niepewnym wyniku zapisu.
+
+Wzór ustawień: `config/description-web.example.json`; lokalne ustawienia: `config/description-web.local.json`. Zawierają produkty 10202/10203, ofertę 7 (strona /product/test321321), szkolenia kontrolne i adres MailHoga. Test dokumentów korzysta z konta pierwszego z .env; wybór użytkownika koszyka nie zmienia tego konta. Dane logowania pozostają w .env i lokalnej sesji.
+
+### Jak sprawdzany jest e-mail
+
+MailHog najpierw musi załadować listę — chwilowe Inbox (0) nie jest dowodem pustej skrzynki. Przed nowym zamówieniem test zapisuje czas i identyfikatory wiadomości odbiorcy. Po zapisie szuka nowej wiadomości do tego samego odbiorcy. Nie wybiera jej wyłącznie po tytule ani jako najnowszej wiadomości.
+
+Potwierdzenie ma ogólną treść i odsyła do załączników. Dlatego nazwa produktu oraz numer zamówienia są sprawdzane w **podsumowanie.pdf**, a nie wymagane w body. Załącznik może mieć typ application/octet-stream; odczyt sprawdza nazwę, kodowanie i sygnaturę PDF. Obsługiwane jest MIME na głównym poziomie odpowiedzi MailHoga i wewnątrz Content; w razie braku pełnego MIME pobierana jest treść konkretnej wiadomości. Numer zamówienia w PDF wiąże dowód z właściwym zamówieniem. Timeout odczytu nie dowodzi, że aplikacja nie wysłała poczty.
+
+Przy raporcie z potwierdzonym zapisem i migawką MailHoga jest przycisk **Sprawdź e-mail ponownie**. Wyłącznie odczytuje istniejącą pocztę i zapisuje osobny raport; nie tworzy koszyka, nie ponawia zapisu zamówienia i nie wysyła nowej wiadomości. Historyczny wynik pozostaje zachowany. Dla pierwotnego raportu #30001628 nie utrwalono listy ID migawki — raport powtórzenia jawnie wskazuje to ograniczenie i sprawdza odbiorcę, czas oraz unikalny numer zamówienia w PDF.
+
+Raport zawiera sekcję **Dokumenty wykorzystane jako dowody** z linkiem do pobranego PDF. Nie kopiuje całej korespondencji do tabeli wyników. Odczyt tekstu wymaga pypdf; interpreter można wskazać zmienną HURT_PDF_PYTHON (domyślnie środowisko Python aplikacji).
+
+Uruchomienie spoza panelu:
+
+```powershell
+npm.cmd run descriptions:web
+npm.cmd run descriptions:documents
+npm.cmd run descriptions:mail -- descriptions-2026-10-20T06-53-44-114Z-b6b4f919
+```
+
+Drugie polecenie zapisuje **nowe** zamówienie. Trzecie odczytuje pocztę istniejącego zamówienia z podanego raportu.
+
+Potwierdzone wyniki z 20.10.2026:
+
+- Widoki WWW: `descriptions-2026-10-20T06-47-44-167Z-fc2f2968` — 10 PASS, 7 SKIP, brak FAIL; cały zakres jest INCOMPLETE.
+- Zamówienie #30001628: `descriptions-2026-10-20T06-53-44-114Z-b6b4f919` — nazwy w koszyku, po zapisie i w PDF poprawne; pierwotny odczyt maila zakończył się timeoutem.
+- Ponowny odczyt tej samej poczty: `descriptions-2026-10-20T07-03-58-105Z-2af280e5` — PASS; załącznik zawiera #30001628 i nazwę „test WHOLESALE”. Nie utworzono kolejnego zamówienia.
+
+Uzupełnione kontrole, ich rzeczywiste raporty oraz pozostały zakres #33388 opisuje następna sekcja. Wyniki API dotyczące variantName pozostają osobnymi niezgodnościami.
+
+### Uzupełnione kontrole opisów — 20.10.2026
+
+Dodatkowe karty w kategorii **Produkty** i przyciski przy scenariuszach:
+
+- **Nowy produkt i tłumaczenia** (`npm.cmd run descriptions:new-product`, DESC-010): tworzy jedną ukrytą, nieaktywną książkę QA z poprawnymi wymaganymi atrybutami. Potwierdza puste pola i zero rekordów kanałowych; następnie dodaje wszystkie cztery pola WHOLESALE/EMPIK, odczytuje CMS i porównuje każdy zapis w bazie. Produkt pozostaje jako QA; nie jest publikowany ani eksportowany do EMPIK. Przed POST powstaje creation-intent.json z kodem. Po błędzie nie ponawiaj POST tego samego kodu bez odczytu CMS. Rzeczywisty przebieg: `descriptions-2026-10-20T08-03-32-948Z-fdc1cc88`, 4 PASS, produkt 10216.
+- **Aplikacja i oferta — opisy koszyka** (`npm.cmd run descriptions:retail-cart`, DESC-021/022/023/027): dwa oddzielne koszyki i sesje RETAIL. Matlandia 129: główna nazwa, 1 dostęp nauczycielski i 11 uczniowskich. Oferta 7: po 2 sztuki A/B i dokładne główne nazwy w wygenerowanym opisie. Automat czeka na inicjalizację i odpowiedzi przeliczeń konfiguratora, a potem przechodzi do /koszyk. Nie finalizuje zamówień. Rzeczywisty przebieg: `descriptions-2026-10-20T08-10-15-175Z-487849e9`, 2 PASS.
+- **Powiadomienie o dostępności** (`npm.cmd run descriptions:stock`, zakres częściowy DESC-029/025): nowy, odizolowany produkt QA stock, różne nazwy RETAIL/WHOLESALE, brak wcześniejszych subskrypcji i migawka poczty. Tymczasowo udostępnia stronę RETAIL przy zapasie 0, zapisuje własny adres z konta podstawowego, potwierdza w bazie dokładnie jednego własnego odbiorcę, zmienia zapas na 1 i szuka nowej wiadomości z główną nazwą. Na końcu przywraca stan, kanały i ukrycie. Nie zmienia zapasów wspólnych produktów. Dziennik `.auth/description-stock-restore.json` blokuje kolejne uruchomienie po niedokończonym teście; przywracanie: `npm.cmd run descriptions:stock:restore`. Nie usuwaj tego dziennika ręcznie. To kontrola powrotu dostępności; wywołanie OutOfStockSubscriber przy braku towaru wymaga osobnego potwierdzenia.
+
+Zestaw **Oferta i widoki RETAIL** sprawdza teraz także widoczną sekcję zwykłego produktu, formularz wyszukiwarki dla Matlandii i dwie kolejne strony listy (10 + 10, bez duplikatów). Wynik: `descriptions-2026-10-20T08-10-50-576Z-4d7bb556`, 13 PASS, 7 SKIP. Produkty A/B są wzorcem stron i oferty; bez potwierdzenia ich przypisania do katalogu GWO nie wymagamy ich w wynikach wyszukiwania. MailHog ma osobne testy i nie jest warunkiem działania stron WWW.
+
+Raporty opisów zawierają teraz sekcję **Pominięte w tym przebiegu — gdzie sprawdzić dalej?**. Mapa pokazuje właściwy zestaw, ograniczenia i osobny dowód wykonania. Korzysta z aktualnego katalogu scenariuszy; nie zmienia historycznych wyników raportu. HTML można odświeżyć bez ponownego wykonywania zapisów. Dowody API, CMS, WWW, koszyków, PDF i poczty pozostają osobnymi przebiegami.
+
+Nadal oddzielnie pozostają: zapis i podsumowanie Order RETAIL, pozostałe warianty aplikacji, dokumenty i e-maile innych kanałów, faktury, pełny generator URL, właściwy OutOfStockSubscriber i środowisko OfferUpdater EMPIK. Brak variantName w API to istniejąca niezgodność DESC-017; nowe kontrole jej nie usuwają.
+
+Powiadomienie o powrocie dostępności — rzeczywisty przebieg `descriptions-2026-10-20T08-17-48-824Z-ec91401a`: **5 PASS** (przygotowanie, jedyna własna subskrypcja, stan 0→1, treść nowego e-maila, przywrócenie i ukrycie QA). Dziennik został zamknięty po odczycie zgodnego stanu. Migawka obejmuje ostatnie 50 ID i czas sprzed utworzenia unikalnego produktu; starsze wiadomości wyklucza czas. Dopasowanie wymaga dokładnego odbiorcy oraz unikalnej nazwy próby. Czytnik dekoduje pełny MIME po ID, zamiast wymagać dosłownej polskiej nazwy w surowym kodowaniu wiadomości.
+
+### Zestaw zbiorczy opisów kanałowych (#33388)
+
+W panelu **Produkty → Opisy kanałowe — wszystkie moduły** dostępne są dwa przyciski:
+
+- **Zbiorczy bez zapisu zamówienia**: API, zapis i walidacje CMS z przywróceniem, formularze i widoki RETAIL, utworzenie ukrytego produktu QA z kontrolą bazy, osobne koszyki aplikacji i oferty oraz powiadomienie o dostępności nowego produktu QA.
+- **Zbiorczy z zamówieniem, PDF i e-mailem**: powyższe oraz jedno nowe zamówienie WHOLESALE i odczyt jego PDF oraz nowego potwierdzenia e-mail. Nie obejmuje faktur ani dokumentów wszystkich kanałów.
+
+Oba warianty pozostawiają ukryte produkty QA i koszyki na DEV oraz wysyłają testowe powiadomienie o dostępności. Wariant bez zapisu zamówienia nie jest testem tylko do odczytu. Korzystają z podstawowego konta i dotychczasowych konfiguracji modułów; nie wymagają ponownego wpisywania danych użytkownika.
+
+Uruchomienie z terminala: `npm run descriptions:all` lub `npm run descriptions:all:complete`.
+
+Raport ma osobną tabelę **Sześć kontroli przekazanych z CMS i frontendu RETAIL**: DESC-010, 022, 023, 024, 025 i 029. Pokazuje wynik kontroli modułu docelowego, liczniki i link do kroków oraz dowodów. Samo przekazanie zakresu nie daje PASS; błąd lub pominięcie części kontroli pozostaje widoczne.
+
+Można jawnie dołączyć odsyłacz do wcześniejszej próby: `npm run descriptions:all -- --evidence=IDENTYFIKATOR_RAPORTU`. Sekcja **Wcześniejsze potwierdzenia — osobne próby** pokazuje datę, zakres i wyniki źródła. Nie dodaje historycznych PASS do bieżących liczników i nie zmienia bieżących SKIP/FAIL. Nie zapisuje ponownie zamówienia. Raport źródłowy musi dotyczyć opisów i tego samego środowiska.
+
+Przebieg 20.10.2026: [66 PASS, 6 FAIL, 2 SKIP](http://127.0.0.1:18767/reports/descriptions-2026-10-20T10-30-53-284Z-755bec99/raport.html). DESC-010: 4 PASS, DESC-022/023: po 1 PASS, DESC-029: 5 PASS z potwierdzonym przywróceniem. Dołączono osobne wcześniejsze potwierdzenie PDF/e-mail RETAIL #30001631, bez ponownego zapisu zamówienia. Sześć FAIL dotyczy brakującego `variantName` w API; SKIP dotyczą Empik bez środowiska i wyłączonego zapisu zamówienia WHOLESALE. Każdy podraport ma link powrotny do zestawienia.
+
+Raport zbiorczy zawiera wyniki rzeczywiście wykonanych kontroli, powiązania DESC-001–DESC-029, granice pokrycia oraz linki do szczegółowych raportów modułów z tej samej próby. Podraporty znajdują się w folderach raportu zbiorczego. Nie kopiuje historycznych PASS. Przekazania „poza zakresem tego modułu” pokazuje osobno i nie zamienia ich w PASS. Rzeczywiste braki automatyzacji i pominięcia pozostają SKIP. Liczniki modułów mogą obejmować przekazania zakresu, dlatego nie są prostą sumą liczników raportu zbiorczego.
+
+Błędy asercji nie blokują następnych niezależnych modułów. Niedokończone przywracanie danych, błąd uruchomienia modułu lub zatrzymanie przez użytkownika blokują kolejne moduły. Nie ma automatycznego ponawiania zapisu zamówienia. Zestaw nie usuwa znanych błędów API (np. brak `variantName`) i nie oznacza pełnej akceptacji #33388: zapis zamówienia RETAIL, inne warianty aplikacji, wszystkie dokumenty/kanały URL, literalny OutOfStockSubscriber i Empik nadal mają ograniczenia wskazane w raporcie.
+
+Pierwszy zbiorczy przebieg DEV bez finalizacji (20.10.2026): **62 PASS, 6 FAIL, 3 SKIP**. [Raport zbiorczy](http://127.0.0.1:18767/reports/descriptions-2026-10-20T08-30-39-757Z-6bb16f0a/raport.html). Sześć FAIL: brak `variantName` w API dla dwóch produktów i trzech kanałów. SKIP: Empik bez środowiska, pełne opisy/listy kategorii RETAIL, dokumenty wyłączone w tym wariancie. CMS 15 PASS, tworzenie produktu 4 PASS, koszyki RETAIL 2 PASS, dostępność 5 PASS. Oba przywrócenia potwierdzone; brak pozostawionych dzienników zmian. Wariant z nowym zamówieniem jest podłączony i sprawdzony testami kodu; w tej zbiorczej próbie nie uruchamiano jego finalizacji.
+
+### Podgląd przeglądarki podczas testu
+
+Przed uruchomieniem zaznacz **Pokaż przeglądarkę podczas testu** nad opcjami uruchomienia i wybierz **Tempo podglądu**: normalne, 0,25 s lub 0,75 s opóźnienia na akcję przeglądarki. Ustawienie dotyczy nowego przebiegu, również uruchomionego ze scenariusza i zestawu zbiorczego. Panel zapamiętuje je lokalnie w przeglądarce; nie zapisuje do `.env` i nie zmienia ustawień już trwającego testu.
+
+Podgląd obejmuje moduły przeglądarkowe: CMS, RETAIL, koszyki WWW, MailHog, odczyty rabatów i bazy oraz konfigurację GLS/adresów. Testy wywołujące bezpośrednio API nie otwierają witryny sklepu; ich żądania i wyniki pozostają w logu i raporcie. Część zapisów CMS wykonuje się przez HTTP, więc nie pokazuje wpisywania każdego pola. Wybrane tempo opóźnia akcje Playwright, nie wszystkie żądania API/HTTP i nie gwarantuje, że każdy odczyt pozostanie na ekranie przez wskazany czas.
+
+Okno pojawia się, gdy moduł otwiera przeglądarkę, i zamyka po jego zakończeniu. W zestawie zbiorczym kolejne moduły mogą otwierać kolejne okna. Nie zamykaj okna ręcznie ani nie zmieniaj w nim danych w trakcie testu; użyj przycisku **Zatrzymaj test**, aby uruchomić obsługę zatrzymania i przywracania danych.
+
+Dla uruchomień CLI można ustawić na czas procesu `HURT_BROWSER_PREVIEW=true` oraz `HURT_BROWSER_SLOW_MO_MS=250` (dozwolone 0, 250, 750). Domyślnie moduły działają w tle. Logowanie GitLab nadal korzysta z widocznego okna niezależnie od tej opcji.
+
+W trybie podglądu okno pokazuje również **bieżącą kontrolę**, przewija do używanego pola i podświetla je. Po zmianach jest krótka pauza na przeczytanie wartości. Formularze produktu zapisywane przez HTTP pokazują przygotowane wartości w polach, a pasek testu podaje **PRZED / PO** oraz kod odpowiedzi HTTP. Ukryta treść edytora ma czytelny, oznaczony podgląd; nie jest to test obsługi przycisków edytora. Zapis nadal korzysta z tego samego, wcześniej przygotowanego body żądania; prezentacja nie dodaje kliknięcia „Zapisz” ani drugiego POST. Hasła, tokeny i inne pola dostępowe są wyłączone z podglądu zmian.
+
+Czytelne pauzy działają wyłącznie przy włączonym podglądzie, także przy normalnym tempie. Wybrane 0,25/0,75 s dodatkowo spowalnia akcje przeglądarki. Bez podglądu nie instaluje się paska, nie rozwija sekcji i nie wykonuje zmian pól ani tych pauz. Zatrzymanie i przywracanie danych pozostają częścią dotychczasowych testów.
+
+Sprawdzenie prezentacji na lokalnym formularzu (bez danych DEV): `node tests/integration/browser-presentation.mjs`. Próba obejmuje rozwinięcie sekcji, widoczną zmianę tekstu i przełącznika, treść ukrytego edytora, zachowanie oryginalnego body i pominięcie sekretów.
+
+### Skrócenie przygotowania opisów kanałowych
+
+Moduł CMS używa jednego świeżo odczytanego formularza zarówno do kontroli obcych zmian, jak i przygotowania najbliższego zapisu. Formularz wraz z aktualnymi polami i CSRF można wykorzystać do zapisu tylko raz; kolejna operacja wymaga nowego odczytu. Jeżeli produkt jest już otwarty po przygotowaniu sesji, pierwszy odczyt nie odświeża ponownie strony.
+
+Przywrócenie wzorca przed kolejnym przypadkiem nie wysyła POST, jeśli ostatni potwierdzony stan już jest tym wzorcem. W poprawnym pełnym przebiegu usuwa to dwa identyczne zapisy przygotowawcze. Właściwe próby zapisów, walidacji i fallbacku nadal są wykonywane. Raport CMS podaje liczbę pominiętych identycznych zapisów.
+
+Moduł odczytu RETAIL wykorzystuje odczyt produktu QA z DESC-001 również do sprawdzenia jego nazwy i slugu w DESC-020. Raport wskazuje ponowne wykorzystanie tego samego źródła. Dotyczy to tylko tego samego modułu bez zapisów; dane nie są współdzielone między modułami ani kolejnymi przebiegami.
+
+Zachowano świeżą kontrolę stanu przed rzeczywistym zapisem, odczyt po operacji, blokadę przy obcej zmianie, dziennik zmian, weryfikację przywrócenia i osobne sesje koszyków. Przygotowania związane z nową wiadomością i zapasami również pozostają odrębne.
+
+### Rozszerzenie CMS i frontendu RETAIL — 20.10.2026
+
+Zestaw descriptions-web porównuje cały tekst głównego opisu A/B z treścią karty produktu: zarówno niepusty opis A, jak i pusty B. Dodatkowo porównuje niepusty pełny opis Matlandii 129. Normalizuje wyłącznie HTML do tekstu i odstępy; nie ocenia wizualnego formatowania. Na liście wybiera rzeczywisty filtr Matematyka, zatwierdza formularz, sprawdza zachowanie filtra w URL i odczytuje kolejne strony do końca (maksymalnie 8; przekroczenie limitu jest FAIL). Dla Matlandii wymaga dokładnej głównej nazwy, slugu i całego niepustego krótkiego opisu CMS. Nie wymaga A/B w katalogu bez potwierdzonej taksonomii. Pozostałe produkty kategorii nie mają niezależnej kontroli nazw CMS. W raporcie są porównania tekstów i odczytane strony list.
+
+Uruchomienie: przycisk **CMS i frontend RETAIL** lub npm.cmd run descriptions:web. Konfiguracja category jest w config/description-web.local.json (wzór w example.json). Zestaw jest odczytowy, także w wariancie z podglądem. Nie finalizuje zamówień. Podsumowanie, zapis zamówienia RETAIL, PDF i e-mail RETAIL wymagają oddzielnego zestawu; kontrole dokumentów WHOLESALE ich nie zastępują.
+
+Podsumowanie aplikacji RETAIL prezentuje nazwę wybranego wariantu (potwierdzenie użytkownika 20.10.2026). Dla Matlandii wzorzec application.summaryName to „Dostęp nauczycielski 2 lata”. Sam brak nazwy Matlandia. Klasa 4 w tej kolumnie nie jest błędem. Osobny przycisk „Nazwa w podsumowaniu RETAIL” wymaga RETAIL_LOGIN_EMAIL i RETAIL_LOGIN_PASSWORD w .env; nie finalizuje. Ten nowy automat wymaga jeszcze weryfikacji całej ścieżki logowania na DEV z poprawnymi danymi; kontrolę konkretnego widoku wykonano w sesji wspomaganej.
+
+**Zapis RETAIL + PDF i e-mail** to osobny automat (descriptions-retail-documents): jeden koszyk Matlandii, login Moje GWO, wariant w podsumowaniu, jedna finalizacja, odczyt Order w CMS, tekst potwierdzenia PDF i załącznika nowej wiadomości. Nie wykonuje przelewu i nie ponawia finalizacji po timeout lub wylogowaniu. Wymaga uzupełnienia RETAIL_LOGIN_PASSWORD w .env. Zapis CMS ma zawierać także główną nazwę aplikacji i 11 dostępów uczniowskich; PDF porównujemy z nazwą wariantu z podsumowania. Poczta jest identyfikowana przez dokładnego odbiorcę, czas sprzed operacji oraz numer nowego zamówienia w załączniku — nie deklarujemy migawki wszystkich wcześniejszych ID wiadomości. Pełny automatyczny przebieg wymaga weryfikacji po uzupełnieniu oddzielnego hasła; wykonano niezależną próbę wspomaganą #30001631.
+
+Próba wspomagana RETAIL: [raport #30001631 — 4 PASS](http://127.0.0.1:18767/reports/descriptions-2026-10-20T10-02-46-041Z-f35d6c21/raport.html). Potwierdzono wariant w podsumowaniu, zapis CMS z główną nazwą aplikacji i 11 dostępami, PDF oraz nowy e-mail. PDF z CMS i załącznik mają identyczny tekst. Odczytowy moduł CMS i frontend RETAIL: [17 PASS, 0 FAIL, 6 SKIP](http://127.0.0.1:18767/reports/descriptions-2026-10-20T09-49-29-061Z-4198cb30/raport.html). Sześć pominięć dotyczy innych modułów. Zapisane zamówienie pozostaje na DEV; nie wykonano płatności. Pierwszą próbę przerwało równoczesne logowanie — do testów procesu używaj konta bez równoległych sesji.
+
+Automat podsumowania RETAIL: [PASS, własna pozycja usunięta](http://127.0.0.1:18767/reports/descriptions-2026-10-20T10-18-08-426Z-12547867/raport.html). Loguje konto przed utworzeniem QA i wymaga pustego koszyka. Nie korzysta z poprzedniej sesji zakupowej z .auth; używa osobnych danych Moje GWO. Po próbie bez zapisu usuwa jedynie zapamiętaną własną pozycję i potwierdza pusty koszyk. Rodzaj zamówienia zapisuje aktualnym formularzem HTTP i bezpośrednio otwiera etap danych: ten zestaw porównuje nazwy, nie sprawdza działania przycisku przejścia z koszyka. Zapis i dokumenty potwierdzono oddzielną próbą wspomaganą #30001631; pełnej automatycznej finalizacji nie powtarzano, aby nie tworzyć drugiego zamówienia.

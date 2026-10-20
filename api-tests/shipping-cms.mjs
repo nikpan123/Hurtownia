@@ -1,3 +1,5 @@
+import {installBrowserPresentation} from './browser-presentation.mjs';
+import {browserLaunchOptions} from './browser-options.mjs';
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir,unlink} from 'node:fs/promises';
 import path from 'node:path';
@@ -13,9 +15,9 @@ export function validateShippingProfile(p){
   return p;
 }
 async function connect({vars,sessionFile}){
-  const {chromium}=await import('playwright');const browser=await chromium.launch({channel:vars.BROWSER_CHANNEL??'msedge',headless:true});
+  const {chromium}=await import('playwright');const browser=await chromium.launch(browserLaunchOptions(vars));
   try{
-    const state=JSON.parse(await readFile(sessionFile,'utf8'));const context=await browser.newContext({storageState:state});const page=await context.newPage();page.setDefaultTimeout(20000);
+    const state=JSON.parse(await readFile(sessionFile,'utf8'));const context=await browser.newContext({storageState:state});const presentation=await installBrowserPresentation(context,{vars});const page=await context.newPage();page.setDefaultTimeout(20000);
     await page.goto(cmsUrl);
     if(new URL(page.url()).hostname!=='cms-ksiegarnia.gwodev.pl')throw new Error('Odśwież sesję GitLab przez Zaloguj-dev.cmd');
     if(new URL(page.url()).pathname==='/login'){
@@ -33,9 +35,10 @@ async function connect({vars,sessionFile}){
     };
     const write=async profile=>{
       const current=await read();assert.equal(current.weightRanges.length,profile.weightRanges.length,'Profil musi mieć tyle przedziałów co CMS; liczba wierszy nie jest zmieniana automatycznie');
-      await page.locator('#sylius_shipping_method_configuration_singlePackageWeight').fill(String(profile.singlePackageWeight));
+      await presentation.inspect(page,page.locator('#sylius_shipping_method_configuration_singlePackageWeight'),'Zmieniam wagę pojedynczej paczki');await page.locator('#sylius_shipping_method_configuration_singlePackageWeight').fill(String(profile.singlePackageWeight));
       const toggle=page.locator('#sylius_shipping_method_configuration_priceIsNet');if(await toggle.isChecked()!==profile.priceIsNet)await page.locator('.ui.checkbox').filter({has:toggle}).click();
-      for(let i=0;i<profile.weightRanges.length;i++)for(const [field,value]of Object.entries({orderWeightFrom:profile.weightRanges[i].from,orderWeightTo:profile.weightRanges[i].to,pricePerPackage:(profile.weightRanges[i].priceMinor/100).toFixed(2).replace('.',',')}))await page.locator('#sylius_shipping_method_configuration_weightRanges_'+i+'_'+field).fill(String(value));
+      for(let i=0;i<profile.weightRanges.length;i++)for(const [field,value]of Object.entries({orderWeightFrom:profile.weightRanges[i].from,orderWeightTo:profile.weightRanges[i].to,pricePerPackage:(profile.weightRanges[i].priceMinor/100).toFixed(2).replace('.',',')})){const input=page.locator('#sylius_shipping_method_configuration_weightRanges_'+i+'_'+field);await presentation.inspect(page,input,'Zmieniam przedział '+(i+1)+' — '+({orderWeightFrom:'waga od',orderWeightTo:'waga do',pricePerPackage:'cena paczki'}[field]));await input.fill(String(value));await presentation.step(page,'Wpisano: '+value);}
+      await presentation.inspect(page,page.locator('#sylius_shipping_method_configuration_weightRanges'),'Przedziały i ceny paczek przygotowane do zapisu');await presentation.inspect(page,page.locator('#sylius_save_changes_button'),'Zapisuję konfigurację GLS przez formularz');
       await Promise.all([page.waitForNavigation(),page.locator('#sylius_save_changes_button').click()]);assert.deepEqual(await read(),profile,'CMS nie potwierdził zapisanej konfiguracji');
     };
     return {read,write,screenshot:file=>page.screenshot({path:file}),close:()=>browser.close()};

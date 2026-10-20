@@ -43,7 +43,7 @@ function runMock({flags={},badTotal=false,foreignMutation=false,completeTimeout=
    for(const [key,a]of Object.entries({shippingAddress:body.shippingAddress,billingAddress:body.billingAddress})){
     const id=++bookId;o[key]={...a,id};if(a.saveToAddressBook)book.push({...a,id});
    }
-   return response([],201);
+   return response(null,204);
   }
   if(path.endsWith('/items/bulk')){for(const p of body.items){const existing=o.items.find(i=>i.product.code===p.productVariant);if(existing)existing.quantity+=p.quantity;else o.items.push({id:o.items.length+1,product:{code:p.productVariant},quantity:p.quantity});}return response({},201);}
   if(path.includes('/items/')){const id=Number(path.split('/').at(-1));if(method==='DELETE')o.items=o.items.filter(i=>i.id!==id);else o.items.find(i=>i.id===id).quantity=body.quantity;return response({},200);}
@@ -85,7 +85,7 @@ test('Kolekcja zawiera wszystkie metody koszyka, adresów, dokumentów i katalog
 });
 
 test('Domyślny przebieg poprawnie losuje jedną grupę, edytuje i wybiera oferty; nie zapisuje zamówienia',()=>{
- const r=runMock();assert.deepEqual(r.errors,[]);assert(!r.results.some(t=>t.status==='FAIL'),JSON.stringify(r.results));
+ const r=runMock({flags:{require_empty_checkout_body:'true'}});assert.deepEqual(r.errors,[]);assert(!r.results.some(t=>t.status==='FAIL'),JSON.stringify(r.results));
  assert(!r.sent.some(s=>s.url.endsWith('/complete')));assert(!r.sent.some(s=>s.method==='DELETE'));assert(!r.sent.some(s=>s.url.includes('/shop/addresses')));
  assert.equal(new Set(JSON.parse(r.values.get('cartProductPlan')).map(p=>p.group)).size,1);
  assert(r.sent.find(s=>s.method==='PATCH').headers['Content-Type']==='application/merge-patch+json');

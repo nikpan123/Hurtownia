@@ -1,3 +1,5 @@
+import {installBrowserPresentation} from './browser-presentation.mjs';
+import {browserLaunchOptions} from './browser-options.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
@@ -54,17 +56,17 @@ export function compareDatabase(order,db,products=[]){
   return checks;
 }
 export async function readDatabase(orderId,{sessionFile='.auth/dev.json',vars=process.env,signal}={}){
-  const queries=databaseQueries(orderId);const {chromium}=await import('playwright');const browser=await chromium.launch({channel:vars.BROWSER_CHANNEL??'msedge',headless:true});
+  const queries=databaseQueries(orderId);const {chromium}=await import('playwright');const browser=await chromium.launch(browserLaunchOptions(vars));
   try{
-    const context=await browser.newContext({storageState:JSON.parse(await readFile(sessionFile,'utf8'))});const page=await context.newPage();page.setDefaultTimeout(30000);const result={};
+    const context=await browser.newContext({storageState:JSON.parse(await readFile(sessionFile,'utf8'))});const presentation=await installBrowserPresentation(context,{vars});const page=await context.newPage();page.setDefaultTimeout(30000);const result={};
     for(const [key,sql]of Object.entries(queries)){
       signal?.throwIfAborted();await page.goto('https://phpmyadmin.gwodev.pl/index.php?route=/table/sql&db=gwo_transfer&table=orders_items');
       if(new URL(page.url()).hostname!=='phpmyadmin.gwodev.pl')throw new Error('Odśwież sesję GitLab do phpMyAdmin');
-      const editor=page.locator('#sqlquery + .CodeMirror textarea');await editor.press('ControlOrMeta+A');await editor.fill(sql);await editor.press('Tab');
+      const editor=page.locator('#sqlquery + .CodeMirror textarea');await presentation.inspect(page,page.locator('.CodeMirror'),'Kontrola bazy: '+key+' — SELECT');await editor.press('ControlOrMeta+A');await editor.fill(sql);await editor.press('Tab');await presentation.step(page,'Zapytanie wpisane — wykonuję odczyt '+key);
       await page.getByRole('button',{name:'Wykonaj',exact:true}).click();
       await page.waitForFunction(()=>document.querySelector('table.table_results')||document.querySelector('#page_content .alert-success')||document.querySelector('#page_content .alert-danger'));
       const parsed=await page.evaluate(()=>{const error=document.querySelector('#page_content .alert-danger');if(error)return {error:error.textContent};const table=document.querySelector('table.table_results');if(!table)return {rows:[]};const headers=Array.from(table.querySelectorAll('thead th[data-column]')).map(e=>e.getAttribute('data-column'));const rows=Array.from(table.querySelectorAll('tbody tr')).map(r=>Object.fromEntries(Array.from(r.querySelectorAll('td.data')).map((c,i)=>[headers[i],c.textContent.trim()])));return {rows};});
-      if(parsed.error)throw new Error('Błąd odczytu bazy: '+parsed.error.slice(0,1000));result[key]=key==='items'?decodeDatabaseNames(parsed.rows):parsed.rows;
+      await presentation.inspect(page,page.locator('table.table_results'),'Porównuję wynik odczytu '+key);if(parsed.error)throw new Error('Błąd odczytu bazy: '+parsed.error.slice(0,1000));result[key]=key==='items'?decodeDatabaseNames(parsed.rows):parsed.rows;
     }
     return result;
   }finally{await browser.close();}

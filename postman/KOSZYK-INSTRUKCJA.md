@@ -32,7 +32,7 @@ Uruchom wcześniej folder 01, aby pozostałe miały prawidłowy JWT i plan produ
 
 - `expected_rebates_json` uzupełnij rabatami konkretnego konta, np. `{"cash_on_delivery":50,"adamada":10}`. `{}` oznacza kontrolę spójności rabatu z ofertą API, a pominięcie niezależnego wzorca. Nie wpisuj rabatów pierwszego konta dla innego użytkownika.
 - `preferred_payment_code` i `preferred_shipping_code`: puste oznaczają losowanie z otrzymanych opcji. Podany kod musi być aktualnie dostępny; kolekcja nie zastępuje go po cichu innym.
-- `require_empty_checkout_body=true` wymaga dokładnie pustego body po HTTP 201 zgodnie z #36926. Odpowiedź `[]` spowoduje FAIL tej kontroli. Domyślne `false` nie ocenia tego spornego formatu, tylko dalszy odczyt zapisu.
+- `require_empty_checkout_body=true` wymaga dokładnie pustego body po HTTP 204 No Content zgodnie z aktualnym #36926. Odpowiedź `[]` spowoduje FAIL tej kontroli. Domyślne `false` nie ocenia tego spornego formatu, tylko dalszy odczyt zapisu.
 - `carrierName` jest przesyłany w shippingAddress. Jeżeli GET zwraca `notes`, jest sprawdzany dopisek „Przewoźnik: …”. Brak tego pola daje SKIP odczytu; sprawdź sekcję „Uwagi” w Syliusie. Użytkownik potwierdził ręcznie poprawny zapis i prezentację w swoim przebiegu z 19.10.2026.
 - GET po odrzuconych danych sprawdza brak częściowej zmiany; sam HTTP 4xx nie wystarcza. Nie odgadujemy reguły netto z jednostkowej ceny brutto. Pobranie PDF nie weryfikuje treści dokumentu ani wysłania e-maila.
 

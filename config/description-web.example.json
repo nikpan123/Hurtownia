@@ -1,0 +1,59 @@
+{
+  "products": [
+    {
+      "id": 10202,
+      "code": "testhurtA",
+      "name": "Testowy produkt dla hurtowni A",
+      "slug": "testowy-produkt-dla-hurtowni"
+    },
+    {
+      "id": 10203,
+      "code": "testhurtB",
+      "name": "Testowy produkt dla hurtowni B",
+      "slug": "testowy-produkt-dla-hurtowni-b"
+    }
+  ],
+  "offer": {
+    "id": 7,
+    "productId": 10210,
+    "code": "test321321",
+    "name": "test321321",
+    "slug": "test321321"
+  },
+  "courses": [
+    {
+      "kind": "paid",
+      "id": 347,
+      "name": "Skrócona nazwa"
+    },
+    {
+      "kind": "closed",
+      "id": 6614,
+      "name": "Założenie testowe do aktualizacji cen"
+    }
+  ],
+  "mailhogUrl": "https://mailhog.gwodev.pl/",
+  "note": "Dane wskazane przez użytkownika 20.10.2026. Zestaw descriptions:web odczytuje formularze i strony; nie zmienia produktów, nie tworzy zamówień i nie wysyła wiadomości. Zmiana nazw/slugów fixture wymaga aktualizacji oczekiwań. Dostęp do MailHoga jest warunkiem technicznym, nie zaliczeniem testu treści maila.",
+  "application": {
+    "id": 129,
+    "code": "Matlandia_Klasa_4",
+    "name": "Matlandia. Klasa 4",
+    "slug": "matlandia-klasa-4",
+    "summaryName": "Dostęp nauczycielski 2 lata",
+    "summaryNameSource": "Potwierdzone przez użytkownika 20.10.2026: podsumowanie tej aplikacji prezentuje nazwę wybranego wariantu."
+  },
+  "searchProducts": [
+    {
+      "id": 129,
+      "code": "Matlandia_Klasa_4",
+      "name": "Matlandia. Klasa 4",
+      "slug": "matlandia-klasa-4"
+    }
+  ],
+  "searchQuery": "Matlandia",
+  "category": {
+    "label": "Matematyka",
+    "name": "attributes[attribute_subjects][]",
+    "value": "sub_2"
+  }
+}

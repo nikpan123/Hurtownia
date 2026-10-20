@@ -171,7 +171,8 @@ export async function runDescriptions(config,credentials,options={}){
     }
     await checkDescriptionCourses({fixtures:options.courses??fixtureData.courses??{},test,skip,request,report});
     const catalog=await descriptionScenarioCatalog();
-    for(const scenario of catalog.cases.filter(s=>s.coverage==='planned'||s.automation.actions.includes('descriptions-cms')))skip(`${scenario.id}: ${scenario.title}`,scenario.automation.limits,[scenario.id],scenario.automation.actions.includes('descriptions-cms')?'out_of_scope':scenario.id==='DESC-028'?'environment':'not_automated');
+    const otherSuite=s=>s.automation.actions.some(a=>['descriptions-cms','descriptions-web','descriptions-documents','descriptions-new-product','descriptions-retail-cart','descriptions-stock'].includes(a));
+    for(const scenario of catalog.cases.filter(s=>s.coverage==='planned'||otherSuite(s)))skip(`${scenario.id}: ${scenario.title}`,scenario.automation.limits,[scenario.id],otherSuite(scenario)?'out_of_scope':scenario.id==='DESC-028'?'environment':'not_automated');
   }catch(e){report.error=api.clean(e.message);report.tests.push({name:'Przebieg / logowanie',status:'FAIL',detail:report.error});}
   return finish();
 }

@@ -9,6 +9,11 @@ import {saveCatalogReport} from '../api-tests/catalog-report.mjs';
 import {saveReport} from '../api-tests/report.mjs';
 import {refreshReports} from '../api-tests/refresh-reports.mjs';
 const base={scenario:'Próba',kind:'order-regression',generatedAt:'2026-10-16T08:00:00Z',baseUrl:'https://ksiegarnia.gwodev.pl/api/v2',status:'INCOMPLETE',tests:[{name:'Logowanie hurtownika',status:'PASS',detail:''},{name:'Zmiana GLS na personal_collection',status:'SKIP',detail:'Metoda niedostępna'},{name:'Zmiana GLS na personal_collection',status:'SKIP',detail:'Metoda niedostępna'}],requests:[]};
+
+test('Kontrakt 204 dotyczy nowych raportów #36926; historyczne zachowują oczekiwanie 201',()=>{
+ assert.match(buildReportExplanation({...base,reference:{checkoutSuccessStatus:204}},'redmine-36926').source,/HTTP 204/);
+ assert.match(buildReportExplanation({...base},'redmine-36926').source,/HTTP 201/);
+});
 test('Wyjaśnienie INCOMPLETE liczy rzeczywiste wyniki i grupuje identyczne pominięcia',()=>{
   const g=buildReportExplanation(base,'order-regression');assert.deepEqual(g.counts,{PASS:1,FAIL:0,SKIP:2});assert.equal(g.incompleteReasons.length,1);assert.equal(g.incompleteReasons[0].count,2);assert.match(g.outcome,/pominięta/);
   const html=renderReportExplanation({...base,status:'PASS'},'order-regression');assert.match(html,/mimo pominięć/);assert.match(html,/Metoda niedostępna/);
