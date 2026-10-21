@@ -1,3 +1,4 @@
+import {DebugHub} from "./debugger/hub.mjs";
 import {runCmsProductCreation as runProductCreation,cmsProductPreview} from '../api-tests/product-create-cms.mjs';
 import {runDescriptionRetailDocuments} from '../api-tests/description-retail-documents.mjs';
 import {publishBrowserStep} from '../api-tests/browser-presentation.mjs';
@@ -160,7 +161,8 @@ async function executeSuite(body,vars,options) {
   if(vars.HURT_DEV_BASE_URL)config.baseUrl=vars.HURT_DEV_BASE_URL;
   return runCatalog(config,credentials,{...options,create:body.suite==='catalog-create',adminEmail:vars[config.creation?.adminEmailEnv??'SYLIUS_ADMIN_EMAIL'],adminPassword:vars[config.creation?.adminPasswordEnv??'SYLIUS_ADMIN_PASSWORD']});
 }
-async function launch(body,runner) {
+async function launch(body,runner,debugHub) {
+  if(body.debugger&&!debugHub)throw new Error("Uruchom debugger z jego zakładki.");
   if(launching||definingUser||currentChild||currentController)throw Object.assign(new Error('Poczekaj na zakończenie aktualnego przebiegu lub odczytu użytkownika.'),{status:409});
   launching=true;
   try {
@@ -183,8 +185,10 @@ async function launch(body,runner) {
   const job={id:randomUUID(),suite:body.suite,name:d.name+(['cart','order','wizard'].includes(body.suite)?' — '+(body.account==='custom'?'Użytkownik zdefiniowany':body.account==='secondary'?'Konto 2':'Konto 1'):''),account:body.account??'primary',browserPreview,status:'RUNNING',startedAt:new Date().toISOString(),log:'',seed:body.seed??null,automatic:body.suite==='wizard'&&body.automatic===true};
   const sensitive=Object.fromEntries(Object.entries(vars).filter(([k])=>/PASSWORD|TOKEN|COOKIE|EMAIL|USERNAME/i.test(k)));
   if(body.caseIds){job.caseIds=body.caseIds;job.name+=' — wybrane przypadki ('+body.caseIds.length+')';}
+  const debugSession=body.debugger?debugHub.create({id:job.id,title:body.caseIds[0],mode:'api',environment:'DEV'}):null;
+  if(debugSession)job.debugger=true;
   jobs.push(job);
-  const append=chunk=>{job.log=(job.log+scrub(chunk.toString(),sensitive)).slice(-64000);};
+  const append=chunk=>{const clean=scrub(chunk.toString(),sensitive);job.log=(job.log+clean).slice(-64000);debugSession?.log(clean);};
   if(body.suite!=='login') {
     const controller=new AbortController();currentController=controller;
     let interactive={};
@@ -195,16 +199,17 @@ async function launch(body,runner) {
     }
     append('Rozpoczęto testy na dev.\n');
     if(browserPreview.enabled)append('Podgląd przeglądarki włączony. Opóźnienie akcji: '+browserPreview.slowMoMs+' ms. Okno pojawi się wyłącznie przy krokach przeglądarkowych; żądania API/HTTP pozostają w logu i raporcie. Okna zamykają się po zakończeniu modułu.\n');
-    Promise.resolve().then(()=>runner(body,vars,{signal:controller.signal,onProgress:line=>{append(line+'\n');publishBrowserStep(vars,scrub(line,sensitive));},...interactive})).then(result=>{
+    Promise.resolve().then(()=>runner(body,vars,{debuggerSession:debugSession,signal:controller.signal,onProgress:line=>{append(line+'\n');publishBrowserStep(vars,scrub(line,sensitive));},...interactive})).then(async result=>{
       job.status=result.report.restorationFailed?'FAIL':controller.signal.aborted?'CANCELLED':result.report.status;
       job.error=result.report.error??null;
+      if(debugSession){if(!debugSession.closed)await debugSession.operation('Ocena scenariusza — wynik zapisanych kontroli',async()=>{if(result.report.status==='FAIL')throw new Error(result.report.error||result.report.tests?.find(t=>t.status==='FAIL')?.detail||'Kontrole scenariusza nie przeszły. Otwórz raport.');},{automatic:true}).catch(()=>{});const directory=path.resolve(result.directory);const inside=directory.startsWith(reportRoot+path.sep);const report=inside?'/reports/'+path.basename(directory)+'/raport.html':undefined;await debugHub.finish(job.id,job.status,{directory:inside?directory:undefined,report,stepsFile:inside?'/reports/'+path.basename(directory)+'/debugger-steps.json':undefined});}
       job.completionBlocked=result.report.completionBlocked??false;
       job.finalization=result.report.finalization;
       if(body.suite==='product-create'){job.creation=result.report.creation;job.lastResponse=result.report.lastResponse;}
       if(body.suite==='wizard')job.lastOrder=result.report.snapshots?.at(-1)?.order;
       append('\n'+job.status+' — '+result.directory+'\n');
       if(result.report.error)append(result.report.error+'\n');
-    }).catch(error=>{job.status=error.code==='RESTORE_FAILED'?'FAIL':controller.signal.aborted?'CANCELLED':'FAIL';job.error=error.message;append(error.message+'\n');}).finally(()=>{job.finishedAt=new Date().toISOString();job.wizard=null;gates.delete(job.id);if(currentController===controller)currentController=null;});
+    }).catch(error=>{job.status=error.code==='RESTORE_FAILED'?'FAIL':controller.signal.aborted?'CANCELLED':'FAIL';job.error=error.message;append(error.message+'\n');}).finally(async()=>{if(debugSession?.status==='RUNNING')await debugHub.finish(job.id,job.status);job.finishedAt=new Date().toISOString();job.wizard=null;gates.delete(job.id);if(currentController===controller)currentController=null;});
     return job;
   }
   let child;
@@ -259,6 +264,11 @@ async function jsonBody(req) {
   try{return JSON.parse(raw);}catch{throw Object.assign(new Error('Niepoprawny JSON.'),{status:400});}
 }
 export function createDashboardServer({runSuite=executeSuite}={}) {
+  const debugHub=new DebugHub({project:'Hurtownia',environment:async()=>{const {config}=await settings();return config.environment+' · '+new URL(config.baseUrl).host;},
+    catalog:()=>shipmentCases.map(c=>({id:c.id,title:c.name,mode:'api',description:'Redmine #37162. Tworzy nowy koszyk i dodaje wskazane produkty; każdy krok API wymaga przycisku. Nie finalizuje zamówienia. Koszyki pozostają na DEV. Przypadek 01 wykonuje trzy próby. Część produktów może być e-bookami niedopuszczonymi w hurtowni; wynik 4xx nie potwierdza sprzedaży tych produktów.'})),
+    start:selected=>launch({suite:'redmine-37162',caseIds:[selected.id],debugger:true},runSuite,debugHub),
+    stop:async id=>{const job=jobs.find(j=>j.id===id);if(job)job.log+='\nZatrzymano debugger.\n';currentController?.abort(new Error('Debugger zatrzymany.'));}
+  });
   const server=http.createServer(async(req,res)=>{
     const host=req.headers.host;
     const port=server.address()?.port;
@@ -267,6 +277,7 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
     if(host!=='127.0.0.1:'+port)return send(403,{error:'Panel dostępny tylko lokalnie.'});
     try {
       const url=new URL(req.url,origin);
+      if(await debugHub.handle(req,res,url))return;
       if(req.method==='POST') {
         if(req.headers.origin!==origin||req.headers['x-ui-token']!==secret||!(req.headers['content-type']??'').includes('application/json'))return send(403,{error:'Odśwież panel przed wykonaniem operacji.'});
         const body=await jsonBody(req);

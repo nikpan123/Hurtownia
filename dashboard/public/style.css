@@ -319,3 +319,6 @@ html[data-theme=dark] :is(.qa-guide-dialog,.qa-guide-intro){--qa-surface:#172131
 @media(max-width:760px){.qa-app .browser-preview-options{grid-template-columns:1fr}}
 
 #product-feedback{overflow-wrap:anywhere}#product-feedback.product-form-error{color:#db695b;font-weight:600}#product-form [aria-invalid="true"]{border-color:#db695b;outline:1px solid #db695b}
+
+#debugger-frame{display:block;width:100%;height:calc(100dvh - 110px);min-height:720px;border:1px solid var(--qa-line,#dce2eb);border-radius:10px}
+.qa-warehouse[data-active-view=debugger]>.run-panel.run-docked{display:none!important}

@@ -34,7 +34,8 @@
     "descriptions:stock": "node api-tests/description-stock-run.mjs",
     "descriptions:stock:restore": "node api-tests/description-stock-run.mjs --restore",
     "descriptions:all": "node api-tests/description-all-run.mjs",
-    "descriptions:all:complete": "node api-tests/description-all-run.mjs --complete"
+    "descriptions:all:complete": "node api-tests/description-all-run.mjs --complete",
+    "test:debugger": "node --test tests/debugger.test.mjs tests/debugger-browser.check.mjs tests/debugger-api.test.mjs"
   },
   "engines": {
     "node": ">=22"

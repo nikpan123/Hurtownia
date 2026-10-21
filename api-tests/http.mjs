@@ -1,9 +1,9 @@
 import { cookieHeader, validateEnvironment,redactText } from './config.mjs';
 
 export class ApiClient {
-  constructor(config,credentials,{allowLocal=false,allowTest=false,fetchImpl=fetch,signal}={}) {
+  constructor(config,credentials,{allowLocal=false,allowTest=false,fetchImpl=fetch,signal,debuggerSession}={}) {
     validateEnvironment(config,{allowLocal,allowTest});
-    this.config=config;this.credentials=credentials;this.fetch=fetchImpl;this.tokens={};this.requests=[];this.signal=signal;
+    this.debuggerSession=debuggerSession;if(debuggerSession)signal?.addEventListener("abort",()=>debuggerSession.close(),{once:true});this.config=config;this.credentials=credentials;this.fetch=fetchImpl;this.tokens={};this.requests=[];this.signal=signal;
     this.secrets=[credentials.email,credentials.password,credentials.testsToken,credentials.cookie,...(credentials.cookies??[]).map(c=>c.value)].filter(Boolean);
   }
   clean(value) {
@@ -14,7 +14,12 @@ export class ApiClient {
     if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,this.clean(v)]));
     return value;
   }
-  async request(method,endpoint,{body,channel='WHOLESALE',token='shop',query={},headers:extra={}}={}) {
+  async request(method,endpoint,options={}) {
+    if(!this.debuggerSession||/authentication-token/.test(endpoint))return this.requestInternal(method,endpoint,options);
+    const safeEndpoint=this.clean(endpoint);
+    return this.debuggerSession.operation(method+' '+safeEndpoint,async()=>{try{return await this.requestInternal(method,endpoint,options);}catch(error){error.message=this.clean(error.message);throw error;}},{request:{method,path:safeEndpoint,body:this.clean(options.body??null)},sanitize:value=>this.clean(value)});
+  }
+  async requestInternal(method,endpoint,{body,channel='WHOLESALE',token='shop',query={},headers:extra={}}={}) {
     this.signal?.throwIfAborted();
     const url=new URL(this.config.baseUrl.replace(/\/$/,'')+'/'+endpoint.replace(/^\//,''));
     for(const [key,value]of Object.entries(query))for(const v of Array.isArray(value)?value:[value])url.searchParams.append(key,String(v));
