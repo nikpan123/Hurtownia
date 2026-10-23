@@ -11,7 +11,6 @@
     "catalog": "node api-tests/catalog-run.mjs",
     "catalog:create": "node api-tests/features-run.mjs --suite product-create",
     "ui": "node dashboard/server.mjs",
-    "prices": "node api-tests/features-run.mjs --suite rounding",
     "descriptions": "node api-tests/features-run.mjs --suite descriptions",
     "descriptions:cms": "node api-tests/description-cms-run.mjs",
     "descriptions:web": "node api-tests/description-web-run.mjs",
@@ -26,6 +25,8 @@
     "database": "node api-tests/database-run.mjs",
     "reports:refresh": "node api-tests/refresh-reports.mjs",
     "redmine:37162": "node api-tests/redmine-37162-run.mjs",
+    "redmine:36618": "node api-tests/redmine-36618-run.mjs",
+    "redmine:36618:restore": "node api-tests/redmine-36618-run.mjs --restore",
     "redmine:36926": "node api-tests/redmine-36926-run.mjs",
     "addresses:restore": "node api-tests/address-defaults-restore.mjs",
     "descriptions:mail": "node api-tests/description-mail-recheck-run.mjs",
@@ -35,7 +36,9 @@
     "descriptions:stock:restore": "node api-tests/description-stock-run.mjs --restore",
     "descriptions:all": "node api-tests/description-all-run.mjs",
     "descriptions:all:complete": "node api-tests/description-all-run.mjs --complete",
-    "test:debugger": "node --test tests/debugger.test.mjs tests/debugger-browser.check.mjs tests/debugger-api.test.mjs"
+    "test:debugger": "node --test tests/debugger.test.mjs tests/debugger-browser.check.mjs tests/debugger-api.test.mjs",
+    "redmine:36944": "node api-tests/redmine-36944-run.mjs",
+    "redmine:36944:restore": "node api-tests/redmine-36944-run.mjs --restore"
   },
   "engines": {
     "node": ">=22"

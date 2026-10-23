@@ -6,6 +6,60 @@ import os from 'node:os';
 import {createDashboardServer,safeReportPath} from '../dashboard/server.mjs';
 import {browserLaunchOptions} from '../api-tests/browser-options.mjs';
 
+test('Debugger #36944: wyszukiwanie 1 i 6 sztuk, pełny zestaw i pojedyncze przypadki',async()=>{
+ let called;
+ const server=createDashboardServer({runSuite:async body=>{called=body;return {report:{status:'PASS'},directory:'raporty-api/rounding-debugger-mock'};}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
+ try{
+  const catalog=await(await fetch(base+'/api/debugger/catalog')).json(),cases=catalog.catalog.filter(c=>c.suite==='redmine-36944');
+  const state=await(await fetch(base+'/api/state')).json();assert(!state.suites.some(s=>s.id==='rounding'));assert(state.suites.some(s=>s.id==='redmine-36944'));
+  const html=await(await fetch(base)).text(),uiToken=html.match(/name="ui-token" content="([^"]+)"/)[1];assert(!html.includes('data-suite="rounding"'));assert(html.includes('data-suite="redmine-36944"'));
+  const obsolete=await fetch(base+'/api/run',{method:'POST',headers:{origin:base,'content-type':'application/json','x-ui-token':uiToken},body:JSON.stringify({suite:'rounding'})});assert.equal(obsolete.status,400);assert.equal(called,undefined);
+  assert.equal(cases.length,3);assert(cases.every(c=>c.title.includes('1 i 6 sztuk')&&c.mode==='api'));
+  assert.deepEqual(cases.find(c=>c.id==='HURT-36944').caseIds,['HURT-36944-01','HURT-36944-02']);
+  assert.deepEqual(cases.find(c=>c.id==='HURT-36944-02').caseIds,['HURT-36944-02']);
+  const result=await fetch(base+'/api/debugger/start',{method:'POST',headers:{origin:base,'content-type':'application/json','x-debugger-token':catalog.token},body:JSON.stringify({id:'HURT-36944'})});
+  assert.equal(result.status,202);assert.equal(called.suite,'redmine-36944');assert.equal(called.debugger,true);assert.deepEqual(called.caseIds,['HURT-36944-01','HURT-36944-02']);
+ }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Debugger udostępnia #36618 jako cały zestaw i 16 przypadków oraz uruchamia właściwy moduł',async()=>{
+ let called;
+ const server=createDashboardServer({runSuite:async body=>{called=body;return {report:{status:'PASS'},directory:'raporty-api/package-debugger-mock'};}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
+ try{
+  const catalog=await(await fetch(base+'/api/debugger/catalog')).json();
+  const packages=catalog.catalog.filter(c=>c.suite==='redmine-36618');assert.equal(packages.length,17);
+  assert(packages.every(c=>c.title.includes('#36618 — liczba paczek')));
+  assert.deepEqual(packages.find(c=>c.id==='HURT-36618-T04').caseIds,['T04']);
+  assert.equal(packages.find(c=>c.id==='HURT-36618').caseIds.length,16);
+  const full=catalog.catalog.find(c=>c.id==='HURT-36618-complete');assert.equal(full.suite,'redmine-36618-complete');assert.equal(full.caseIds.length,16);assert(full.description.includes('8 zamówień'));
+  const result=await fetch(base+'/api/debugger/start',{method:'POST',headers:{origin:base,'content-type':'application/json','x-debugger-token':catalog.token},body:JSON.stringify({id:'HURT-36618-T01'})});
+  assert.equal(result.status,202);assert.equal(called.suite,'redmine-36618');assert.deepEqual(called.caseIds,['T01']);assert.equal(called.debugger,true);
+ }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('#36618 jest widoczny, ma dwa warianty i przekazuje wybór przypadków',async()=>{
+ const calls=[];
+ const server=createDashboardServer({runSuite:async body=>{calls.push(body);return {report:{status:'PASS'},directory:'raporty-api/packages-ui-mock'};}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
+ try{
+  const html=await(await fetch(base)).text(),token=html.match(/name="ui-token" content="([^"]+)"/)[1];
+  assert(html.includes('data-suite="redmine-36618"'));assert(html.includes('data-suite="redmine-36618-complete"'));
+  const state=await(await fetch(base+'/api/state')).json();
+  assert(state.suites.some(s=>s.id==='redmine-36618-complete'));
+  const catalog=await(await fetch(base+'/api/scenarios')).json();
+  assert.equal(catalog.cases.filter(c=>c.id.startsWith('HURT-36618-')).length,16);
+  const documentation=await(await fetch(base+'/api/documentation')).json();assert(documentation.html.includes('#36618'));
+  const post=body=>fetch(base+'/api/run',{method:'POST',headers:{origin:base,'x-ui-token':token,'content-type':'application/json'},body:JSON.stringify(body)});
+  assert.equal((await post({suite:'redmine-36618',caseIds:['T99']})).status,400);
+  for(const suite of ['redmine-36618','redmine-36618-complete']){
+   assert.equal((await post({suite,caseIds:['T04'],verifyDatabase:true})).status,202);
+   assert.deepEqual(calls.at(-1),{suite,caseIds:['T04'],verifyDatabase:true});
+  }
+ }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+});
+
 test('Panel przekazuje podgląd do modułów tylko w wybranym przebiegu i odrzuca błędne tempo',async()=>{
  const called=[],original=process.env.HURT_BROWSER_PREVIEW;
  const server=createDashboardServer({runSuite:async(body,vars)=>{called.push(browserLaunchOptions(vars));return {report:{status:'PASS'},directory:'raporty-api/preview-mock'};}});

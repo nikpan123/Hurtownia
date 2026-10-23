@@ -47,3 +47,5 @@ Thumbs.db
 Desktop.ini
 .idea/
 .vscode/
+
+/config/scenario-description-backups/

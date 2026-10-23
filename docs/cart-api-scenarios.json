@@ -788,15 +788,15 @@
     {
       "id": "PAY-007",
       "category": "payments",
-      "title": "Zaokrąglenia według wzorca starej hurtowni",
+      "title": "API hurtowni — zaokrąglenia 1 i 6 sztuk (#36944)",
       "priority": "P1",
-      "coverage": "partial",
+      "coverage": "automated",
       "effect": "cart",
       "conditions": [
         "Produkt referencyjny 18.40 zł brutto, VAT 5%, cena oryginalna równa cenie, minimum price=0.",
         "Dostępna płatność z potwierdzonym rabatem 23%."
       ],
-      "data": "Ilości 1–10; wartości wzorcowe dla 1 i 6 sztuk.",
+      "data": "Produkt 5lp-1; 1 i 6 sztuk; 18,40 zł brutto, VAT 5%, rabat 23%.",
       "steps": [
         "Potwierdź cenę i rabat referencyjny.",
         "Dodawaj ustalone ilości i odczytuj wycenę.",
@@ -804,19 +804,19 @@
         "Dla 6 sztuk sprawdź 84.99 zł brutto po rabacie."
       ],
       "expected": [
-        "Wartości odpowiadają uzgodnionemu wzorcowi starej hurtowni.",
-        "Dla pozostałych ilości zapisano pomiary; brak jawnego wzorca nie jest pozornym PASS.",
-        "Brak płatności 23% oznacza niespełniony warunek, a nie błąd kalkulacji produktu."
+        "Dla 1 sztuki discountedUnitPriceNet = 1349 gr (13,49 zł netto).",
+        "Dla 6 sztuk total pozycji = itemsTotal = 8499 gr (84,99 zł brutto produktów), bez dostawy.",
+        "Brak dostępnego rabatu 23% daje SKIP z przyczyną; niezgodność kwoty daje FAIL."
       ],
       "automation": {
-        "runner": "Zaokrąglenia cen",
+        "runner": "API hurtowni — 1 i 6 sztuk (HURT-36944-01 / HURT-36944-02)",
         "sources": [
-          "api-tests/features.mjs"
+          "api-tests/redmine-36944.mjs"
         ],
-        "limits": "Kontrola wymaga przygotowanych danych. Jeżeli tymczasowo zmieniano rabat w CMS, należy go przywrócić i potwierdzić odczytem.",
         "actions": [
-          "rounding"
-        ]
+          "redmine-36944"
+        ],
+        "limits": "Wyłącznie API nowej hurtowni; bez RETAIL, CMS i finalizacji. Konto dedykowane w HURT_ROUNDING_EMAIL."
       }
     },
     {
@@ -1661,11 +1661,6 @@
       "label": "Uruchom test paczek",
       "note": "Cały zestaw paczek z lokalną konfiguracją progów i produktu. Bez finalizacji i bez zmiany CMS; konto z konfiguracji regresji."
     },
-    "rounding": {
-      "suite": "rounding",
-      "label": "Uruchom test zaokrągleń",
-      "note": "Zestaw ilości 1–10 dla przygotowanego produktu 18,40 zł i rabatu 23%. Wymaga przygotowanych danych; nie zmienia rabatu automatycznie."
-    },
     "addresses": {
       "suite": "redmine-36926",
       "label": "Uruchom test adresów #36926",
@@ -1686,6 +1681,11 @@
       "view": "reports",
       "label": "Otwórz raporty",
       "note": "Wybierz raport uruchomienia i porównaj jego zawartość z oczekiwaniami scenariusza."
+    },
+    "redmine-36944": {
+      "suite": "redmine-36944",
+      "label": "API hurtowni — 1 i 6 sztuk",
+      "note": "Dwa koszyki WHOLESALE produktu 5lp-1 za 18,40 zł brutto; hurtownik HURT_ROUNDING_EMAIL z rabatem 23%. Bez finalizacji i zmian CMS."
     }
   }
 }

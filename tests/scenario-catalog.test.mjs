@@ -6,7 +6,7 @@ import {createDashboardServer} from '../dashboard/server.mjs';
 import vm from 'node:vm';
 
 test('Katalog ma unikalne, kompletne przypadki i istniejące źródła automatyzacji',async()=>{
-  const c=await loadScenarioCatalog();assert.equal(c.cases.length,73);assert.equal(new Set(c.cases.map(s=>s.id)).size,c.cases.length);
+  const c=await loadScenarioCatalog();assert.equal(c.cases.length,89);assert.equal(new Set(c.cases.map(s=>s.id)).size,c.cases.length);
   for(const s of c.cases){
     assert(c.categories.some(v=>v.id===s.category),s.id);assert(c.coverageLabels[s.coverage],s.id);assert(c.effectLabels[s.effect],s.id);assert(c.priorities[s.priority],s.id);
     for(const field of ['conditions','steps','expected'])assert(s[field].length>0&&s[field].every(v=>typeof v==='string'&&v.trim()),s.id+' '+field);
@@ -35,18 +35,18 @@ test('Przyciski scenariuszy pokazują zakres, blokują start w trakcie testu i k
   assert(render('DB-001').includes('data-scenario-view="reports"'));assert(!render('PACK-005').includes('data-suite="packages-profile"'));
   assert(render('DESC-012').includes('data-suite="descriptions"'));assert(render('DESC-001').includes('data-suite="descriptions-cms"'));assert.equal(vm.runInContext('selectedScenario',context),'DESC-012');
   context.state.jobs=[{status:'RUNNING'}];assert(render('CART-007').includes('disabled'));
-  nodes.get('scenario-detail').listener({target:{closest:()=>({dataset:{scenarioView:'start',scenarioTarget:'package-profile'}})}});
+  nodes.get('scenario-detail').listener({target:{closest:selector=>selector==='[data-scenario-view]'?({dataset:{scenarioView:'start',scenarioTarget:'package-profile'}}):null}});
   assert.equal(view,'start');assert(details.open);assert(scrolled);assert(reset,'Filtr biblioteki nie może ukrywać formularza paczek');
   assert(render('DESC-002').includes('data-suite="descriptions-web"'));assert(render('DESC-020').includes('data-suite="descriptions-web"'));
   assert(render('DESC-024').includes('data-suite="descriptions-documents"'));assert(render('DESC-025').includes('data-suite="descriptions-documents"'));
-  const allowed=new Set(['cart','regression','regression-order','order','packages','rounding','redmine-36926','descriptions','descriptions-cms','descriptions-web','descriptions-documents','descriptions-new-product','descriptions-retail-cart','descriptions-retail-summary','descriptions-retail-documents','descriptions-stock']);
+  const allowed=new Set(['redmine-36618','redmine-36618-complete','cart','regression','regression-order','order','packages','redmine-36944','redmine-36926','descriptions','descriptions-cms','descriptions-web','descriptions-documents','descriptions-new-product','descriptions-retail-cart','descriptions-retail-summary','descriptions-retail-documents','descriptions-stock']);
   for(const action of Object.values(c.actions))if(action.suite)assert(allowed.has(action.suite));
 });
 
 test('Panel udostępnia katalog i dokument do pobrania bez uruchamiania testów',async()=>{
   const server=createDashboardServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
   try{
-    const result=await fetch(base+'/api/scenarios');assert.equal(result.status,200);assert.equal((await result.json()).cases.length,73);
+    const result=await fetch(base+'/api/scenarios');assert.equal(result.status,200);assert.equal((await result.json()).cases.length,89);
     const md=await fetch(base+'/SCENARIUSZE-KOSZYKA-HURTOWEGO.md');assert(md.headers.get('content-disposition').includes('attachment'));assert((await md.text()).includes('ISO-006'));
     const descriptions=await (await fetch(base+'/SCENARIUSZE-OPISOW-KANALOWYCH.md')).text();assert(descriptions.includes('DESC-029'));assert(!descriptions.includes('### CART-'));
     assert.equal((await fetch(base+'/scenarios.js')).status,200);assert.equal((await fetch(base+'/.env')).status,404);

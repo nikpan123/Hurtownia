@@ -1,3 +1,6 @@
+import diagnostic from '../api-tests/test-data-diagnostic.cjs';
+import {runRounding36944,roundingCases} from '../api-tests/redmine-36944.mjs';
+import {createScenarioEditor} from './scenario-editor.mjs';
 import {DebugHub} from "./debugger/hub.mjs";
 import {runCmsProductCreation as runProductCreation,cmsProductPreview} from '../api-tests/product-create-cms.mjs';
 import {runDescriptionRetailDocuments} from '../api-tests/description-retail-documents.mjs';
@@ -14,11 +17,13 @@ import {fileURLToPath} from 'node:url';
 import {ApiClient} from '../api-tests/http.mjs';
 import {runShipmentRegression,shipmentCases} from '../api-tests/redmine-37162.mjs';
 import {runAddressRegression,addressCases} from '../api-tests/redmine-36926.mjs';
+import {packageCases} from '../api-tests/redmine-36618.mjs';
+import {runConfiguredPackageRegression} from '../api-tests/package-suite.mjs';
 import {runScenario} from '../api-tests/engine.mjs';
 import {runCatalog} from '../api-tests/catalog.mjs';
 import {ChoiceGate,validateSelection,availableProducts} from './wizard.mjs';
 import {redactText} from '../api-tests/config.mjs';
-import {runRounding,runDescriptions} from '../api-tests/features.mjs';
+import {runDescriptions} from '../api-tests/features.mjs';
 import {runDescriptionCms} from '../api-tests/description-cms.mjs';
 import {runDescriptionWeb} from '../api-tests/description-web.mjs';
 import {runDescriptionDocuments} from '../api-tests/description-documents.mjs';
@@ -41,8 +46,14 @@ import {readWholesalerRebates} from '../api-tests/wholesaler-cms.mjs';
 const workspace=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const reportRoot=path.join(workspace,'raporty-api');
 const secret=randomBytes(24).toString('hex');
+function makeScenarioEditor(dataDir){return createScenarioEditor({file:path.join(dataDir,'scenarios.local.json'),backupDir:path.join(dataDir,'scenario-description-backups'),baseCatalog:async()=>{const c=await loadScenarioCatalog();return {features:[{id:'hurtownia',scenarios:c.cases.map(s=>({id:s.id,title:s.title,description:s.requirement||'',preconditions:s.conditions,steps:s.steps,expected:s.expected.join('\n'),data:s.data||'',blocker:s.automation.limits||'',testIds:s.automation.sources||[]}))}]};}});}
+async function editedScenarioCatalog(scope,editor){const native=await loadScenarioCatalog(scope),edited=await editor.catalog();return {...native,...edited,cases:native.cases.map(s=>{const doc=edited.features[0].scenarios.find(d=>d.id===s.id);return {...s,title:doc.title,requirement:doc.description,conditions:doc.preconditions,steps:doc.steps,expected:doc.expected.split('\n'),data:doc.data,descriptionUpdatedAt:doc.descriptionUpdatedAt,automation:{...s.automation,limits:doc.blocker}};})};}
+
 const definitions={
+  'redmine-36618':{name:'Redmine #36618 — paczki i koszt dostawy bez finalizacji',script:'',args:[]},
+  'redmine-36618-complete':{name:'Redmine #36618 — paczki i koszt dostawy z zapisem',script:'',args:[]},
   'redmine-36926':{name:'Redmine #36926 — adresy w drugim kroku koszyka',script:'',args:[]},
+  'redmine-36944':{name:'Redmine #36944 — API nowej hurtowni: 1 i 6 sztuk',script:'',args:[]},
   'redmine-37162':{name:'Redmine #37162 — ShipmentInterface: Got NULL',script:'',args:[]},
   database:{name:'Porównanie zapisanego zamówienia z bazą',script:'',args:[]},
   regression:{name:'Regresja koszyka — wiele przypadków',script:'',args:[]},
@@ -54,7 +65,6 @@ const definitions={
   order:{name:'Pełne zamówienie',script:'api-tests/run.mjs',args:['--config','config/dev.local.json','--complete']},
   catalog:{name:'Katalog produktów',script:'api-tests/catalog-run.mjs',args:[]},
   'product-create':{name:'Tworzenie książki przez formularz CMS',script:'',args:[]},
-  rounding:{name:'Ceny netto / brutto — wzorzec starej hurtowni',script:'',args:[]},
   descriptions:{name:'Opisy produktów zależne od kanału — API',script:'',args:[]},
   'descriptions-cms':{name:'Opisy kanałowe — zapis i walidacje CMS',script:'',args:[]},
   'descriptions-retail-documents':{name:'RETAIL — nowe zamówienie, PDF i e-mail',script:'',args:[]},
@@ -119,6 +129,10 @@ async function executeSuite(body,vars,options) {
     const source=JSON.parse(await readFile(await safeReportPath(reportRoot,[body.reportId,'raport.json']),'utf8'));const report=await verifySavedReport(source,dbOptions);const directory=path.join(reportRoot,'database-'+new Date().toISOString().replace(/[:.]/g,'-')+'-'+randomUUID().slice(0,8));await saveFeatureReport(report,directory);return {report,directory};
   }
   if(body.suite!=='product-create'&&(!credentials.testsToken||!credentials.email||!credentials.password))throw new Error('Uzupełnij wymagane dane API w .env.');
+  if(['redmine-36618','redmine-36618-complete'].includes(body.suite)){
+    return runConfiguredPackageRegression(cartConfig,credentials,{...options,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json'),autoProducts:body.autoProducts,caseIds:body.caseIds,complete:body.suite==='redmine-36618-complete'});
+  }
+  if(body.suite==='redmine-36944')return runRounding36944(cartConfig,credentials,{...options,vars,caseIds:body.caseIds,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
   if(body.suite==='redmine-37162')return runShipmentRegression(cartConfig,credentials,{...options,caseIds:body.caseIds});
   if(body.suite==='redmine-36926')return runAddressRegression(cartConfig,credentials,{...options,caseIds:body.caseIds,otherRunning:async()=>false,cmsDefaults:true,...dbOptions});
   if(['regression','regression-order','packages','packages-profile'].includes(body.suite)){
@@ -131,7 +145,6 @@ async function executeSuite(body,vars,options) {
     return run();
   }
   if(body.suite==='product-create')return runProductCreation(cartConfig,credentials,{...options,input:body.input,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
-  if(body.suite==='rounding')return runRounding(cartConfig,credentials,options);
   if(body.suite==='descriptions')return runDescriptions(cartConfig,credentials,options);
   if(body.suite==='descriptions-cms')return runDescriptionCms(cartConfig,credentials,{...options,vars,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
   if(body.suite==='descriptions-retail-documents')return runDescriptionRetailDocuments(cartConfig,credentials,{...options,vars,complete:true,sessionFile:path.resolve(workspace,cartConfig.sessionFile??'.auth/dev.json')});
@@ -169,11 +182,12 @@ async function launch(body,runner,debugHub) {
   const browserPreview=validateBrowserPreview(body.browserPreview);
   const d=definitions[body.suite];if(!d)throw Object.assign(new Error('Nieznany zestaw testów.'),{status:400});
   if(body.caseIds!==undefined){
-    const cases=body.suite==='redmine-37162'?shipmentCases:body.suite==='redmine-36926'?addressCases:null;
+    const cases=['redmine-36618','redmine-36618-complete'].includes(body.suite)?packageCases:body.suite==='redmine-36944'?roundingCases:body.suite==='redmine-37162'?shipmentCases:body.suite==='redmine-36926'?addressCases:null;
     if(!cases||!Array.isArray(body.caseIds)||!body.caseIds.length||body.caseIds.some(id=>typeof id!=='string'||!cases.some(c=>c.id===id)))throw Object.assign(new Error('Wybierz istniejące przypadki z tego zestawu.'),{status:400});
     body.caseIds=[...new Set(body.caseIds)];
   }
   if(!['login','database'].includes(body.suite)){
+    try{await readFile(path.join(workspace,'.auth/rounding-36944-restore.json'),'utf8');throw new Error('Najpierw przywróć promocję QA 289: npm run redmine:36944:restore. Pozostał dziennik zmiany promocji.');}catch(e){if(e.code!=='ENOENT')throw e;}
     try{await readFile(path.join(workspace,'.auth/shipping-restore.json'),'utf8');throw new Error('Najpierw przywróć konfigurację GLS: npm run packages:restore. Istnieje niedokończony dziennik zmian CMS.');}catch(e){if(e.code!=='ENOENT')throw e;}
   }
   if(body.suite==='product-create')cmsProductPreview(body.input);
@@ -201,7 +215,7 @@ async function launch(body,runner,debugHub) {
     if(browserPreview.enabled)append('Podgląd przeglądarki włączony. Opóźnienie akcji: '+browserPreview.slowMoMs+' ms. Okno pojawi się wyłącznie przy krokach przeglądarkowych; żądania API/HTTP pozostają w logu i raporcie. Okna zamykają się po zakończeniu modułu.\n');
     Promise.resolve().then(()=>runner(body,vars,{debuggerSession:debugSession,signal:controller.signal,onProgress:line=>{append(line+'\n');publishBrowserStep(vars,scrub(line,sensitive));},...interactive})).then(async result=>{
       job.status=result.report.restorationFailed?'FAIL':controller.signal.aborted?'CANCELLED':result.report.status;
-      job.error=result.report.error??null;
+      job.error=result.report.error??null;job.dataError=diagnostic.classifyTestDataError(job.error)||(result.report.tests??result.report.checks??[]).filter(c=>c.status==='FAIL').map(c=>diagnostic.classifyTestDataError(c.detail)).find(Boolean)||null;
       if(debugSession){if(!debugSession.closed)await debugSession.operation('Ocena scenariusza — wynik zapisanych kontroli',async()=>{if(result.report.status==='FAIL')throw new Error(result.report.error||result.report.tests?.find(t=>t.status==='FAIL')?.detail||'Kontrole scenariusza nie przeszły. Otwórz raport.');},{automatic:true}).catch(()=>{});const directory=path.resolve(result.directory);const inside=directory.startsWith(reportRoot+path.sep);const report=inside?'/reports/'+path.basename(directory)+'/raport.html':undefined;await debugHub.finish(job.id,job.status,{directory:inside?directory:undefined,report,stepsFile:inside?'/reports/'+path.basename(directory)+'/debugger-steps.json':undefined});}
       job.completionBlocked=result.report.completionBlocked??false;
       job.finalization=result.report.finalization;
@@ -209,7 +223,7 @@ async function launch(body,runner,debugHub) {
       if(body.suite==='wizard')job.lastOrder=result.report.snapshots?.at(-1)?.order;
       append('\n'+job.status+' — '+result.directory+'\n');
       if(result.report.error)append(result.report.error+'\n');
-    }).catch(error=>{job.status=error.code==='RESTORE_FAILED'?'FAIL':controller.signal.aborted?'CANCELLED':'FAIL';job.error=error.message;append(error.message+'\n');}).finally(async()=>{if(debugSession?.status==='RUNNING')await debugHub.finish(job.id,job.status);job.finishedAt=new Date().toISOString();job.wizard=null;gates.delete(job.id);if(currentController===controller)currentController=null;});
+    }).catch(error=>{job.status=error.code==='RESTORE_FAILED'?'FAIL':controller.signal.aborted?'CANCELLED':'FAIL';job.error=error.message;job.dataError=diagnostic.classifyTestDataError(error);append(error.message+'\n');}).finally(async()=>{if(debugSession?.status==='RUNNING')await debugHub.finish(job.id,job.status);job.finishedAt=new Date().toISOString();job.wizard=null;gates.delete(job.id);if(currentController===controller)currentController=null;});
     return job;
   }
   let child;
@@ -263,10 +277,23 @@ async function jsonBody(req) {
   let raw='';for await(const part of req){raw+=part;if(Buffer.byteLength(raw)>16000)throw Object.assign(new Error('Zbyt duże żądanie.'),{status:413});}
   try{return JSON.parse(raw);}catch{throw Object.assign(new Error('Niepoprawny JSON.'),{status:400});}
 }
-export function createDashboardServer({runSuite=executeSuite}={}) {
+export function createDashboardServer({runSuite=executeSuite,scenarioDataDir=path.join(workspace,'config')}={}) {
+  const scenarioEditor=makeScenarioEditor(scenarioDataDir);
   const debugHub=new DebugHub({project:'Hurtownia',environment:async()=>{const {config}=await settings();return config.environment+' · '+new URL(config.baseUrl).host;},
-    catalog:()=>shipmentCases.map(c=>({id:c.id,title:c.name,mode:'api',description:'Redmine #37162. Tworzy nowy koszyk i dodaje wskazane produkty; każdy krok API wymaga przycisku. Nie finalizuje zamówienia. Koszyki pozostają na DEV. Przypadek 01 wykonuje trzy próby. Część produktów może być e-bookami niedopuszczonymi w hurtowni; wynik 4xx nie potwierdza sprzedaży tych produktów.'})),
-    start:selected=>launch({suite:'redmine-37162',caseIds:[selected.id],debugger:true},runSuite,debugHub),
+    catalog:()=>[
+      ...[{id:'HURT-36944',name:'1 i 6 sztuk — cały test',caseIds:roundingCases.map(c=>c.id)},...roundingCases.map(c=>({id:c.id,name:'1 i 6 sztuk — '+c.name,caseIds:[c.id]}))].map(c=>({
+        id:c.id,suite:'redmine-36944',caseIds:c.caseIds,title:'#36944 — API hurtowni · '+c.name,mode:'api',
+        description:'Produkt 5lp-1 za 18,40 zł brutto. Konto HURT_ROUNDING_EMAIL (skonfigurowany hurtownik z rabatem 23%); wybór użytkownika u góry panelu nie zmienia tego konta. Logowanie automatyczne, następnie każde żądanie i sprawdzenie kwot wymagają Następnego kroku. Dla 1 sztuki: discountedUnitPriceNet = 1349 gr (13,49 zł netto). Dla 6 sztuk: total pozycji = itemsTotal = 8499 gr (84,99 zł brutto produktów). Osobny koszyk na przypadek. Bez CMS, RETAIL i finalizacji; koszyki pozostają na DEV.'
+      })),
+      ...shipmentCases.map(c=>({id:c.id,suite:'redmine-37162',caseIds:[c.id],title:c.name,mode:'api',description:'Redmine #37162. Tworzy nowy koszyk i dodaje wskazane produkty; każdy krok API wymaga przycisku. Nie finalizuje zamówienia. Koszyki pozostają na DEV. Przypadek 01 wykonuje trzy próby. Część produktów może być e-bookami niedopuszczonymi w hurtowni; wynik 4xx nie potwierdza sprzedaży tych produktów.'})),
+      ...[{id:'HURT-36618',name:'Cały zestaw T01–T16',caseIds:packageCases.map(c=>c.id)},...packageCases.map(c=>({id:'HURT-36618-'+c.id,name:c.id+' — '+c.name,caseIds:[c.id]}))].map(c=>({
+        id:c.id,suite:'redmine-36618',caseIds:c.caseIds,title:'#36618 — liczba paczek · '+c.name,mode:'api',
+        description:'#36618 — liczba paczek i koszt dostawy. Przygotowuje własne książki QA 140 g i 1 g; zapis CMS i każde żądanie API czekają na Następny krok. Logowanie oraz wyłączenie produktów po zakończeniu lub zatrzymaniu odbywają się automatycznie. Tworzy koszyki na dev, bez zatwierdzania zamówień. Kontrole finalizacji, KWys po zapisie i PDF mają SKIP; brakujące wzorce również są pomijane.'
+      })),
+      {id:'HURT-36618-complete',suite:'redmine-36618-complete',caseIds:packageCases.map(c=>c.id),title:'#36618 — liczba paczek · Pełny zestaw z zapisem, bazą i PDF',mode:'api',
+       description:'Pełne T01–T16 na dev: przygotowanie produktów i wzorców CMS, tymczasowe udostępnienie odbioru własnego, zatwierdzenie do 8 zamówień, porównanie KWys z bazą oraz panelu CMS i PDF. Może wysłać e-maile i uruchomić transfer. Każdy zapis i żądanie API wymagają Następnego kroku; przywracanie ustawień jest automatyczne. Palety mają status Nie dotyczy, jeśli odczytana konfiguracja ich nie obsługuje.'}
+    ],
+    start:selected=>launch({suite:selected.suite,caseIds:selected.caseIds,debugger:true},runSuite,debugHub),
     stop:async id=>{const job=jobs.find(j=>j.id===id);if(job)job.log+='\nZatrzymano debugger.\n';currentController?.abort(new Error('Debugger zatrzymany.'));}
   });
   const server=http.createServer(async(req,res)=>{
@@ -281,6 +308,7 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
       if(req.method==='POST') {
         if(req.headers.origin!==origin||req.headers['x-ui-token']!==secret||!(req.headers['content-type']??'').includes('application/json'))return send(403,{error:'Odśwież panel przed wykonaniem operacji.'});
         const body=await jsonBody(req);
+        if(url.pathname==='/api/scenarios/update'){await scenarioEditor.update(body,{origin:req.headers.origin,expectedOrigin:origin,contentType:req.headers['content-type'],editToken:req.headers['x-scenario-token']});return send(200,await editedScenarioCatalog(undefined,scenarioEditor));}
         if(url.pathname==='/api/account/custom'){
           if(launching||definingUser||currentChild||currentController)return send(409,{error:'Poczekaj na zakończenie testu lub odczytu przed zmianą użytkownika.'});
           definingUser=true;
@@ -304,11 +332,11 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
       }
       if(req.method!=='GET')return send(404,{error:'Nie znaleziono.'});
       if(url.pathname==='/api/documentation')return send(200,renderDocumentation(await readFile(path.join(workspace,'README.md'),'utf8')));
-      if(url.pathname==='/api/scenarios')return send(200,await loadScenarioCatalog());
+      if(url.pathname==='/api/scenarios')return send(200,await editedScenarioCatalog(undefined,scenarioEditor));
       const scenarioDownloads={'/SCENARIUSZE-KOSZYKA-HURTOWEGO.md':'cart','/SCENARIUSZE-OPISOW-KANALOWYCH.md':'descriptions','/SCENARIUSZE-TESTOWE.md':'all'};
       if(scenarioDownloads[url.pathname]){
         res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Content-Disposition':'attachment; filename="'+url.pathname.slice(1)+'"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
-        return res.end(renderScenarioMarkdown(await loadScenarioCatalog(scenarioDownloads[url.pathname])));
+        return res.end(renderScenarioMarkdown(await editedScenarioCatalog(scenarioDownloads[url.pathname],scenarioEditor)));
       }
       if(url.pathname==='/README.md'){
         res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Content-Disposition':'attachment; filename="README.md"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
@@ -319,7 +347,7 @@ export function createDashboardServer({runSuite=executeSuite}={}) {
         const file=await safeReportPath(reportRoot,url.pathname.slice('/reports/'.length).split('/').map(decodeURIComponent));
         res.writeHead(200,{'Content-Type':file.endsWith('.pdf')?'application/pdf':file.endsWith('.json')?'application/json; charset=utf-8':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; sandbox allow-popups allow-same-origin"});return res.end(await readFile(file));
       }
-      const assets={'/':'index.html','/app.js':'app.js','/wizard.js':'wizard.js','/scenarios.js':'scenarios.js','/product-form.js':'product-form.js','/style.css':'style.css'};
+      const assets={'/':'index.html','/app.js':'app.js','/wizard.js':'wizard.js','/scenarios.js':'scenarios.js','/scenario-editor.js':'scenario-editor.js','/scenario-editor.css':'scenario-editor.css','/product-form.js':'product-form.js','/style.css':'style.css'};
       const asset=assets[url.pathname];if(!asset)return send(404,{error:'Nie znaleziono.'});
       let data=await readFile(path.join(workspace,'dashboard/public',asset));
       if(asset==='index.html')data=Buffer.from(data.toString().replace('__UI_TOKEN__',secret));

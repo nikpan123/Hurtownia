@@ -59,6 +59,9 @@ export async function readDatabase(orderId,{sessionFile='.auth/dev.json',vars=pr
   const queries=databaseQueries(orderId);const {chromium}=await import('playwright');const browser=await chromium.launch(browserLaunchOptions(vars));
   try{
     const context=await browser.newContext({storageState:JSON.parse(await readFile(sessionFile,'utf8'))});const presentation=await installBrowserPresentation(context,{vars});const page=await context.newPage();page.setDefaultTimeout(30000);const result={};
+    // Pierwsze wejście inicjalizuje sesję phpMyAdmin i może odrzucić trasę /table/sql.
+    await page.goto('https://phpmyadmin.gwodev.pl/',{waitUntil:'domcontentloaded'});
+    assert.equal(new URL(page.url()).hostname,'phpmyadmin.gwodev.pl','Odśwież sesję GitLab do phpMyAdmin');
     for(const [key,sql]of Object.entries(queries)){
       signal?.throwIfAborted();await page.goto('https://phpmyadmin.gwodev.pl/index.php?route=/table/sql&db=gwo_transfer&table=orders_items');
       if(new URL(page.url()).hostname!=='phpmyadmin.gwodev.pl')throw new Error('Odśwież sesję GitLab do phpMyAdmin');

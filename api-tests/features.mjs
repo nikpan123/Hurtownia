@@ -93,44 +93,6 @@ export async function runProductCreation(config,credentials,options={}){
   return finish();
 }
 
-export async function runRounding(config,credentials,options={}){
-  const settings=options.settings??JSON.parse(await readFile('config/regressions.local.json','utf8')).pricing;
-  const c=await context(config,credentials,options,'Ceny netto / brutto — wzorzec starej hurtowni','rounding');const {api,report,test,skip,request,cart,finish}=c;
-  report.reference=settings;const rows=[];report.tables.push({title:'Pomiary — kwoty dotyczą produktów bez dostawy',headers:['Ilość','Netto / szt. po rabacie API','Netto razem API','Brutto razem API','Wzorzec potwierdzony','Różnica (grosze)'],rows});
-  try{
-    await api.loginShop();let order,session;
-    if(!await test('Produkt referencyjny: cena 18,40 zł brutto i VAT 5%',async()=>{
-      session=await cart('WHOLESALE',settings.productVariant);order=await request('GET',session.endpoint);
-      assert.equal(order.items.length,1);const item=order.items[0];assert.equal(item.unitPrice,settings.baseGrossMinor);assert.equal(item.originalUnitPrice,settings.baseGrossMinor);assert.equal(item.unitPriceNet,settings.baseNetMinor);
-    }))return await finish();
-    const payments=await request('GET','wholesale/orders/'+encodeURIComponent(session.token)+'/payments');
-    assert(Array.isArray(payments));report.paymentOffers=payments;
-    const payment=payments.find(p=>p.rebatePercent===settings.rebatePercent&&(!settings.paymentCode||p.code===settings.paymentCode));
-    if(!payment){
-      report.blockedReason='Brak dostępnej płatności z rabatem '+settings.rebatePercent+'%. Nie wybieramy metody spoza listy API ani nie zmieniamy ustawień hurtownika.';
-      skip('Warunek: dostępny rabat 23%',report.blockedReason+' Dostępne: '+payments.map(p=>p.code+' '+p.rebatePercent+'%').join(', '));
-      for(const quantity of settings.quantities)skip('Ilość '+quantity+': porównanie wyceny','Nie można uruchomić bez właściwego rabatu.');
-      return await finish();
-    }
-    report.selectedPayment=payment.code;
-    await request('PATCH','wholesale/orders/'+encodeURIComponent(session.token)+'/payment-method',{body:{paymentMethodCode:payment.code}});
-    const itemId=order.items[0].id;
-    for(const quantity of settings.quantities){
-      await test('Ilość '+quantity+': wycena i wzorzec starej hurtowni',async()=>{
-        await request('PATCH',session.endpoint+'/items/'+encodeURIComponent(itemId),{body:{quantity}},[200,204]);
-        const o=await request('GET',session.endpoint);assert.equal(o.items.length,1);const i=o.items[0];
-        assert.equal(i.quantity,quantity);assert.equal(i.rebatePercent,settings.rebatePercent);assert.equal(i.unitPrice,settings.baseGrossMinor,'Cena bazowa zmieniła się podczas testu');
-        const expected=settings.anchors[String(quantity)];
-        rows.push([quantity,money(i.discountedUnitPriceNet),money(i.totalNetSalesAfterDiscount),money(i.total),expected?Object.entries(expected).map(([k,v])=>k+': '+money(v)).join('; '):'obserwacja — brak niezależnego wzorca',expected?Object.entries(expected).map(([k,v])=>`${k}: ${i[k]-v}`).join('; '):'—']);
-        assert.equal(o.itemsTotal,o.items.reduce((sum,p)=>sum+p.total,0),'Suma produktów');
-        assert.equal(o.total,o.itemsTotal+o.shippingTotal,'Do zapłaty = produkty + dostawa');
-        for(const [field,value]of Object.entries(expected??{}))assert.equal(i[field],value,'Wzorzec starej hurtowni: '+field);
-      });
-    }
-  }catch(e){report.error=api.clean(e.message);report.tests.push({name:'Przebieg / logowanie',status:'FAIL',detail:report.error});}
-  return finish();
-}
-
 export async function runDescriptions(config,credentials,options={}){
   const fixtureData=options.fixtures?{products:options.fixtures,courses:options.courses}:JSON.parse(await readFile('config/catalog-fixtures.local.json','utf8'));
   const fixtures=fixtureData.products.filter(p=>p.main);

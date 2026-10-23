@@ -1,6 +1,7 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
+import {packageScenarioCategory,packageScenarioActions,packageScenarioCases} from './package-scenarios.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 export async function loadScenarioCatalog(scope='all'){
@@ -8,7 +9,7 @@ export async function loadScenarioCatalog(scope='all'){
   if(scope==='cart')return cart;
   const descriptions=JSON.parse(await readFile(path.join(root,'docs/product-channel-scenarios.json'),'utf8'));
   if(scope==='descriptions')return {...cart,...descriptions,coverageLabels:cart.coverageLabels,effectLabels:{...cart.effectLabels,...descriptions.effectLabels},priorities:cart.priorities,actions:{...cart.actions,...descriptions.actions}};
-  return {...cart,title:'Scenariusze testowe API i funkcji księgarni',scope:'Koszyk hurtowy oraz opisy produktów w kanałach sprzedaży. Katalog wymagań i pokrycia kodem; wynik konkretnego wykonania znajduje się w raporcie.',categories:[...cart.categories,...descriptions.categories],effectLabels:{...cart.effectLabels,...descriptions.effectLabels},cases:[...cart.cases,...descriptions.cases],actions:{...cart.actions,...descriptions.actions},endpoints:[...cart.endpoints,...descriptions.endpoints],rules:[...cart.rules,...descriptions.rules],prerequisites:[...cart.prerequisites,...descriptions.prerequisites],setupNotes:[...cart.setupNotes,...descriptions.setupNotes]};
+  return {...cart,title:'Scenariusze testowe API i funkcji księgarni',scope:'Koszyk hurtowy oraz opisy produktów w kanałach sprzedaży. Katalog wymagań i pokrycia kodem; wynik konkretnego wykonania znajduje się w raporcie.',categories:[...cart.categories,...descriptions.categories,packageScenarioCategory],effectLabels:{...cart.effectLabels,...descriptions.effectLabels},cases:[...cart.cases,...descriptions.cases,...packageScenarioCases],actions:{...cart.actions,...descriptions.actions,...packageScenarioActions},endpoints:[...cart.endpoints,...descriptions.endpoints],rules:[...cart.rules,...descriptions.rules],prerequisites:[...cart.prerequisites,...descriptions.prerequisites],setupNotes:[...cart.setupNotes,...descriptions.setupNotes]};
 }
 export function renderScenarioMarkdown(c){
   const bullets=items=>items.map(s=>`- ${s}`).join('\n');

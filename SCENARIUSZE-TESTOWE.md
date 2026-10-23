@@ -85,7 +85,7 @@ Koszyk hurtowy oraz opisy produktów w kanałach sprzedaży. Katalog wymagań i 
 | PAY-004 | Zmiana dostępnej płatności w tym samym koszyku | P1 | Obsługiwane przez automat |
 | PAY-005 | Nieistniejąca metoda płatności | P1 | Obsługiwane przez automat |
 | PAY-006 | Istniejąca płatność niedozwolona hurtownikowi | P1 | Obsługiwane przez automat |
-| PAY-007 | Zaokrąglenia według wzorca starej hurtowni | P1 | Częściowo obsługiwane |
+| PAY-007 | API hurtowni — zaokrąglenia 1 i 6 sztuk (#36944) | P1 | Obsługiwane przez automat |
 | SHIP-001 | Dostawy dostępne po wyborze płatności | P0 | Obsługiwane przez automat |
 | SHIP-002 | Zapis dostawy i poprawnych adresów | P0 | Obsługiwane przez automat |
 | SHIP-003 | Niekompletny adres dostawy | P1 | Obsługiwane przez automat |
@@ -139,6 +139,22 @@ Koszyk hurtowy oraz opisy produktów w kanałach sprzedaży. Katalog wymagań i 
 | DESC-027 | Tłumaczenia produktów dołączonych do oferty | P1 | Częściowo obsługiwane |
 | DESC-028 | EMPIK — dane oferty przekazane przez OfferUpdater | P1 | Do automatyzacji |
 | DESC-029 | OutOfStockSubscriber — nazwa w RETAIL | P1 | Częściowo obsługiwane |
+| HURT-36618-T01 | Jedna paczka | P1 | Obsługiwane przez automat |
+| HURT-36618-T02 | Dwie i trzy paczki | P1 | Obsługiwane przez automat |
+| HURT-36618-T03 | Podsumowanie i zatwierdzenie | P1 | Obsługiwane przez automat |
+| HURT-36618-T04 | Retest: książka 140 g, płatność terminowa, odbiór własny | P1 | Obsługiwane przez automat |
+| HURT-36618-T05 | Pozostałe dostawy bez kalkulatora | P1 | Obsługiwane przez automat |
+| HURT-36618-T06 | Kalkulator → brak kalkulatora | P1 | Obsługiwane przez automat |
+| HURT-36618-T07 | Brak kalkulatora → kalkulator | P1 | Obsługiwane przez automat |
+| HURT-36618-T08 | Zwiększenie i zmniejszenie ilości | P1 | Obsługiwane przez automat |
+| HURT-36618-T09 | Dokładne granice wagowe | P1 | Obsługiwane przez automat |
+| HURT-36618-T10 | Zapis KWys | P1 | Obsługiwane przez automat |
+| HURT-36618-T11 | Cena jednostkowa KWys | P1 | Obsługiwane przez automat |
+| HURT-36618-T12 | Powtórzone podsumowanie | P2 | Obsługiwane przez automat |
+| HURT-36618-T13 | Różne formy płatności | P2 | Obsługiwane przez automat |
+| HURT-36618-T14 | Rabaty i promocje | P2 | Obsługiwane przez automat |
+| HURT-36618-T15 | Spójność API, panelu i PDF | P2 | Obsługiwane przez automat |
+| HURT-36618-T16 | Palety i wysyłka mieszana | P2 | Obsługiwane przez automat |
 
 ## Logowanie i dostęp
 
@@ -792,9 +808,9 @@ Regresja — istniejąca niedostępna płatność
 
 **Ograniczenia:** Bez potwierdzonego kodu i źródła przypadek ma SKIP. Losowy nieistniejący kod nie zastępuje tej kontroli uprawnień.
 
-### PAY-007 — Zaokrąglenia według wzorca starej hurtowni
+### PAY-007 — API hurtowni — zaokrąglenia 1 i 6 sztuk (#36944)
 
-**P1 · Częściowo obsługiwane · Zmiana koszyka**
+**P1 · Obsługiwane przez automat · Zmiana koszyka**
 
 **Warunki wstępne**
 
@@ -803,7 +819,7 @@ Regresja — istniejąca niedostępna płatność
 
 **Dane**
 
-Ilości 1–10; wartości wzorcowe dla 1 i 6 sztuk.
+Produkt 5lp-1; 1 i 6 sztuk; 18,40 zł brutto, VAT 5%, rabat 23%.
 
 **Kroki**
 
@@ -814,19 +830,19 @@ Ilości 1–10; wartości wzorcowe dla 1 i 6 sztuk.
 
 **Oczekiwany wynik**
 
-- Wartości odpowiadają uzgodnionemu wzorcowi starej hurtowni.
-- Dla pozostałych ilości zapisano pomiary; brak jawnego wzorca nie jest pozornym PASS.
-- Brak płatności 23% oznacza niespełniony warunek, a nie błąd kalkulacji produktu.
+- Dla 1 sztuki discountedUnitPriceNet = 1349 gr (13,49 zł netto).
+- Dla 6 sztuk total pozycji = itemsTotal = 8499 gr (84,99 zł brutto produktów), bez dostawy.
+- Brak dostępnego rabatu 23% daje SKIP z przyczyną; niezgodność kwoty daje FAIL.
 
 **Odpowiadający test**
 
-Zaokrąglenia cen
+API hurtowni — 1 i 6 sztuk (HURT-36944-01 / HURT-36944-02)
 
-**Uruchom test zaokrągleń:** Zestaw ilości 1–10 dla przygotowanego produktu 18,40 zł i rabatu 23%. Wymaga przygotowanych danych; nie zmienia rabatu automatycznie. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+**API hurtowni — 1 i 6 sztuk:** Dwa koszyki WHOLESALE produktu 5lp-1 za 18,40 zł brutto; hurtownik HURT_ROUNDING_EMAIL z rabatem 23%. Bez finalizacji i zmian CMS. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-- `api-tests/features.mjs`
+- `api-tests/redmine-36944.mjs`
 
-**Ograniczenia:** Kontrola wymaga przygotowanych danych. Jeżeli tymczasowo zmieniano rabat w CMS, należy go przywrócić i potwierdzić odczytem.
+**Ograniczenia:** Wyłącznie API nowej hurtowni; bez RETAIL, CMS i finalizacji. Konto dedykowane w HURT_ROUNDING_EMAIL.
 
 ## Dostawa i adresy
 
@@ -2825,6 +2841,600 @@ Powiadomienie RETAIL o dostępności nowego QA
 - `tests/description-stock.test.mjs`
 
 **Ograniczenia:** Automat tworzy własny produkt, kontroluje 0 subskrypcji przed próbą i dokładnie 1 własną przed zmianą zapasu. Wymaga MailHoga i phpMyAdmina. Sprawdza nową wiadomość i nazwę RETAIL przy odmiennej WHOLESALE. Dziennik .auth/description-stock-restore.json; po przerwaniu descriptions:stock:restore. Wynik rzeczywistego wykonania wymaga raportu. Migawka obejmuje ostatnie 50 ID i czas przed utworzeniem unikalnego produktu; dopasowanie wymaga dokładnego odbiorcy, czasu oraz nazwy nowej próby. Poczta MIME jest dekodowana po ID, więc polska nazwa nie jest szukana tylko w surowym kodowaniu. Wywołanie OutOfStockSubscriber przy braku towaru wymaga osobnego potwierdzenia.
+
+## #36618 — paczki i koszt dostawy
+
+### HURT-36618-T01 — Jedna paczka
+
+**P1 · Obsługiwane przez automat · Zmiana koszyka**
+
+**Wymaganie:** #36618 / T01 — Jedna paczka
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Przygotuj zamówienie na jedną paczkę i pobierz podsumowanie.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- API zwraca jedną paczkę oraz koszt netto i brutto zgodny z kalkulatorem.
+
+**Odpowiadający test**
+
+runPackageRegression / T01
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T02 — Dwie i trzy paczki
+
+**P1 · Obsługiwane przez automat · Zmiana koszyka**
+
+**Wymaganie:** #36618 / T02 — Dwie i trzy paczki
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Zwiększ ilość do dwóch, następnie trzech paczek.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Liczba paczek i koszty odpowiadają każdej ilości.
+
+**Odpowiadający test**
+
+runPackageRegression / T02
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T03 — Podsumowanie i zatwierdzenie
+
+**P1 · Obsługiwane przez automat · Możliwy zapis zamówienia**
+
+**Wymaganie:** #36618 / T03 — Podsumowanie i zatwierdzenie
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Pobierz podsumowanie i zatwierdź niezmienione zamówienie.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Liczba paczek i koszty pozostają zgodne przed zapisem i po nim.
+
+**Odpowiadający test**
+
+runPackageRegression / T03
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Sprawdź #36618 także z zapisem:** Uruchamia cały zestaw i składa do 8 zamówień QA na dev. Może wysłać e-maile i uruchomić transfer. Automatycznie porównuje bazę, panel CMS i PDF; na końcu przywraca odbiór własny i wyłącza produkty QA. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T04 — Retest: książka 140 g, płatność terminowa, odbiór własny
+
+**P1 · Obsługiwane przez automat · Możliwy zapis zamówienia**
+
+**Wymaganie:** #36618 / T04 — Retest: książka 140 g, płatność terminowa, odbiór własny
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Dodaj książkę 140 g, wybierz płatność terminową i odbiór własny; odczytaj podsumowanie i zatwierdź.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Brak dodatniej liczby paczek na obu etapach; nie występuje zmiana 0 → 3.
+
+**Odpowiadający test**
+
+runPackageRegression / T04
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Sprawdź #36618 także z zapisem:** Uruchamia cały zestaw i składa do 8 zamówień QA na dev. Może wysłać e-maile i uruchomić transfer. Automatycznie porównuje bazę, panel CMS i PDF; na końcu przywraca odbiór własny i wyłącza produkty QA. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T05 — Pozostałe dostawy bez kalkulatora
+
+**P1 · Obsługiwane przez automat · Możliwy zapis zamówienia**
+
+**Wymaganie:** #36618 / T05 — Pozostałe dostawy bez kalkulatora
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Dla każdej dostawy bez kalkulatora sprawdź lekkie i ciężkie zamówienie oraz zapis.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Brak wyliczonych paczek; koszt odpowiada konfiguracji metody.
+
+**Odpowiadający test**
+
+runPackageRegression / T05
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Sprawdź #36618 także z zapisem:** Uruchamia cały zestaw i składa do 8 zamówień QA na dev. Może wysłać e-maile i uruchomić transfer. Automatycznie porównuje bazę, panel CMS i PDF; na końcu przywraca odbiór własny i wyłącza produkty QA. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T06 — Kalkulator → brak kalkulatora
+
+**P1 · Obsługiwane przez automat · Zmiana koszyka**
+
+**Wymaganie:** #36618 / T06 — Kalkulator → brak kalkulatora
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Zmień dostawę z kalkulatorem na dostawę bez kalkulatora.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Poprzednia liczba paczek jest usunięta, a koszt aktualny.
+
+**Odpowiadający test**
+
+runPackageRegression / T06
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T07 — Brak kalkulatora → kalkulator
+
+**P1 · Obsługiwane przez automat · Zmiana koszyka**
+
+**Wymaganie:** #36618 / T07 — Brak kalkulatora → kalkulator
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Zmień dostawę bez kalkulatora na dostawę z kalkulatorem.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- API zwraca aktualną liczbę paczek i koszty.
+
+**Odpowiadający test**
+
+runPackageRegression / T07
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T08 — Zwiększenie i zmniejszenie ilości
+
+**P1 · Obsługiwane przez automat · Zmiana koszyka**
+
+**Wymaganie:** #36618 / T08 — Zwiększenie i zmniejszenie ilości
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Zwiększ i zmniejsz ilość produktu na tym samym koszyku.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Liczba paczek i koszt są przeliczane w obu kierunkach.
+
+**Odpowiadający test**
+
+runPackageRegression / T08
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T09 — Dokładne granice wagowe
+
+**P1 · Obsługiwane przez automat · Zmiana koszyka**
+
+**Wymaganie:** #36618 / T09 — Dokładne granice wagowe
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Sprawdź każdy próg dokładnie oraz 1 g poniżej i powyżej.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Liczba paczek i koszt odpowiadają włącznym granicom kalkulatora.
+
+**Odpowiadający test**
+
+runPackageRegression / T09
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T10 — Zapis KWys
+
+**P1 · Obsługiwane przez automat · Możliwy zapis zamówienia**
+
+**Wymaganie:** #36618 / T10 — Zapis KWys
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Zatwierdź zamówienie i porównaj jego zapis z bazą.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Jedna pozycja KWys ma właściwą ilość i wartość.
+
+**Odpowiadający test**
+
+runPackageRegression / T10
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Sprawdź #36618 także z zapisem:** Uruchamia cały zestaw i składa do 8 zamówień QA na dev. Może wysłać e-maile i uruchomić transfer. Automatycznie porównuje bazę, panel CMS i PDF; na końcu przywraca odbiór własny i wyłącza produkty QA. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T11 — Cena jednostkowa KWys
+
+**P1 · Obsługiwane przez automat · Możliwy zapis zamówienia**
+
+**Wymaganie:** #36618 / T11 — Cena jednostkowa KWys
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Zatwierdź zamówienie na kilka paczek i porównaj KWys z API.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Cena jednostkowa razy ilość daje koszt dostawy bez ponownego mnożenia całkowitego kosztu.
+
+**Odpowiadający test**
+
+runPackageRegression / T11
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Sprawdź #36618 także z zapisem:** Uruchamia cały zestaw i składa do 8 zamówień QA na dev. Może wysłać e-maile i uruchomić transfer. Automatycznie porównuje bazę, panel CMS i PDF; na końcu przywraca odbiór własny i wyłącza produkty QA. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T12 — Powtórzone podsumowanie
+
+**P2 · Obsługiwane przez automat · Możliwy zapis zamówienia**
+
+**Wymaganie:** #36618 / T12 — Powtórzone podsumowanie
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Odczytaj podsumowanie trzy razy, następnie zatwierdź i porównaj bazę.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Odczyty nie zmieniają zamówienia; KWys nie jest powielony.
+
+**Odpowiadający test**
+
+runPackageRegression / T12
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Sprawdź #36618 także z zapisem:** Uruchamia cały zestaw i składa do 8 zamówień QA na dev. Może wysłać e-maile i uruchomić transfer. Automatycznie porównuje bazę, panel CMS i PDF; na końcu przywraca odbiór własny i wyłącza produkty QA. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T13 — Różne formy płatności
+
+**P2 · Obsługiwane przez automat · Zmiana koszyka**
+
+**Wymaganie:** #36618 / T13 — Różne formy płatności
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Zmień płatność między co najmniej dwiema dostępnymi metodami.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Paczki i koszty są zgodne z niezależnym wzorcem oraz dopłatą płatności.
+
+**Odpowiadający test**
+
+runPackageRegression / T13
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T14 — Rabaty i promocje
+
+**P2 · Obsługiwane przez automat · Zmiana koszyka**
+
+**Wymaganie:** #36618 / T14 — Rabaty i promocje
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Porównaj koszyk przed i po zmianie rabatu/płatności dla przygotowanej promocji.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Rabaty oraz koszty i liczba paczek odpowiadają wzorcom.
+
+**Odpowiadający test**
+
+runPackageRegression / T14
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T15 — Spójność API, panelu i PDF
+
+**P2 · Obsługiwane przez automat · Możliwy zapis zamówienia**
+
+**Wymaganie:** #36618 / T15 — Spójność API, panelu i PDF
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Zatwierdź zamówienie; porównaj API, bazę, panel i PDF.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Dane są spójne; bez adaptera panelu i PDF ta część pozostaje SKIP.
+
+**Odpowiadający test**
+
+runPackageRegression / T15
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Sprawdź #36618 także z zapisem:** Uruchamia cały zestaw i składa do 8 zamówień QA na dev. Może wysłać e-maile i uruchomić transfer. Automatycznie porównuje bazę, panel CMS i PDF; na końcu przywraca odbiór własny i wyłącza produkty QA. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
+
+### HURT-36618-T16 — Palety i wysyłka mieszana
+
+**P2 · Obsługiwane przez automat · Możliwy zapis zamówienia**
+
+**Wymaganie:** #36618 / T16 — Palety i wysyłka mieszana
+
+**Warunki wstępne**
+
+- Dostęp do API dev i konto hurtowe oraz sesja administratora CMS do przygotowania książek QA.
+- Dostęp do odczytu CMS; dla pełnego wariantu także do phpMyAdmin.
+
+**Dane**
+
+Automat przygotowuje książki QA 140 g i 1 g, odczytuje kalkulator, dopłaty i rabaty z CMS oraz tymczasowo udostępnia odbiór własny. Po próbie przywraca ustawienia. Instrukcja: Dokumentacja testów → #36618.
+
+**Kroki**
+
+1. Sprawdź wariant paletowy i mieszany zgodnie z potwierdzoną regułą liczenia jednostek.
+2. Otwórz raport bieżącego wykonania i sprawdź wynik odpowiedniego T01–T16.
+
+**Oczekiwany wynik**
+
+- Ilości i koszty są zgodne z niezależnym wzorcem i zapisem KWys.
+
+**Odpowiadający test**
+
+runPackageRegression / T16
+
+**Sprawdź #36618 bez finalizacji:** Uruchamia cały zestaw T01–T16 na koncie z konfiguracji. Tworzy koszyki; kontrole zapisu mają SKIP. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+**Sprawdź #36618 także z zapisem:** Uruchamia cały zestaw i składa do 8 zamówień QA na dev. Może wysłać e-maile i uruchomić transfer. Automatycznie porównuje bazę, panel CMS i PDF; na końcu przywraca odbiór własny i wyłącza produkty QA. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+
+- `api-tests/redmine-36618.mjs`
+- `tests/redmine-36618.test.mjs`
+- `REDMINE-36618.md`
+
+**Ograniczenia:** Wariant bez zapisu pomija finalizację. Pełny wariant porównuje bazę, panel i PDF automatycznie. T16 ma Nie dotyczy, jeśli odczytana konfiguracja nie obsługuje palet. Niejednoznaczny wzorzec lub błąd odczytu CMS zatrzymuje przygotowanie.
 
 ## Endpointy
 

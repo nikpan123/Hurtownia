@@ -1,5 +1,15 @@
 [
   {
+    "id": "HURT-36944-01",
+    "title": "API hurtowni — 1 i 6 sztuk — 1 sztuka: 13,49 zł netto",
+    "suite": "redmine-36944"
+  },
+  {
+    "id": "HURT-36944-02",
+    "title": "API hurtowni — 1 i 6 sztuk — 6 sztuk: 84,99 zł brutto produktów",
+    "suite": "redmine-36944"
+  },
+  {
     "id": "HURT-BUG-37162-01",
     "title": "Oryginalny payload: m-F8P × 9 i D414 × 5 — trzy nowe koszyki",
     "suite": "redmine-37162"

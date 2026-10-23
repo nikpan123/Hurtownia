@@ -70,7 +70,7 @@ Koszyk WHOLESALE, płatności, dostawy, paczki, izolacja kont, finalizacja i odc
 | PAY-004 | Zmiana dostępnej płatności w tym samym koszyku | P1 | Obsługiwane przez automat |
 | PAY-005 | Nieistniejąca metoda płatności | P1 | Obsługiwane przez automat |
 | PAY-006 | Istniejąca płatność niedozwolona hurtownikowi | P1 | Obsługiwane przez automat |
-| PAY-007 | Zaokrąglenia według wzorca starej hurtowni | P1 | Częściowo obsługiwane |
+| PAY-007 | API hurtowni — zaokrąglenia 1 i 6 sztuk (#36944) | P1 | Obsługiwane przez automat |
 | SHIP-001 | Dostawy dostępne po wyborze płatności | P0 | Obsługiwane przez automat |
 | SHIP-002 | Zapis dostawy i poprawnych adresów | P0 | Obsługiwane przez automat |
 | SHIP-003 | Niekompletny adres dostawy | P1 | Obsługiwane przez automat |
@@ -748,9 +748,9 @@ Regresja — istniejąca niedostępna płatność
 
 **Ograniczenia:** Bez potwierdzonego kodu i źródła przypadek ma SKIP. Losowy nieistniejący kod nie zastępuje tej kontroli uprawnień.
 
-### PAY-007 — Zaokrąglenia według wzorca starej hurtowni
+### PAY-007 — API hurtowni — zaokrąglenia 1 i 6 sztuk (#36944)
 
-**P1 · Częściowo obsługiwane · Zmiana koszyka**
+**P1 · Obsługiwane przez automat · Zmiana koszyka**
 
 **Warunki wstępne**
 
@@ -759,7 +759,7 @@ Regresja — istniejąca niedostępna płatność
 
 **Dane**
 
-Ilości 1–10; wartości wzorcowe dla 1 i 6 sztuk.
+Produkt 5lp-1; 1 i 6 sztuk; 18,40 zł brutto, VAT 5%, rabat 23%.
 
 **Kroki**
 
@@ -770,19 +770,19 @@ Ilości 1–10; wartości wzorcowe dla 1 i 6 sztuk.
 
 **Oczekiwany wynik**
 
-- Wartości odpowiadają uzgodnionemu wzorcowi starej hurtowni.
-- Dla pozostałych ilości zapisano pomiary; brak jawnego wzorca nie jest pozornym PASS.
-- Brak płatności 23% oznacza niespełniony warunek, a nie błąd kalkulacji produktu.
+- Dla 1 sztuki discountedUnitPriceNet = 1349 gr (13,49 zł netto).
+- Dla 6 sztuk total pozycji = itemsTotal = 8499 gr (84,99 zł brutto produktów), bez dostawy.
+- Brak dostępnego rabatu 23% daje SKIP z przyczyną; niezgodność kwoty daje FAIL.
 
 **Odpowiadający test**
 
-Zaokrąglenia cen
+API hurtowni — 1 i 6 sztuk (HURT-36944-01 / HURT-36944-02)
 
-**Uruchom test zaokrągleń:** Zestaw ilości 1–10 dla przygotowanego produktu 18,40 zł i rabatu 23%. Wymaga przygotowanych danych; nie zmienia rabatu automatycznie. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
+**API hurtowni — 1 i 6 sztuk:** Dwa koszyki WHOLESALE produktu 5lp-1 za 18,40 zł brutto; hurtownik HURT_ROUNDING_EMAIL z rabatem 23%. Bez finalizacji i zmian CMS. Uruchamiany jest cały zestaw, nie pojedynczy przypadek.
 
-- `api-tests/features.mjs`
+- `api-tests/redmine-36944.mjs`
 
-**Ograniczenia:** Kontrola wymaga przygotowanych danych. Jeżeli tymczasowo zmieniano rabat w CMS, należy go przywrócić i potwierdzić odczytem.
+**Ograniczenia:** Wyłącznie API nowej hurtowni; bez RETAIL, CMS i finalizacji. Konto dedykowane w HURT_ROUNDING_EMAIL.
 
 ## Dostawa i adresy
 

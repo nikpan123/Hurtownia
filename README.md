@@ -78,7 +78,6 @@ Alternatywnie uruchom dwukrotnie `Przygotuj.cmd`. Program przygotowania kopiuje 
 | `config/test.example.json` | `config/test.local.json` |
 | `config/catalog.dev.example.json` | `config/catalog.dev.local.json` |
 | `config/catalog-fixtures.example.json` | `config/catalog-fixtures.local.json` |
-| `config/regressions.example.json` | `config/regressions.local.json` |
 | `config/product-create.example.json` | `config/product-create.local.json` |
 
 **Istniejące pliki nie są nadpisywane.** Pliki lokalne są ignorowane przez Git. Po sklonowaniu trzeba uzupełnić dane dostępowe, sprawdzić adresy i scenariusze oraz przygotować własne oczekiwania dla produktów QA. Samo skopiowanie pustej listy fixture nie potwierdza reguł biznesowych.
@@ -128,7 +127,6 @@ Panel nasłuchuje tylko na `127.0.0.1`. Odczytuje lokalne ustawienia i nie pokaz
 | Pełne zamówienie | Koszyk oraz końcowe zatwierdzenie i pobranie PDF | Tak — finalizuje zamówienie |
 | Katalog produktów | Kontrakt DTO, strony, wyszukiwanie, sortowanie, filtry, kanały, fixture | Odczyt; bez tworzenia produktu i zamówienia |
 | Nowy produkt API | Osobny formularz: podgląd dwóch JSON-ów, produkt i wariant z cenami | Próba utworzenia nowego produktu i wariantu; bez testów katalogu |
-| Zaokrąglenia cen | Cena 18,40 zł, rabat 23%, ilości 1–10 i wzorce starej hurtowni | Tworzy koszyk i zmienia ilości/płatność; bez finalizacji |
 | Opisy per kanał | Nazwa, slug, opisy, lista i `productName` koszyka dla trzech kanałów | Odczyt oraz koszyki QA; bez finalizacji |
 | Opisy kanałowe — CMS | Zapis i odczyt czterech pól, fallback, granice długości i kolizje slugów | Tymczasowa zmiana opisów QA i przywrócenie pól; bez finalizacji |
 
@@ -273,15 +271,6 @@ Przycisk katalogu służy do odczytu; tworzenie produktu ma osobny formularz.
 
 Wymagana jest zapisana sesja administratora CMS. Nie są potrzebne dane JWT admin API. Dotychczasowe 403 w admin API pozostają wynikiem osobnej, historycznej ścieżki.
 
-### Zaokrąglenia cen — wzorzec starej hurtowni
-
-1. Utwórz koszyk produktu referencyjnego i sprawdź bazowe ceny: brutto 18,40 zł, zgodną cenę oryginalną i oczekiwaną cenę netto.
-2. Pobierz płatności i znajdź dostępną ofertę z rabatem 23%. Bez niej pomiń pomiary z wyjaśnieniem; zwykły przycisk nie zmienia rabatów konta.
-3. Ustaw tę płatność i zmieniaj ilości według konfiguracji, obecnie 1–10 sztuk.
-4. Dla każdej ilości zapisz cenę netto po rabacie, sumę netto i brutto. Sprawdź ilość, rabat, niezmienność ceny bazowej oraz zgodność sum.
-5. Dla ilości z niezależnym wzorcem porównaj konkretne pola: 13,49 zł netto za sztukę przy 1 sztuce oraz 84,99 zł brutto przy 6 sztukach. Pozostałe ilości bez wzorca są obserwacjami i kontrolą spójności.
-6. Zapisz tabelę pomiarów i różnic w groszach. Nie finalizuj zamówienia.
-
 ### Opisy produktów zależne od kanału
 
 1. Odczytaj niezależne wzorce produktów: opisy główne, nadpisania kanałowe, slugi i widoczność w kanałach.
@@ -421,7 +410,6 @@ W PowerShell użycie `npm.cmd` omija problemy lokalnej polityki uruchamiania skr
 | `npm.cmd run plan` | Pokazuje plan przykładowej konfiguracji bez żądań API |
 | `node api-tests/run.mjs --config config/dev.local.json --plan` | Plan aktualnej lokalnej konfiguracji bez żądań API |
 | `npm.cmd run catalog` | Ogólne testy katalogu |
-| `npm.cmd run prices` | Osobny test cen i zaokrągleń |
 | `npm.cmd run descriptions` | Osobny test opisów zależnych od kanału |
 | `npm.cmd run catalog:create -- --input config/product-create.local.json` | Tworzy tylko produkt i wariant z podanych danych; historyczna nazwa skryptu npm |
 | `npm.cmd test` | Testy samego narzędzia na symulowanym API |
@@ -526,20 +514,6 @@ Scenariusz zamówienia sprawdza m.in.:
 
 `paymentQuoteTotalBasis: "net"` porównuje `orderItemTotal` oferty płatności z sumą `totalNetSalesAfterDiscount` produktów, bez dostawy. To konfigurowane zestawienie pól, domyślnie informacyjne. Ścisłą kontrolę równości i blokadę zapisu włącza dopiero `enforcePaymentQuoteTotal: true`, po potwierdzeniu wspólnej reguły naliczania i zaokrąglania. Ustawienie `"gross"` porównuje z `itemsTotal`. Brak ustalenia podstawy daje pominiętą kontrolę zamiast zgadywania.
 
-### Osobny test zaokrągleń
-
-Konfiguracja: `config/regressions.local.json`, sekcja `pricing`.
-
-Potwierdzone przez użytkownika wzorce starej hurtowni dla ceny 18,40 zł brutto i rabatu 23%:
-
-| Ilość | Sprawdzane pole pozycji | Oczekiwanie |
-| --- | --- | --- |
-| 1 | `discountedUnitPriceNet` | `1349`, czyli 13,49 zł netto |
-| 6 | `total` | `8499`, czyli 84,99 zł brutto pozycji |
-
-Dla ilości 1–10 raport zapisuje netto/brutto oraz kontroluje rabat i spójność sum. Dla ilości bez niezależnego wzorca pokazuje obserwacje; nie uznaje domyślnego algorytmu za potwierdzony.
-
-Test wybiera wyłącznie płatność z listy API oferującą 23%. Jeśli jej nie ma, wynik to **INCOMPLETE**. Program nie zmienia sam rabatów konta i nie wybiera ukrytej metody płatności. Tymczasowe ustawienie rabatu w CMS wymaga uzgodnienia; po pomiarze należy odtworzyć poprzednią wartość. Jednorazowy pomiar dev z 16.10.2026 potwierdził obie wartości wzorcowe; po teście przywrócono pierwotne 50% przy odbiorze. Wyniki są w lokalnych raportach, poza Git.
 
 ## Tłumaczenia produktów per kanał
 
@@ -555,6 +529,23 @@ Osobny zestaw `npm.cmd run descriptions` wykorzystuje fixture zawierające `main
 Sprawdzane: nazwa i slug na liście, nazwa/slug/opis/krótki opis w szczegółach oraz `productName` w nowo utworzonym koszyku dla każdego przygotowanego kanału. Test nie finalizuje tych koszyków.
 
 Nie należy utożsamiać wyniku tego zestawu z pełną akceptacją zadania. Oddzielne przypadki SKIP wskazują brak pokrycia walidacji CMS, długości i unikalności slugów, specjalnych typów produktów, kursów, generowania URL, e-maili, powiadomień, treści PDF oraz integracji Empik. W szczególności brak testowego serwera Empik nie jest wynikiem PASS.
+
+## Redmine #36944 — API nowej hurtowni
+
+W panelu **Zgłoszenia błędów → API hurtowni — 1 i 6 sztuk**, przycisk **Sprawdź 1 i 6 sztuk**. CLI: `npm run redmine:36944`.
+
+W **Debuggerze testów** wyszukaj `36944` lub `1 i 6 sztuk` i wybierz **HURT-36944 — cały test** (albo pojedynczy przypadek 01/02). Logowanie jest automatyczne. Każde żądanie API i osobna ocena kwot czekają na **Następny krok**. Podgląd zawiera payloady, odpowiedzi oraz oczekiwaną i odczytaną kwotę; po zakończeniu dostępny jest raport.
+
+Wyłącznie kanał WHOLESALE. Produkt `5lp-1` za 18,40 zł brutto (17,52 zł netto, VAT 5%); konto `HURT_ROUNDING_EMAIL` ze wspólnym hasłem API i dostępną płatnością z rabatem 23%. Konfiguracja: `config/redmine-36944.local.json`.
+
+| Przypadek | Oczekiwanie z API |
+| --- | --- |
+| HURT-36944-01: 1 sztuka | `items[0].discountedUnitPriceNet = 1349` groszy |
+| HURT-36944-02: 6 sztuk | `items[0].total = itemsTotal = 8499` groszy |
+
+Każdy przypadek tworzy osobny koszyk: POST shop/orders, POST shop/orders/{token}/items/bulk, GET koszyka, GET wholesale/orders/{token}/payments i PATCH wholesale/orders/{token}/payment-method. Dla 6 sztuk dodatkowo PATCH shop/orders/{token}/items/{id}, następnie GET. Raport pokazuje rzeczywiste żądania, kwoty oczekiwane i odczytane oraz różnicę w groszach. Koszt dostawy jest oddzielony od wartości produktów. Brak dostępnego rabatu 23% lub niezgodne dane produktu daje SKIP; HTTP i błędne kwoty dają FAIL.
+
+Bez finalizacji zamówień, RETAIL, przeglądarki oraz zmian produktów, rabatów i promocji CMS. Historyczne raporty obejmujące RETAIL zachowują pierwotny zakres. Polecenie redmine:36944:restore pozostaje wyłącznie do ewentualnego odtworzenia niedokończonej historycznej próby CMS.
 
 ## Tworzenie książki przez formularz CMS
 
@@ -651,7 +642,7 @@ Te ścieżki należą do `http://127.0.0.1:18767`, nie do Syliusa.
 | GET | `/api/documentation` | Bieżący README jako bezpiecznie sformatowana dokumentacja i spis treści |
 | GET | `/README.md` | Pobranie źródłowego README projektu |
 | GET | `/api/state` | Stan danych, przebiegów i raportów; bez haseł/tokenów |
-| POST | `/api/run` | Uruchomienie dozwolonego zestawu: m.in. `cart`, `order`, `wizard`, `catalog`, `product-create`, `rounding`, `descriptions`, `descriptions-cms`, `login`; również zestawy regresji i zgłoszeń opisane wyżej |
+| POST | `/api/run` | Uruchomienie dozwolonego zestawu: m.in. `cart`, `order`, `wizard`, `catalog`, `product-create`, `redmine-36944`, `descriptions`, `descriptions-cms`, `login`; również zestawy regresji i zgłoszeń opisane wyżej |
 | POST | `/api/stop` | Zatrzymanie aktywnego przebiegu po jego identyfikatorze |
 | POST | `/api/preview` | Bezpiecznie ograniczony podgląd GET listy lub szczegółów katalogu |
 | POST | `/api/product/preview` | Lokalna walidacja danych i przygotowanie JSON; bez zapisu w Syliusie |
@@ -1097,3 +1088,147 @@ W menu wybierz **Debugger testów**. Na start dostępne są pojedyncze przypadki
 Przypadek 01 tworzy trzy koszyki; pozostałe po jednym. Testy nie finalizują zamówienia. Koszyki pozostają na DEV, zgodnie z dotychczasowym działaniem tych przypadków. Produkty e-bookowe ze zgłoszenia mogą być niedopuszczone w hurtowni — odpowiedź walidacyjna nie potwierdza ich dostępności w sprzedaży. Wynik całego przypadku oraz błędy kontroli są pokazane w podsumowaniu i raporcie. Hasła, tokeny i dane sesji są maskowane w podglądzie.
 
 Raport i kroki JSON można pobrać po zakończeniu. Zwykłe uruchomienia nie czekają na debugger. Inne przypadki wymagają jeszcze przygotowania do tego trybu. `npm run test:debugger` sprawdza mechanizm na lokalnych odpowiedziach próbnych, bez testów na DEV.
+
+### Edycja scenariuszy
+Przy scenariuszu wybierz „Edytuj scenariusz” lub „Opis / edycja”. Możesz zmienić tytuł, opis, warunki wstępne, dane, kroki i oczekiwany wynik. Kroki można dodawać, usuwać i przestawiać. „Zapisz scenariusz” zapisuje opis lokalnie; „Anuluj” pozostawia dotychczasowy. Formularz zachowuje wpisany tekst, gdy ktoś zapisze inną wersję w drugiej karcie. Edycja dotyczy instrukcji w danym panelu, nie kodu automatu ani jego ID. Poprzednia wersja i wcześniejsze dowody pozostają zachowane. Zmieniona instrukcja wymaga nowego sprawdzenia.
+
+
+# #36618 — automatyczne testy paczek
+
+## Uruchomienie w panelu
+
+Wybierz **Uruchom testy → Regresja i dostawa → #36618 — liczba paczek i koszt dostawy**.
+
+- **Bez zapisu** tworzy i zmienia koszyki. Kontrole wymagające zatwierdzenia mają SKIP.
+- **Z zapisem** wykonuje pełny zakres, składa do 8 zamówień QA na dev, porównuje
+  KWys z bazą oraz panel CMS i PDF. Może wysłać testowe e-maile i uruchomić transfer.
+  Porównanie bazy i dokumentów jest w tym wariancie włączone automatycznie.
+
+W **Debuggerze testów** wyszukaj `36618`. Dostępne są T01–T16 osobno,
+cały zestaw bez zapisu i pełny zestaw z zapisem, bazą i PDF.
+Zapisy CMS i każde żądanie API czekają na **Następny krok**. Logowanie,
+odczyty konfiguracji CMS oraz przywracanie ustawień są automatyczne.
+
+## Automatyczne przygotowanie
+
+Nie trzeba ręcznie wpisywać kodów produktów, cen dostawy ani rabatów.
+Wymagane są istniejące dane konta API i administratora CMS w `.env`,
+ważna sesja GitLab i dostęp do CMS oraz phpMyAdmin na dev.
+
+1. Automat tworzy lub ponownie wykorzystuje dwie własne książki QA: 140 g i 1 g.
+   Na czas testu udostępnia je tylko w WHOLESALE, poza listami, w cenie 21,00 zł brutto (20,00 zł netto przy VAT 5%). Rabaty 25%, 50% i 75% dają wtedy dokładne kwoty; po próbie przywraca wcześniejsze ceny.
+2. Zwykłe przypadki używają książki 140 g. Dokładne granice są osiągane przez
+   połączenie obu książek, np. 57 × 140 g + 20 × 1 g = 8000 g.
+3. Odczytuje kalkulator GLS, VAT książek, stawki dostaw i dopłaty płatności z CMS.
+   Osobno odczytuje rabaty skonfigurowanego hurtownika w CMS. API służy do
+   ustalenia dostępności metod, a nie do wyznaczania oczekiwanych cen.
+4. Na czas próby udostępnia istniejący odbiór własny w WHOLESALE i usuwa wymaganie
+   kategorii wysyłkowej. Zmienia tylko te dwa pola, z dziennikiem przed zapisem.
+5. Po próbie przywraca dokładny stan odbioru własnego i wyłącza książki QA.
+   Kody handlowe QA mają najwyżej 20 znaków, zgodnie z ograniczeniem bazy transferowej. Rekordy książek pozostają do ponownego użycia. Konflikt z cudzą zmianą daje FAIL
+   i zachowuje dziennik, zamiast nadpisywać obce dane.
+
+Kalkulator `weight_range_shipping` w tym środowisku obsługuje paczki i ich ceny.
+Jeśli odczytane formularze nie mają konfiguracji palet, T16 jest oznaczony
+**NIE DOTYCZY**, z opisem źródła. Nie jest zaliczany jako wykonany test palet.
+
+## Zakres T01–T16
+
+| ID | Kontrola |
+| --- | --- |
+| T01 | Jedna paczka i koszt netto/brutto |
+| T02 | Dwie i trzy paczki |
+| T03 | Spójność podsumowania i zatwierdzenia |
+| T04 | Książka 140 g, płatność terminowa, odbiór własny: retest 0 → 3 |
+| T05 | Dostawy bez kalkulatora dla lekkiego i ciężkiego zamówienia |
+| T06 | Zmiana kalkulator → brak kalkulatora |
+| T07 | Zmiana brak kalkulatora → kalkulator |
+| T08 | Zwiększenie i zmniejszenie ilości |
+| T09 | Dokładne granice wagowe ±1 g |
+| T10 | Jedna pozycja KWys i jej wartość w bazie |
+| T11 | Cena jednostkowa KWys i liczba paczek |
+| T12 | Trzy odczyty podsumowania i brak duplikatu KWys po zapisie |
+| T13 | Dostępne płatności i niezależne dopłaty CMS |
+| T14 | Różne rabaty płatności: zgodność z CMS i niezmienność paczek |
+| T15 | API, baza, wyświetlone kwoty panelu CMS i treść PDF |
+| T16 | Palety i wysyłka mieszana, jeśli konfiguracja je obsługuje |
+
+T15 sprawdza numer zamówienia, produkty i ilości oraz sumę i koszt dostawy
+w panelu CMS. W PDF sprawdza numer, nazwy produktów, liczbę paczek,
+koszt dostawy i kwotę do zapłaty. Ilość i koszty netto/brutto KWys są porównywane
+z zapisem Sylius oraz bazy transferowej. Kontrola nie obejmuje faktury.
+
+## Uruchomienie poleceniem
+
+```powershell
+npm run redmine:36618 -- --plan
+npm run redmine:36618
+npm run redmine:36618 -- --complete
+```
+
+Raporty JSON/HTML i pobrane PDF trafiają do `raporty-api/redmine-36618-*`.
+Każdy nowy koszyk ma osobny token. `complete` nie jest ponawiane po błędzie lub
+utracie odpowiedzi. Numer zamówienia potwierdza zapis; jeśli API zwraca `state`,
+nie może on nadal mieć wartości `cart`.
+
+## Przywracanie po przerwaniu
+
+Po zakończeniu zatrzymanego procesu:
+
+```powershell
+npm run redmine:36618:restore
+```
+
+Rejestr produktów: `.auth/package-products-36618.json`.
+Dziennik odbioru własnego: `.auth/package-pickup-36618.json`.
+Nie kasuj tych plików, aby ukryć błąd. Niepewny POST utworzenia książki nie jest
+ponawiany; następny przebieg szuka dokładnego kodu w bazie i potwierdza jego ID
+oraz dane w CMS. Przy braku potwierdzenia zatrzymuje przygotowanie.
+
+## Ręczne wzorce i testy lokalne
+
+Opcjonalny `config/redmine-36618.local.json` nadpisuje ustawienia przykładowe.
+`autoProducts: false` pozostawia własne produkty, a `autoReferences: false`
+wyłącza odczyt i przygotowanie wzorców CMS. W tym trybie trzeba samodzielnie
+podać kalkulator, dopłaty, nonCalculatorMethods, retest140g, paymentVariants
+oraz discountVariants. Braki mają SKIP, nie PASS.
+
+```powershell
+node tests/redmine-36618.test.mjs
+node tests/package-products.test.mjs
+node tests/package-references.test.mjs
+```
+
+Są to lokalne kontrole automatu na symulowanych odpowiedziach. Ich PASS nie
+zastępuje raportu z rzeczywistego wykonania na dev.
+
+## Wynik weryfikacji na dev — 21.10.2026
+
+[Zestawienie końcowe z jawnymi źródłami prób](http://127.0.0.1:18767/reports/redmine-36618-wynik-koncowy-1792583019810/raport.html):
+222 PASS, 2 FAIL, 0 SKIP, 1 NIE DOTYCZY.
+
+Retest T04 z płatnością terminową i odbiorem własnym przeszedł także po
+zatwierdzeniu (zamówienie 30001636). T10, T11, T12 i T15 zostały ponownie
+wykonane z krótkimi kodami handlowymi: 203 PASS, w tym baza, KWys, panel i PDF.
+Historyczne błędy adaptera i danych QA pozostają w źródłach; nie zmieniano ich wyników.
+
+Potwierdzone niezgodności API:
+
+- **T06, koszyk 6945:** po przejściu GLS → poczta API zapisuje `poczta_polska`,
+  ale pozostawia 36,00 zł brutto / 34,29 zł netto zamiast 20,00 zł / 19,05 zł.
+- **T07, koszyk 6946:** po przejściu poczta → GLS API zapisuje `gls_wholesale`,
+  ale zwraca 0 paczek zamiast 2 oraz 20,00 zł / 19,05 zł zamiast 36,00 zł / 34,29 zł.
+
+T16 nie dotyczy odczytanych konfiguracji, które nie mają obsługi palet.
+Nie oznacza to zaliczenia testu palet. Po obu próbach potwierdzono przywrócenie
+odbioru własnego oraz cen, kodów handlowych i ukrycia produktów QA.
+
+W panelu otwórz **Uruchom testy → Regresja i dostawa → #36618 — liczba paczek i koszt dostawy**. Wyszukiwarka obsługuje numer 36618. Pełne opisy T01–T16 znajdziesz w zakładce **Scenariusze testowe**, w obszarze **#36618 — paczki i koszt dostawy**.
+
+### Układ panelu Hurtowni
+
+Panel korzysta z układu wspólnego z Octopusem: **Pulpit**, **Scenariusze**, **Uruchom testy**, **Debugger testów**, **Przebieg i logi** oraz **Historia i raporty**. Formularze zamówienia, książki CMS, podgląd API i konfiguracja pozostają dostępne w menu. Konto wybierasz w „Uruchom testy” lub przyciskiem użytkownika w nagłówku.
+
+Scenariusze są pogrupowane według obszarów i rozwijane w miejscu. Każdy pokazuje przygotowanie, numerowane kroki, oczekiwany wynik i zakres powiązanego zestawu. Sama zmiana widoku nie uruchamia testów. Zakładka „Przebieg i logi” pokazuje pełny log; w pozostałych widokach trwający przebieg pozostaje w przesuwanym oknie. Link z końcówką `#scenarios`, `#start` lub `#reports` otwiera konkretny widok.
+
+Kontrola układu we wszystkich zakładkach, w jasnym i ciemnym motywie oraz przy szerokościach 1440, 1024 i 390 px: `node --test tests/dashboard-layout.check.mjs`. Korzysta z lokalnego serwera i Edge, blokuje zapisy API i nie uruchamia zestawów biznesowych.

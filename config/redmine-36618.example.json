@@ -1,0 +1,26 @@
+{
+  "autoProducts": true,
+  "autoReferences": true,
+  "packages": {
+    "shippingCode": "gls_wholesale",
+    "paymentCode": null,
+    "paymentSurchargeGrossMinor": null,
+    "product": {"productVariant": null, "unitWeightGrams": null},
+    "calculator": null
+  },
+  "nonCalculatorMethods": [],
+  "retest140g": {
+    "product": {"productVariant": null, "unitWeightGrams": 140},
+    "shippingCode": null,
+    "paymentCode": null,
+    "source": null,
+    "representation": "zero",
+    "expected": {"shippingTotal": null, "shippingTotalNet": null}
+  },
+  "heavyQuantity": 100,
+  "paymentVariants": [],
+  "discountVariants": [],
+  "palletVariants": [],
+  "maxBoundaryWeightGrams": 100000,
+  "extraCases": {}
+}

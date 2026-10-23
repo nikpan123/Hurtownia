@@ -5,6 +5,7 @@ import {readFile,mkdir} from 'node:fs/promises';
 import path from 'node:path';
 import {descriptionContext} from './features.mjs';
 import {createMailhogReader} from './mailhog.mjs';
+import {packageWeightBody} from './package-book-fields.mjs';
 
 const cms='https://cms-ksiegarnia.gwodev.pl',shop='https://ksiegarnia.gwodev.pl';
 const plainText=value=>String(value??'').replace(/\s+/g,' ').trim();
@@ -69,11 +70,28 @@ export async function connectDescriptionWeb({vars=process.env,sessionFile='.auth
     assert(/^qa-33388-[a-z0-9-]+$/.test(input.code),'Tworzenie ograniczone do nowego produktu qa-33388-');
     return this.createSimpleBook(input);
    },
+   async roundingPromotion(){
+    const url=cms+'/promotions/289/edit';await goto(url);
+    assert.equal(await page.locator('#sylius_promotion_code').inputValue(),'test','Inna promocja niż wskazana QA 289/test');
+    return page.locator('#sylius_promotion_code').evaluate(e=>({code:e.value,fields:[...new FormData(e.form).entries()].filter(([k,v])=>typeof v==='string'&&!/token/i.test(k)).sort(([a,av],[b,bv])=>a.localeCompare(b)||av.localeCompare(bv))}));
+   },
+   async saveRoundingPromotion(expected,target){
+    const current=await this.roundingPromotion();assert.deepEqual(current,expected,'Promocja zmieniona poza testem — nie nadpisuję');
+    const allowed=/^sylius_promotion\[rules\]\[\d+\]\[configuration\]\[product_code\]$/;
+    assert.equal(target.code,current.code);assert.equal(target.fields.length,current.fields.length);
+    for(let i=0;i<current.fields.length;i++){assert.equal(current.fields[i][0],target.fields[i][0]);if(current.fields[i][1]!==target.fields[i][1])assert(allowed.test(current.fields[i][0]),'Próba zmiany pola promocji poza listą dozwolonych');}
+    const entries=await page.locator('#sylius_promotion_code').evaluate(e=>[...new FormData(e.form).entries()].filter(([,v])=>typeof v==='string'));
+    const body=new URLSearchParams(entries);for(const [key,val]of target.fields)if(allowed.test(key))body.set(key,val);for(const [key,val]of entries)if(/token/i.test(key))onSecret(val);
+    await presentation.form(page,body,'Promocja QA 289 — tymczasowe produkty reguł');
+    const url=cms+'/promotions/289/edit',response=await context.request.post(url,{data:body.toString(),headers:{'content-type':'application/x-www-form-urlencoded',referer:url,origin:cms},maxRedirects:0});
+    onRequest({method:'POST',endpoint:url,status:response.status()});assert([302,303].includes(response.status()),'Zapis promocji HTTP '+response.status()+' — nie ponawiam');
+    assert.deepEqual(await this.roundingPromotion(),target,'Nie potwierdzono zapisanych reguł promocji');
+   },
    async createSimpleBook(input){
     assert(/^qa-[A-Za-z0-9_-]{1,90}$/.test(input.code),'Tworzenie ograniczone do nowego produktu QA');
     const url=cms+'/products/new/simple/BOOK';await goto(url);
     const form=await page.locator('#sylius_product_code').evaluate(e=>({action:e.form.action,entries:[...new FormData(e.form).entries()].filter(([,v])=>typeof v==='string')}));
-    assert.equal(form.action,url);const body=new URLSearchParams(form.entries);
+    assert.equal(form.action,url);const body=input.weightGrams===undefined?new URLSearchParams(form.entries):packageWeightBody(form.entries,input.weightGrams);
     for(const [key,value] of form.entries)if(/token/i.test(key))onSecret(value);
     for(const key of ['enabled','visibleOnList','visibleInBookshop'])body.delete('sylius_product['+key+']');
     body.delete('sylius_product[channels][]');body.append('sylius_product[channels][]',input.channel??'WHOLESALE');
@@ -99,6 +117,59 @@ export async function connectDescriptionWeb({vars=process.env,sessionFile='.auth
     const state=await this.newProductState(p);
     const details=await page.locator('#sylius_product_code').evaluate((e,channel)=>{const f=e.form;return {merchandiseCode:f.querySelector('#sylius_product_variant_merchandiseCode').value,prices:Object.fromEntries(['price','originalPrice','minimumPrice'].map(k=>[k,f.querySelector('#sylius_product_variant_channelPricings_'+channel+'_'+k).value]))};},channel);
     return {...state,...details};
+   },
+   async packageBookState(p){
+    assert(Number.isSafeInteger(p.id)&&p.id>0&&/^qa-36618-[a-f0-9-]+-(?:1|140)g$/.test(p.code),'Tylko własne książki QA #36618');
+    const state=await this.createdBookState(p,'WHOLESALE');
+    const weight=await page.locator('[name="sylius_product[variant][weight]"]').inputValue();
+    assert(/^\d+$/.test(weight),'CMS nie zwrócił całkowitej wagi książki');
+    return {...state,weightGrams:Number(weight)};
+   },
+   async findPackageBook(code){
+    assert(/^qa-36618-[a-f0-9-]+-(?:1|140)g$/.test(code),'Tylko własny kod QA #36618');
+    const db=await context.newPage();
+    try{
+     await db.goto('https://phpmyadmin.gwodev.pl/',{waitUntil:'domcontentloaded'});
+     await db.goto('https://phpmyadmin.gwodev.pl/index.php?route=/table/sql&db=bookshop2&table=sylius_product',{waitUntil:'domcontentloaded'});
+     assert.equal(new URL(db.url()).hostname,'phpmyadmin.gwodev.pl','Brak dostępu do odczytu produktów');
+     const sql="SELECT id,code FROM bookshop2.sylius_product WHERE code='"+code+"'";
+     const editor=db.locator('#sqlquery + .CodeMirror textarea');await editor.press('ControlOrMeta+A');await editor.fill(sql);await editor.press('Tab');
+     await db.getByRole('button',{name:'Wykonaj',exact:true}).click();
+     await db.waitForFunction(()=>document.querySelector('table.table_results')||document.querySelector('#page_content .alert-success')||document.querySelector('#page_content .alert-danger'));
+     const result=await db.evaluate(()=>{
+      const error=document.querySelector('#page_content .alert-danger');if(error)return {error:error.textContent};
+      const table=document.querySelector('table.table_results');if(!table)return {rows:[]};
+      const headers=[...table.querySelectorAll('thead th[data-column]')].map(e=>e.dataset.column);
+      return {rows:[...table.querySelectorAll('tbody tr')].map(r=>Object.fromEntries([...r.querySelectorAll('td.data')].map((c,i)=>[headers[i],c.textContent.trim()])))};
+     });
+     onRequest({method:'SELECT',endpoint:'bookshop2.sylius_product / własny kod QA #36618',status:result.error?'FAIL':'OK'});
+     assert(!result.error,'Nie odczytano zapisanego produktu QA');assert(result.rows.length<=1,'Niejednoznaczny kod QA');
+     const found=result.rows[0];if(!found)return null;assert.equal(found.code,code);
+     return {id:Number(found.id),code:found.code};
+    }finally{await db.close();}
+   },
+   async savePackageBook(p,expected,next){
+    const current=await this.packageBookState(p);assert.deepEqual(current,expected,'Produkt #36618 zmieniony poza próbą');
+    // Zmieniamy dostępność i kontrolowaną cenę wyłącznie własnych książek QA; waga i treść pozostają wzorcem.
+    const allowed=new Set(['enabled','visible','listed','tracked','activeChannels','prices','merchandiseCode']);
+    for(const key of Object.keys(current))if(!allowed.has(key))assert.deepEqual(next[key],current[key],'Niedozwolona zmiana QA: '+key);
+    assert.deepEqual(next.activeChannels,['WHOLESALE']);assert.equal(next.listed,false);
+    const url=cms+'/products/'+p.id+'/edit';
+    const entries=await page.locator('#sylius_product_code').evaluate(e=>[...new FormData(e.form).entries()].filter(([,v])=>typeof v==='string'));
+    const body=new URLSearchParams(entries);for(const [key,value]of entries)if(/token/i.test(key))onSecret(value);
+    for(const [key,enabled]of Object.entries({enabled:next.enabled,visibleOnList:next.listed,visibleInBookshop:next.visible})){
+     body.delete('sylius_product['+key+']');if(enabled)body.set('sylius_product['+key+']','1');
+    }
+    body.delete('sylius_product[variant][tracked]');if(next.tracked)body.set('sylius_product[variant][tracked]','1');
+    body.delete('sylius_product[channels][]');body.append('sylius_product[channels][]','WHOLESALE');
+    assert(['1,00','21,00'].includes(next.prices.price)&&next.prices.price===next.prices.originalPrice&&next.prices.minimumPrice==='0,00','Nieprawidłowa cena książki QA #36618');
+    for(const key of ['price','originalPrice','minimumPrice'])body.set('sylius_product[variant][channelPricings][WHOLESALE]['+key+']',next.prices[key]);
+    assert(next.merchandiseCode===p.code||next.merchandiseCode==='qa36618-'+p.id||/^qa36618-[a-f0-9]{10}$/.test(next.merchandiseCode),'Nieprawidłowy kod handlowy własnego QA');
+    body.set('sylius_product[variant][merchandiseCode]',next.merchandiseCode);
+    await presentation.form(page,body,'Dostępność własnej książki QA #36618');
+    const response=await context.request.post(url,{data:body.toString(),headers:{'content-type':'application/x-www-form-urlencoded',referer:url,origin:cms},maxRedirects:0,timeout:30000});
+    onRequest({method:'POST',endpoint:url+' / QA 36618',status:response.status()});
+    assert([302,303].includes(response.status()),'Zapis QA #36618 HTTP '+response.status()+'; nie ponawiam');
    },
    async saveNewTranslations(p,expected){
     assert(/^qa-33388-[a-z0-9-]+$/.test(p.code));const state=await this.newProductState(p);assert(!state.enabled&&!state.visible&&!state.listed,'Nowy produkt QA musi pozostać nieaktywny i ukryty');assert.deepEqual(state.activeChannels,['WHOLESALE']);
@@ -208,7 +279,7 @@ export async function connectDescriptionWeb({vars=process.env,sessionFile='.auth
     }
     assert(await page.getByRole('link',{name:/Wyloguj/}).isVisible(),'Nie potwierdzono logowania Moje GWO');
     onProgress('RETAIL: kontrola pustego koszyka przed dodaniem QA');await goto(shop+'/koszyk');
-    assert((await page.locator('main').innerText()).includes('Twój koszyk jest pusty.'),'Konto ma już koszyk. Nie dodano QA i nie zmieniono istniejących pozycji.');
+    assert((await page.locator('main').innerText()).includes('Twój koszyk jest pusty.'),'[EXISTING_TEST_DATA] Konto ma już koszyk. Nie dodano QA i nie zmieniono istniejących pozycji.');
     await this.applicationCart(p,{students:11});
     const links=await page.locator('main a[href*="/product/"]').evaluateAll(links=>links.map(a=>a.textContent.trim()).filter(Boolean));
     assert.equal(links.length,1,'Logowanie połączyło koszyki lub zmieniło pozycje — dalsza próba zatrzymana');assert.equal(links[0],p.name,'Koszyk nie zawiera oczekiwanej aplikacji');

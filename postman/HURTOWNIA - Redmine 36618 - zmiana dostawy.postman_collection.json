@@ -1,0 +1,3033 @@
+{
+  "info": {
+    "name": "Hurtownia #36618 — reprodukcja T06 i T07",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Dwa niezależne odtworzenia błędów zmiany dostawy, zgodne z raportem redmine-36618-1792583373530-f4328629 (koszyki historyczne 6972/6973). Każdy folder tworzy NOWY koszyk. Bez complete, zamówień, CMS i e-maili.\n\nSTART: uzupełnij lokalnie email, api_password, tests_token oraz product_variant_140g. Zapewnij sesję bramki GitLab w Postmanie. Uruchom oba foldery w Collection Runner, jedna iteracja; nie używaj opcji przerywania na pierwszym FAIL, aby wykonać drugi przypadek. Każdy folder można też uruchomić oddzielnie od logowania. Nie uruchamiaj współbieżnie.\n\nDANE: aktywna w WHOLESALE fizyczna książka o wadze 140 g, VAT 5%, bez Adamady. 58 szt. = 8120 g. Testowa książka QA ID 10233 ma wariant qa-36618-00f95a52-bfeb-461d-ae73-0c8058da5a00-140g i jest po automatach wyłączona — sama znajomość ID nie wystarczy. Użyj przygotowanego aktywnego wariantu o tych parametrach. Kolekcja nie zmienia dostępności produktów. Zwracany kod handlowy może różnić się od kodu wariantu.\n\nWZORCE z CMS: GLS singlePackageWeight=8000 g; dla 8120 g dwie paczki po 1000 gr netto, VAT 5%, dopłata cash_on_delivery 1500 gr brutto: razem 3600 gr brutto / 3429 gr netto. Poczta Polska 1000 gr brutto + dopłata cash_on_delivery 1000 gr brutto = 2000 gr brutto / 1905 gr netto, bez kalkulatora paczek. Jeżeli konfiguracja się zmieniła, potwierdź nowe wzorce w CMS przed oceną wyniku. Wzorców nie uczymy z odpowiedzi badanego API.\n\nT06: GLS → poczta_polska, cały czas 58 szt. Oczekiwano 2000/1905 gr i braku dodatniej liczby paczek; odnotowano 3600/3429 gr i 0 paczek.\nT07: poczta_polska (1 szt.) → GLS (58 szt.). Oczekiwano 2 paczek i 3600/3429 gr; odnotowano 0 paczek i 2000/1905 gr. Celowo zachowano kolejność żądań oryginalnego automatu, w tym zapis ilości i płatności przed każdą zmianą dostawy.\n\nDowód: ostatni GET w folderze, Test Results / Visualize oraz Postman Console z ID koszyka i kwotami przed/po. Konsola nie wypisuje haseł ani tokenów. Czyść dane uwierzytelniające przed eksportem. JWT i token koszyka są zapisywane w lokalnych zmiennych przebiegu (pm.variables), poza kolekcją. Przekierowania są wyłączone."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://ksiegarnia.gwodev.pl/api/v2",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "api_password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tests_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_variant_140g",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "payment_code",
+      "value": "cash_on_delivery",
+      "type": "string"
+    },
+    {
+      "key": "shipping_address_json",
+      "value": "{\"phoneNumber\":\"123456789\",\"carrierName\":\"QA 36618\",\"company\":\"Firma testowa QA\",\"street\":\"Testowa\",\"streetNumber\":\"10\",\"city\":\"Gdańsk\",\"postcode\":\"80-001\"}",
+      "type": "string"
+    },
+    {
+      "key": "billing_address_json",
+      "value": "{\"nip\":\"1234563218\",\"company\":\"Firma testowa QA\",\"street\":\"Testowa\",\"streetNumber\":\"10\",\"city\":\"Gdańsk\",\"postcode\":\"80-001\"}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "T06 — gls_wholesale → poczta_polska",
+      "description": "Uruchom cały folder od logowania. Osobny nowy koszyk, bez finalizacji. Oczekiwane ceny dla cash_on_delivery i potwierdzonej konfiguracji opisanej w instrukcji. Wszystkie asercje końcowe wykonują się niezależnie.",
+      "item": [
+        {
+          "name": "01 — logowanie hurtownika",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/shop/authentication-token",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(true){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " need(value('email')&&value('api_password')&&value('tests_token'),'Uzupełnij lokalnie email, api_password i tests_token.');need(value('product_variant_140g'),'Uzupełnij product_variant_140g — aktywny wariant książki 140 g, VAT 5%.');need(value('payment_code')==='cash_on_delivery','Wzorce kolekcji wymagają cash_on_delivery.');body({email:value('email'),apiPassword:value('api_password')});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);const b=json();const t=typeof b==='string'?b:b?.token??b?.accessToken??b?.bearerToken??b?.jwt??b?.data?.token;need(typeof t==='string'&&t,'Brak JWT');set('r36618_jwt',t);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "02 — utwórz nowy koszyk",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"localeCode\": \"pl_PL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,201]);const o=json();need(o.tokenValue&&!o.number,'Nieprawidłowy nowy koszyk');set('r36618_token',o.tokenValue);set('r36618_path',encodeURIComponent(o.tokenValue));console.log('T06 — ID nowego koszyka',o.id);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "03 — dodaj jedną książkę 140 g",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}/items/bulk",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " body({items:[{productVariant:value('product_variant_140g'),quantity:1}]});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,201,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "04 — pobierz ID pozycji",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);const o=json();need(o.items?.length===1&&o.items[0].id,'Oczekiwano jednej pozycji');set('r36618_item',o.items[0].id);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "Zapis ilości: 58",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/merge-patch+json"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}/items/{{r36618_item}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 58\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "06a — dostępne płatności",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/orders/{{r36618_path}}/payments",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);need(methods(json()).some(m=>m.code===value('payment_code')),'Brak wymaganej płatności');}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "06b — zapisz płatność",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/merge-patch+json"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/orders/{{r36618_path}}/payment-method",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodCode\": \"{{payment_code}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "06c — dostępne dostawy",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/checkout-step-two/{{r36618_path}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);need(methods(json().shippingMethods).some(m=>m.code==='gls_wholesale'),'Brak wymaganej dostawy gls_wholesale');}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "06d — zapisz dostawę gls_wholesale",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/checkout-step-two/{{r36618_path}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " const shipping=JSON.parse(value('shipping_address_json')),billing=JSON.parse(value('billing_address_json'));body({orderTokenValue:value('r36618_token'),shippingMethodCode:'gls_wholesale',shippingAddress:{...shipping,saveToAddressBook:false,isDefault:false},billingAddress:{...billing,saveToAddressBook:false,isDefault:false}});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,201,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "07 — potwierdź poprawny stan początkowy",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{",
+                  "ok([200]);const order=json();",
+                  "const selected=code(order.shipments?.[0]?.method);",
+                  "pm.test('Zapisana metoda dostawy: gls_wholesale',()=>pm.expect(selected).to.eql('gls_wholesale'));",
+                  "pm.test('Zapisana płatność: '+value('payment_code'),()=>pm.expect(code(order.payments?.[0]?.method)).to.eql(value('payment_code')));",
+                  "pm.test('Jedna pozycja z poprawną ilością',()=>{pm.expect(order.items).to.have.lengthOf(1);pm.expect(order.items[0].quantity).to.eql(58);});",
+                  "const expected={\"quantity\":58,\"shipmentPackageQuantity\":2,\"shippingTotal\":3600,\"shippingTotalNet\":3429};",
+                  "const observed={cartId:order.id,shippingMethod:selected,shipmentPackageQuantity:order.shipmentPackageQuantity,shippingTotal:order.shippingTotal,shippingTotalNet:order.shippingTotalNet};",
+                  "for(const field of ['shippingTotal','shippingTotalNet'])pm.test('PRZED ZMIANĄ: '+field+' = '+expected[field]+' gr',()=>pm.expect(order[field]).to.eql(expected[field]));",
+                  "pm.test('PRZED ZMIANĄ: liczba paczek 2',()=>{",
+                  " pm.expect(order.shipmentPackageQuantity).to.eql(2);",
+                  "});",
+                  "console.log('PRZED ZMIANĄ #36618 — kwoty w groszach',observed,'OCZEKIWANO',expected);",
+                  "set('r36618_before',JSON.stringify(observed));",
+                  "if(selected!=='gls_wholesale'||order.items?.length!==1||order.items[0].quantity!==expected.quantity||order.shippingTotal!==expected.shippingTotal||order.shippingTotalNet!==expected.shippingTotalNet||order.shipmentPackageQuantity!==expected.shipmentPackageQuantity)stop('Niepoprawny stan początkowy — nie oceniaj regresji zmiany dostawy.');",
+                  "pm.visualizer.set('<h2>#36618 — Stan początkowy</h2><p>Kwoty w groszach. Dane oczekiwane pochodzą z konfiguracji CMS opisanej w instrukcji.</p><pre>{{details}}</pre>',{details:JSON.stringify({before:value('r36618_before')?JSON.parse(value('r36618_before')):null,expected,actual:observed},null,2)});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "Zapis ilości: 58",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/merge-patch+json"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}/items/{{r36618_item}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 58\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "09a — dostępne płatności",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/orders/{{r36618_path}}/payments",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);need(methods(json()).some(m=>m.code===value('payment_code')),'Brak wymaganej płatności');}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "09b — zapisz płatność",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/merge-patch+json"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/orders/{{r36618_path}}/payment-method",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodCode\": \"{{payment_code}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "09c — dostępne dostawy",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/checkout-step-two/{{r36618_path}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);need(methods(json().shippingMethods).some(m=>m.code==='poczta_polska'),'Brak wymaganej dostawy poczta_polska');}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "09d — zapisz dostawę poczta_polska",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/checkout-step-two/{{r36618_path}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " const shipping=JSON.parse(value('shipping_address_json')),billing=JSON.parse(value('billing_address_json'));body({orderTokenValue:value('r36618_token'),shippingMethodCode:'poczta_polska',shippingAddress:{...shipping,saveToAddressBook:false,isDefault:false},billingAddress:{...billing,saveToAddressBook:false,isDefault:false}});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,201,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "10 — WERYFIKACJA BŁĘDU po zmianie dostawy",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}",
+            "description": "Ten GET jest dowodem. HTTP 200 nie oznacza poprawnej wyceny. Oddzielne testy porównują metodę, liczbę paczek, brutto i netto. FAIL oznacza rozbieżność z niezależnym wzorcem; nie jest oczekiwanym wynikiem poprawnej implementacji."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{",
+                  "ok([200]);const order=json();",
+                  "const selected=code(order.shipments?.[0]?.method);",
+                  "pm.test('Zapisana metoda dostawy: poczta_polska',()=>pm.expect(selected).to.eql('poczta_polska'));",
+                  "pm.test('Zapisana płatność: '+value('payment_code'),()=>pm.expect(code(order.payments?.[0]?.method)).to.eql(value('payment_code')));",
+                  "pm.test('Jedna pozycja z poprawną ilością',()=>{pm.expect(order.items).to.have.lengthOf(1);pm.expect(order.items[0].quantity).to.eql(58);});",
+                  "const expected={\"quantity\":58,\"noCalculator\":true,\"shippingTotal\":2000,\"shippingTotalNet\":1905};",
+                  "const observed={cartId:order.id,shippingMethod:selected,shipmentPackageQuantity:order.shipmentPackageQuantity,shippingTotal:order.shippingTotal,shippingTotalNet:order.shippingTotalNet};",
+                  "for(const field of ['shippingTotal','shippingTotalNet'])pm.test('PO ZMIANIE: '+field+' = '+expected[field]+' gr',()=>pm.expect(order[field]).to.eql(expected[field]));",
+                  "pm.test('PO ZMIANIE: liczba paczek bez dodatniej wartości',()=>{",
+                  " pm.expect(order.shipmentPackageQuantity===0||order.shipmentPackageQuantity===null||order.shipmentPackageQuantity===undefined).to.eql(true);",
+                  "});",
+                  "console.log('PO ZMIANIE #36618 — kwoty w groszach',observed,'OCZEKIWANO',expected);",
+                  "",
+                  "pm.visualizer.set('<h2>#36618 — Po zmianie</h2><p>Kwoty w groszach. Dane oczekiwane pochodzą z konfiguracji CMS opisanej w instrukcji.</p><pre>{{details}}</pre>',{details:JSON.stringify({before:value('r36618_before')?JSON.parse(value('r36618_before')):null,expected,actual:observed},null,2)});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "T07 — poczta_polska → gls_wholesale",
+      "description": "Uruchom cały folder od logowania. Osobny nowy koszyk, bez finalizacji. Oczekiwane ceny dla cash_on_delivery i potwierdzonej konfiguracji opisanej w instrukcji. Wszystkie asercje końcowe wykonują się niezależnie.",
+      "item": [
+        {
+          "name": "01 — logowanie hurtownika",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/shop/authentication-token",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(true){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " need(value('email')&&value('api_password')&&value('tests_token'),'Uzupełnij lokalnie email, api_password i tests_token.');need(value('product_variant_140g'),'Uzupełnij product_variant_140g — aktywny wariant książki 140 g, VAT 5%.');need(value('payment_code')==='cash_on_delivery','Wzorce kolekcji wymagają cash_on_delivery.');body({email:value('email'),apiPassword:value('api_password')});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);const b=json();const t=typeof b==='string'?b:b?.token??b?.accessToken??b?.bearerToken??b?.jwt??b?.data?.token;need(typeof t==='string'&&t,'Brak JWT');set('r36618_jwt',t);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "02 — utwórz nowy koszyk",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"localeCode\": \"pl_PL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,201]);const o=json();need(o.tokenValue&&!o.number,'Nieprawidłowy nowy koszyk');set('r36618_token',o.tokenValue);set('r36618_path',encodeURIComponent(o.tokenValue));console.log('T07 — ID nowego koszyka',o.id);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "03 — dodaj jedną książkę 140 g",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}/items/bulk",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " body({items:[{productVariant:value('product_variant_140g'),quantity:1}]});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,201,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "04 — pobierz ID pozycji",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);const o=json();need(o.items?.length===1&&o.items[0].id,'Oczekiwano jednej pozycji');set('r36618_item',o.items[0].id);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "Zapis ilości: 1",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/merge-patch+json"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}/items/{{r36618_item}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "06a — dostępne płatności",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/orders/{{r36618_path}}/payments",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);need(methods(json()).some(m=>m.code===value('payment_code')),'Brak wymaganej płatności');}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "06b — zapisz płatność",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/merge-patch+json"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/orders/{{r36618_path}}/payment-method",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodCode\": \"{{payment_code}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "06c — dostępne dostawy",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/checkout-step-two/{{r36618_path}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);need(methods(json().shippingMethods).some(m=>m.code==='poczta_polska'),'Brak wymaganej dostawy poczta_polska');}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "06d — zapisz dostawę poczta_polska",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/checkout-step-two/{{r36618_path}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " const shipping=JSON.parse(value('shipping_address_json')),billing=JSON.parse(value('billing_address_json'));body({orderTokenValue:value('r36618_token'),shippingMethodCode:'poczta_polska',shippingAddress:{...shipping,saveToAddressBook:false,isDefault:false},billingAddress:{...billing,saveToAddressBook:false,isDefault:false}});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,201,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "07 — potwierdź poprawny stan początkowy",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{",
+                  "ok([200]);const order=json();",
+                  "const selected=code(order.shipments?.[0]?.method);",
+                  "pm.test('Zapisana metoda dostawy: poczta_polska',()=>pm.expect(selected).to.eql('poczta_polska'));",
+                  "pm.test('Zapisana płatność: '+value('payment_code'),()=>pm.expect(code(order.payments?.[0]?.method)).to.eql(value('payment_code')));",
+                  "pm.test('Jedna pozycja z poprawną ilością',()=>{pm.expect(order.items).to.have.lengthOf(1);pm.expect(order.items[0].quantity).to.eql(1);});",
+                  "const expected={\"quantity\":1,\"noCalculator\":true,\"shippingTotal\":2000,\"shippingTotalNet\":1905};",
+                  "const observed={cartId:order.id,shippingMethod:selected,shipmentPackageQuantity:order.shipmentPackageQuantity,shippingTotal:order.shippingTotal,shippingTotalNet:order.shippingTotalNet};",
+                  "for(const field of ['shippingTotal','shippingTotalNet'])pm.test('PRZED ZMIANĄ: '+field+' = '+expected[field]+' gr',()=>pm.expect(order[field]).to.eql(expected[field]));",
+                  "pm.test('PRZED ZMIANĄ: liczba paczek bez dodatniej wartości',()=>{",
+                  " pm.expect(order.shipmentPackageQuantity===0||order.shipmentPackageQuantity===null||order.shipmentPackageQuantity===undefined).to.eql(true);",
+                  "});",
+                  "console.log('PRZED ZMIANĄ #36618 — kwoty w groszach',observed,'OCZEKIWANO',expected);",
+                  "set('r36618_before',JSON.stringify(observed));",
+                  "if(selected!=='poczta_polska'||order.items?.length!==1||order.items[0].quantity!==expected.quantity||order.shippingTotal!==expected.shippingTotal||order.shippingTotalNet!==expected.shippingTotalNet||!(order.shipmentPackageQuantity===0||order.shipmentPackageQuantity===null||order.shipmentPackageQuantity===undefined))stop('Niepoprawny stan początkowy — nie oceniaj regresji zmiany dostawy.');",
+                  "pm.visualizer.set('<h2>#36618 — Stan początkowy</h2><p>Kwoty w groszach. Dane oczekiwane pochodzą z konfiguracji CMS opisanej w instrukcji.</p><pre>{{details}}</pre>',{details:JSON.stringify({before:value('r36618_before')?JSON.parse(value('r36618_before')):null,expected,actual:observed},null,2)});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "Zapis ilości: 58",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/merge-patch+json"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}/items/{{r36618_item}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 58\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "09a — dostępne płatności",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/orders/{{r36618_path}}/payments",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);need(methods(json()).some(m=>m.code===value('payment_code')),'Brak wymaganej płatności');}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "09b — zapisz płatność",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/merge-patch+json"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/orders/{{r36618_path}}/payment-method",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodCode\": \"{{payment_code}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "09c — dostępne dostawy",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/checkout-step-two/{{r36618_path}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200]);need(methods(json().shippingMethods).some(m=>m.code==='gls_wholesale'),'Brak wymaganej dostawy gls_wholesale');}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "09d — zapisz dostawę gls_wholesale",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/wholesale/checkout-step-two/{{r36618_path}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " const shipping=JSON.parse(value('shipping_address_json')),billing=JSON.parse(value('billing_address_json'));body({orderTokenValue:value('r36618_token'),shippingMethodCode:'gls_wholesale',shippingAddress:{...shipping,saveToAddressBook:false,isDefault:false},billingAddress:{...billing,saveToAddressBook:false,isDefault:false}});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{ok([200,201,204]);}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "10 — WERYFIKACJA BŁĘDU po zmianie dostawy",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{r36618_jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Channel",
+                "value": "WHOLESALE"
+              },
+              {
+                "key": "X-Tests-Token",
+                "value": "{{tests_token}}"
+              }
+            ],
+            "url": "{{base_url}}/shop/orders/{{r36618_path}}",
+            "description": "Ten GET jest dowodem. HTTP 200 nie oznacza poprawnej wyceny. Oddzielne testy porównują metodę, liczbę paczek, brutto i netto. FAIL oznacza rozbieżność z niezależnym wzorcem; nie jest oczekiwanym wynikiem poprawnej implementacji."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "",
+                  "if(false){",
+                  " set('r36618_blocked',false);",
+                  " for(const k of ['r36618_jwt','r36618_token','r36618_path','r36618_item','r36618_before'])pm.variables.unset(k);",
+                  "}",
+                  "try{",
+                  " need(!value('r36618_blocked'),'Poprzedni krok nie powiódł się. Uruchom folder od logowania.');",
+                  " need(value('base_url') === 'https://ksiegarnia.gwodev.pl/api/v2','Kolekcja przeznaczona dla https://ksiegarnia.gwodev.pl/api/v2');",
+                  " ",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);pm.execution.skipRequest();throw e;}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function need(ok,message){if(!ok)throw new Error(message);}",
+                  "function value(k){return pm.variables.get(k);}",
+                  "function set(k,v){pm.variables.set(k,v);}",
+                  "function stop(message){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw new Error(message);}",
+                  "function body(data){pm.request.body.update(JSON.stringify(data));}",
+                  "function json(){try{return pm.response.json();}catch(e){stop('Brak JSON — sprawdź sesję GitLab i adres API.');}}",
+                  "function ok(codes){const pass=codes.includes(pm.response.code);pm.test('HTTP '+codes.join('/'),()=>pm.expect(pass).to.eql(true));if(!pass)stop('Niepoprawny HTTP '+pm.response.code+' — dalsze kroki zatrzymane.');}",
+                  "function methods(data){return Array.isArray(data)?data:data?.['hydra:member']??data?.member??[];}",
+                  "function code(method){return typeof method==='string'?method:method?.code;}",
+                  "try{",
+                  "ok([200]);const order=json();",
+                  "const selected=code(order.shipments?.[0]?.method);",
+                  "pm.test('Zapisana metoda dostawy: gls_wholesale',()=>pm.expect(selected).to.eql('gls_wholesale'));",
+                  "pm.test('Zapisana płatność: '+value('payment_code'),()=>pm.expect(code(order.payments?.[0]?.method)).to.eql(value('payment_code')));",
+                  "pm.test('Jedna pozycja z poprawną ilością',()=>{pm.expect(order.items).to.have.lengthOf(1);pm.expect(order.items[0].quantity).to.eql(58);});",
+                  "const expected={\"quantity\":58,\"shipmentPackageQuantity\":2,\"shippingTotal\":3600,\"shippingTotalNet\":3429};",
+                  "const observed={cartId:order.id,shippingMethod:selected,shipmentPackageQuantity:order.shipmentPackageQuantity,shippingTotal:order.shippingTotal,shippingTotalNet:order.shippingTotalNet};",
+                  "for(const field of ['shippingTotal','shippingTotalNet'])pm.test('PO ZMIANIE: '+field+' = '+expected[field]+' gr',()=>pm.expect(order[field]).to.eql(expected[field]));",
+                  "pm.test('PO ZMIANIE: liczba paczek 2',()=>{",
+                  " pm.expect(order.shipmentPackageQuantity).to.eql(2);",
+                  "});",
+                  "console.log('PO ZMIANIE #36618 — kwoty w groszach',observed,'OCZEKIWANO',expected);",
+                  "",
+                  "pm.visualizer.set('<h2>#36618 — Po zmianie</h2><p>Kwoty w groszach. Dane oczekiwane pochodzą z konfiguracji CMS opisanej w instrukcji.</p><pre>{{details}}</pre>',{details:JSON.stringify({before:value('r36618_before')?JSON.parse(value('r36618_before')):null,expected,actual:observed},null,2)});",
+                  "}catch(e){set('r36618_blocked',true);pm.execution.setNextRequest(null);throw e;}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        }
+      ]
+    }
+  ]
+}

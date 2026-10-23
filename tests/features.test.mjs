@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtemp,readFile} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {minorUnits,productPayload,runProductCreation,runRounding,runDescriptions} from '../api-tests/features.mjs';
+import {minorUnits,productPayload,runProductCreation,runDescriptions} from '../api-tests/features.mjs';
 const config={environment:'dev',enabled:true,baseUrl:'http://127.0.0.1:11111/api/v2'};
 const credentials={email:'qa@example.invalid',password:'secret-password-mock',testsToken:'secret-tests-token'};
 const input={code:'qa-form-1',variantCode:'qa-form-v1',name:'QA książka',slug:'qa-ksiazka',channel:'WHOLESALE',price:'18,40',originalPrice:'18.40',minimumPrice:'0'};
@@ -51,17 +51,6 @@ test('403 kończy tworzenie bez POST wariantu i bez testów katalogu; nie ujawni
   assert.equal(r.report.status,'FAIL');assert.equal(r.report.lastResponse.status,403);assert.equal(m.calls.length,3);
   assert.equal(m.calls[2].method,'GET');assert.equal(r.report.accessDiagnostic.readStatus,403);assert.match(r.report.blockedReason,/403/);
   const saved=await readFile(path.join(r.directory,'raport.json'),'utf8');for(const secret of ['private-admin-pass','private-jwt-mock',...Object.values(credentials)])assert(!saved.includes(secret));
-});
-const settings={productVariant:'5lp-1',baseGrossMinor:1840,baseNetMinor:1752,rebatePercent:23,quantities:[1,6],anchors:{1:{discountedUnitPriceNet:1349},6:{total:8499}}};
-test('Wzorce 13,49 i 84,99 przechodzą; 13,50 i 85,02 są wykrywane w obu punktach',async()=>{
-  for(const wrongPrice of [false,true]){
-    const m=mock({wrongPrice});const r=await runRounding(config,credentials,await options({...m,settings}));assert.equal(r.report.status,wrongPrice?'FAIL':'PASS');
-    assert.equal(r.report.tables[0].rows.length,2);assert(!m.calls.some(c=>c.endpoint.endsWith('/complete')));
-    if(wrongPrice)assert.equal(r.report.tests.filter(t=>t.status==='FAIL').length,2);
-  }
-});
-test('Brak rabatu 23% daje INCOMPLETE i nie wybiera niedostępnej płatności',async()=>{
-  const m=mock({no23:true});const r=await runRounding(config,credentials,await options({...m,settings}));assert.equal(r.report.status,'INCOMPLETE');assert(r.report.blockedReason);assert(!m.calls.some(c=>c.endpoint.endsWith('/payment-method')));
 });
 test('Opisy sprawdzają trzy kanały i zapis productName, jawnie wskazują niesprawdzony zakres',async()=>{
   const m=mock();const r=await runDescriptions(config,credentials,await options({...m,fixtures}));assert.equal(r.report.status,'INCOMPLETE',JSON.stringify(r.report.tests.filter(t=>t.status==='FAIL')));
